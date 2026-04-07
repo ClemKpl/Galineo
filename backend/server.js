@@ -9,6 +9,7 @@ const userRoutes    = require('./routes/users');
 const roleRoutes    = require('./routes/roles');
 const taskRoutes    = require('./routes/tasks');
 const messageRoutes = require('./routes/messages');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 app.use(cors());
@@ -22,7 +23,8 @@ app.use('/projects/:projectId/messages', messageRoutes);
 app.use('/projects', projectRoutes);
 app.use('/users',    userRoutes);
 app.use('/roles',    roleRoutes);
+app.use('/notifications', notificationRoutes);
 
-app.listen(3001, () => {
-  console.log('🚀 Galineo API running on http://localhost:3001');
+app.listen(3001, '0.0.0.0', () => {
+  console.log('🚀 Galineo API running on port 3001 (accessible on network)');
 });

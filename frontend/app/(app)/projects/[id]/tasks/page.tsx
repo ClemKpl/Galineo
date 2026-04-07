@@ -30,6 +30,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('normal'); // 'urgent_important', 'urgent_not_important', 'not_urgent_important', 'not_urgent_not_important' ou 'normal'
   const [phase, setPhase] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [parentId, setParentId] = useState('');
@@ -73,6 +74,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     setDescription('');
     setPriority('normal');
     setPhase('');
+    setStartDate('');
     setDueDate('');
     setAssignedTo('');
     setParentId('');
@@ -87,6 +89,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     setDescription('');
     setPriority('normal');
     setPhase('');
+    setStartDate('');
     setDueDate('');
     setAssignedTo('');
     setParentId(parentTaskId.toString());
@@ -101,6 +104,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     setDescription(task.description || '');
     setPriority(task.priority || 'normal');
     setPhase(task.phase || '');
+    setStartDate(task.start_date ? task.start_date.substring(0, 10) : '');
     setDueDate(task.due_date ? task.due_date.substring(0, 10) : '');
     setAssignedTo(task.assigned_to ? task.assigned_to.toString() : '');
     setParentId(task.parent_id ? task.parent_id.toString() : '');
@@ -143,6 +147,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         description,
         priority,
         phase,
+        start_date: startDate || null,
         due_date: dueDate || null,
         assigned_to: assignedTo ? parseInt(assignedTo) : null,
         parent_id: parentId ? parseInt(parentId) : null,
@@ -277,21 +282,21 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     const isDone = task.status === 'done';
     
     return (
-      <div className={`flex items-center gap-3 px-4 py-3 border-b border-stone-100 hover:bg-stone-50 transition-colors group ${isDone ? 'opacity-60' : ''} ${isFeature ? 'bg-stone-50/50' : 'pl-12'}`}>
-        <button onClick={() => toggleStatus(task)} className={`w-5 h-5 rounded-full border flex flex-shrink-0 items-center justify-center transition-colors ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-stone-300 hover:border-orange-400'}`}>
+      <div className={`flex items-start gap-3 px-4 py-3 border-b border-stone-100 hover:bg-stone-50 transition-colors group ${isDone ? 'opacity-60' : ''} ${isFeature ? 'bg-stone-50/50' : 'pl-10 sm:pl-12'}`}>
+        <button onClick={(e) => { e.stopPropagation(); toggleStatus(task); }} className={`mt-0.5 w-5 h-5 rounded-full border flex flex-shrink-0 items-center justify-center transition-colors ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-stone-300 hover:border-orange-400'}`}>
           {isDone && <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>}
         </button>
         
-        <div className="flex-1 min-w-0 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className={`${isFeature ? 'text-base font-bold text-stone-900' : 'text-sm font-medium'} truncate ${isDone ? 'line-through text-stone-500' : 'text-stone-900'}`}>{task.title}</span>
+        <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`${isFeature ? 'text-base font-bold text-stone-900' : 'text-sm font-medium'} max-w-[200px] sm:max-w-xs md:max-w-md truncate ${isDone ? 'line-through text-stone-500' : 'text-stone-900'}`}>{task.title}</span>
             {!isFeature && renderStatusBadge(task.status || 'todo')}
-            {task.description && <span className="px-2 py-0.5 bg-stone-100 text-stone-500 rounded-md text-[10px] font-semibold uppercase tracking-wider">Description</span>}
+            {task.description && <span className="hidden sm:inline-block px-2 py-0.5 bg-stone-100 text-stone-500 rounded-md text-[10px] font-semibold uppercase tracking-wider">Descr.</span>}
             {renderPriority(task.priority)}
             {task.phase && <span className="px-2 py-0.5 bg-stone-100 text-stone-600 rounded-md text-[10px] font-bold uppercase tracking-wider">{task.phase}</span>}
           </div>
           
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs shrink-0 mt-1 sm:mt-0">
             {task.due_date && (
               <span className={`flex items-center gap-1 ${new Date(task.due_date) < new Date() && !isDone ? 'text-red-500 font-semibold' : 'text-stone-400'}`}>
                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -302,19 +307,19 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
               <span className="bg-stone-100 text-stone-600 px-2 py-1 rounded-full border border-stone-200">{task.assignee_name}</span>
             )}
             
-            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+            <div className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 flex items-center gap-1 transition-opacity">
               {isFeature && (
-                <button onClick={() => openCreateTask(task.id)} className="px-2 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-100 bg-orange-50 rounded-lg transition-colors" title="Ajouter une tâche à cette fonctionnalité">
+                <button onClick={(e) => { e.stopPropagation(); openCreateTask(task.id); }} className="px-2 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-100 bg-orange-50 rounded-lg transition-colors" title="Ajouter une tâche à cette fonctionnalité">
                   + Tâche
                 </button>
               )}
-              <button onClick={() => openHistoryModal(task)} className="px-2 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-200 bg-stone-100 rounded-lg transition-colors" title="Historique d'avancement">
+              <button onClick={(e) => { e.stopPropagation(); openHistoryModal(task); }} className="px-2 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-200 bg-stone-100 rounded-lg transition-colors" title="Historique d'avancement">
                 Historique
               </button>
-              <button onClick={() => openEditModal(task)} className="p-1.5 text-stone-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors" title="Modifier">
+              <button onClick={(e) => { e.stopPropagation(); openEditModal(task); }} className="p-1.5 text-stone-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors" title="Modifier">
                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               </button>
-              <button onClick={() => handleDelete(task.id)} className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Supprimer">
+              <button onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }} className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Supprimer">
                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
               </button>
             </div>
@@ -330,31 +335,17 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
     return (
       <div
+        draggable
+        onDragStart={(event) => startDragTask(event, task.id)}
         onDragEnd={() => {
           setDraggedTaskId(null);
           setDragOverColumn(null);
         }}
-        className={`rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-colors hover:border-stone-300 ${isDone ? 'opacity-75' : ''} ${draggedTaskId === task.id ? 'opacity-50' : ''}`}
+        className={`relative rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-colors hover:border-orange-300 cursor-grab active:cursor-grabbing ${isDone ? 'opacity-75' : ''} ${draggedTaskId === task.id ? 'opacity-50 ring-2 ring-orange-400' : ''}`}
       >
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3 relative z-10">
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2">
-              <div
-                draggable
-                onDragStart={(event) => startDragTask(event, task.id)}
-                onMouseDown={(event) => event.stopPropagation()}
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 text-stone-400 transition-colors ${draggedTaskId === task.id ? 'cursor-grabbing' : 'cursor-grab hover:border-orange-300 hover:bg-orange-50 hover:text-orange-500'}`}
-                title="Glisser pour changer de colonne"
-              >
-                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="9" cy="6" r="1.5" />
-                  <circle cx="15" cy="6" r="1.5" />
-                  <circle cx="9" cy="12" r="1.5" />
-                  <circle cx="15" cy="12" r="1.5" />
-                  <circle cx="9" cy="18" r="1.5" />
-                  <circle cx="15" cy="18" r="1.5" />
-                </svg>
-              </div>
               {renderStatusBadge(task.status || 'todo')}
               {task.description && <span className="px-2 py-0.5 bg-stone-100 text-stone-500 rounded-md text-[10px] font-semibold uppercase tracking-wider">Description</span>}
             </div>
@@ -364,7 +355,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             )}
           </div>
 
-          <button onClick={() => toggleStatus(task)} className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${isDone ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-stone-300 text-transparent hover:border-orange-400'}`} title={isDone ? 'Marquer a faire' : 'Marquer termine'}>
+          <button onClick={(e) => { e.stopPropagation(); toggleStatus(task); }} className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${isDone ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-stone-300 text-transparent hover:border-orange-400'}`} title={isDone ? 'Marquer a faire' : 'Marquer termine'}>
             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
         </div>
@@ -410,36 +401,36 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   return (
     <div className="p-8 max-w-6xl mx-auto">
       {/* HEADER & INFO BULLE */}
-      <div className="relative z-20 flex items-start justify-between mb-8">
+      <div className="relative z-20 flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-stone-900 flex items-center gap-3">
+          <h2 className="text-xl sm:text-2xl font-bold text-stone-900 flex items-center gap-2 sm:gap-3">
             Fonctionnalités & Tâches
             <div className="group relative z-30">
               <div className="w-5 h-5 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-xs font-bold cursor-help hover:bg-orange-100 hover:text-orange-600 transition-colors">?</div>
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[80]">
+              <div className="absolute left-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 w-64 sm:w-72 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[80]">
                 Créez d'abord vos "Fonctionnalités" (ex: Page d'Accueil), puis insérez vos "Tâches" à l'intérieur (ex: Maquetter le Header).
-                <div className="absolute left-1/2 -translate-x-1/2 top-full border-4 border-transparent border-t-stone-800"></div>
+                <div className="absolute left-6 sm:left-1/2 sm:-translate-x-1/2 bottom-full border-4 border-transparent border-b-stone-800"></div>
               </div>
             </div>
           </h2>
-          <p className="text-stone-400 text-sm mt-1">Séparez votre projet en grands blocs (Fonctionnalités) puis découpez-les (Tâches)</p>
+          <p className="text-stone-400 text-xs sm:text-sm mt-1">Séparez votre projet en grands blocs (Fonctionnalités) puis découpez-les (Tâches)</p>
         </div>
-        <div className="flex gap-2">
-           <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-white p-1 shadow-sm">
-              <button onClick={() => setViewMode('list')} className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === 'list' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+           <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-white p-1 shadow-sm shrink-0">
+              <button onClick={() => setViewMode('list')} className={`rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors ${viewMode === 'list' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
                 Liste
               </button>
-              <button onClick={() => setViewMode('kanban')} className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === 'kanban' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+              <button onClick={() => setViewMode('kanban')} className={`rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors ${viewMode === 'kanban' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
                 Kanban
               </button>
            </div>
-           <button onClick={() => openCreateTask()} className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl text-sm transition-colors shadow-sm flex items-center gap-2">
-              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Nouvelle Tâche
+           <button onClick={() => openCreateTask()} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5">
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Tâche
            </button>
-           <button onClick={() => openCreateFeature()} className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl text-sm transition-colors shadow-sm flex items-center gap-2">
-              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Nouvelle Fonctionnalité
+           <button onClick={() => openCreateFeature()} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5">
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Fonctionnalité
            </button>
         </div>
       </div>
@@ -544,36 +535,41 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1">Phase / Catégorie</label>
-                      <input type="text" value={phase} onChange={e => setPhase(e.target.value)}
-                        className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900" 
-                        placeholder="Ex: Design, Backend..." />
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Date de début</label>
+                      <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                        className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900" />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-stone-700 mb-1">Priorité (Eisenhower)</label>
-                      <select value={priority} onChange={e => setPriority(e.target.value)}
-                        className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 bg-white">
-                        <option value="normal">Normale</option>
-                        <option value="urgent_important">Urgent & Important</option>
-                        <option value="not_urgent_important">Important, pas urgent</option>
-                        <option value="urgent_not_important">Urgent, pas important</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-stone-700 mb-1">Date d'échéance</label>
                       <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
                         className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Phase</label>
+                      <input type="text" value={phase} onChange={e => setPhase(e.target.value)}
+                        className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900" 
+                        placeholder="Ex: Design..." />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Priorité</label>
+                      <select value={priority} onChange={e => setPriority(e.target.value)}
+                        className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 bg-white">
+                        <option value="normal">Normale</option>
+                        <option value="urgent_important">Urg. & Imp.</option>
+                        <option value="not_urgent_important">Important</option>
+                        <option value="urgent_not_important">Urgent</option>
+                      </select>
                     </div>
                     <div className="relative">
                       <label className="block text-sm font-medium text-stone-700 mb-1">Assigner à</label>
                       <div className="relative">
                         {assignedTo ? (
                            <div className="flex items-center justify-between w-full px-4 py-2 border border-orange-200 bg-orange-50 rounded-xl">
-                              <span className="text-sm font-semibold text-orange-700">{getAssignedUserName(assignedTo)}</span>
-                              <button type="button" onClick={() => { setAssignedTo(''); setSearchUser(''); }} className="text-orange-400 hover:text-orange-600">
+                              <span className="text-sm font-semibold text-orange-700 truncate">{getAssignedUserName(assignedTo)}</span>
+                              <button type="button" onClick={() => { setAssignedTo(''); setSearchUser(''); }} className="text-orange-400 hover:text-orange-600 shrink-0 ml-1">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                               </button>
                            </div>
@@ -584,13 +580,13 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                                   <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
                                 </svg>
                                 <input type="text" value={searchUser} onChange={(e) => setSearchUser(e.target.value)} onFocus={() => setShowUserList(true)} onBlur={() => setTimeout(() => setShowUserList(false), 200)}
-                                  className="w-full pl-10 pr-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-sm transition-all"
-                                  placeholder="Chercher un partenaire..." />
+                                  className="w-full pl-10 pr-2 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-sm transition-all"
+                                  placeholder="Chercher..." />
                               </div>
                               {showUserList && (
                                 <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-stone-200 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
                                    {filteredMembers.length === 0 ? (
-                                     <div className="p-3 text-sm text-stone-400 text-center">Aucun membre trouvé</div>
+                                     <div className="p-3 text-sm text-stone-400 text-center">Aucun membre</div>
                                    ) : (
                                      filteredMembers.map(u => (
                                        <button key={u.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setAssignedTo(u.id.toString()); setShowUserList(false); setSearchUser(''); }}

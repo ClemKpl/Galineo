@@ -90,13 +90,31 @@ router.post('/', authMiddleware, (req, res) => {
     priority || 'normal', start_date || null, due_date || null, createdBy, assigned_to || null
   ], function (err) {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ id: this.lastID, ...req.body, project_id: projectId });
+    const taskId = this.lastID;
+
+    // Notification: task assigned to someone
+    if (assigned_to && assigned_to !== createdBy) {
+      db.run(`
+        INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id)
+        VALUES (?, 'task_assigned', ?, ?, ?, ?, ?)
+      `, [
+        assigned_to,
+        'Nouvelle tâche assignée',
+        `"${title}" vous a été assignée par ${req.user.name}`,
+        projectId,
+        taskId,
+        createdBy
+      ]);
+    }
+
+    res.json({ id: taskId, ...req.body, project_id: projectId });
   });
 });
 
 // PATCH /projects/:projectId/tasks/:id — Modifier une tâche
 router.patch('/:id', authMiddleware, (req, res) => {
   const { id, projectId } = req.params;
+  const userId = req.user.id;
   const updates = [];
   const values = [];
 
@@ -111,12 +129,40 @@ router.patch('/:id', authMiddleware, (req, res) => {
 
   if (updates.length === 0) return res.status(400).json({ error: 'Aucun champ à modifier' });
 
-  values.push(id, projectId);
+  // Check if assigned_to changed — need old value
+  if (req.body.assigned_to !== undefined) {
+    db.get('SELECT assigned_to, title FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], (findErr, oldTask) => {
+      if (findErr || !oldTask) {
+        // fallback: just do the update
+        return doUpdate();
+      }
+      doUpdate(() => {
+        const newAssignee = req.body.assigned_to;
+        if (newAssignee && newAssignee !== userId && newAssignee !== oldTask.assigned_to) {
+          db.run(`
+            INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id)
+            VALUES (?, 'task_assigned', ?, ?, ?, ?, ?)
+          `, [
+            newAssignee,
+            'Tâche assignée',
+            `"${oldTask.title}" vous a été assignée par ${req.user.name}`,
+            projectId, id, userId
+          ]);
+        }
+      });
+    });
+  } else {
+    doUpdate();
+  }
 
-  db.run(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND project_id = ?`, values, function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: 'Tâche modifiée' });
-  });
+  function doUpdate(afterCb) {
+    const vals = [...values, id, projectId];
+    db.run(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND project_id = ?`, vals, function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (afterCb) afterCb();
+      res.json({ message: 'Tâche modifiée' });
+    });
+  }
 });
 
 // DELETE /projects/:projectId/tasks/:id — Supprimer une tâche

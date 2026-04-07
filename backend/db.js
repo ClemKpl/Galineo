@@ -109,6 +109,23 @@ db.serialize(() => {
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT,
+    project_id INTEGER,
+    task_id INTEGER,
+    from_user_id INTEGER,
+    is_read INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL,
+    FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE SET NULL
+  )`);
+
   // Seed default roles
   db.run(`INSERT OR IGNORE INTO roles (id, name, is_default) VALUES
     (1, 'Propriétaire', 1),
