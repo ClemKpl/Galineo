@@ -31,13 +31,13 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
   return (
     <div className="p-8 max-w-6xl mx-auto h-full flex flex-col">
       {/* HEADER & INFO BULLE */}
-      <div className="flex items-start justify-between mb-8 shrink-0">
+      <div className="relative z-20 flex items-start justify-between mb-8 shrink-0">
         <div>
           <h2 className="text-2xl font-bold text-stone-900 flex items-center gap-3">
             Calendrier & Timeline
-            <div className="group relative">
+            <div className="group relative z-30">
               <div className="w-5 h-5 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-xs font-bold cursor-help hover:bg-orange-100 hover:text-orange-600 transition-colors">?</div>
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[80]">
                 Vue chronologique (Gantt simplifié) de toutes les tâches qui ont une date d'échéance. Idéal pour voir quels jalons arrivent à court et moyen terme.
                 <div className="absolute left-1/2 -translate-x-1/2 top-full border-4 border-transparent border-t-stone-800"></div>
               </div>

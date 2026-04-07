@@ -21,6 +21,60 @@ router.get('/', authMiddleware, (req, res) => {
 });
 
 // POST /projects/:projectId/tasks — Créer une tâche
+// GET /projects/:projectId/tasks/:id/comments â€” Historique / commentaires d'avancement
+router.get('/:id/comments', authMiddleware, (req, res) => {
+  const { id, projectId } = req.params;
+
+  db.get('SELECT id FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], (taskErr, task) => {
+    if (taskErr) return res.status(500).json({ error: taskErr.message });
+    if (!task) return res.status(404).json({ error: 'Tâche non trouvée' });
+
+    db.all(`
+      SELECT tc.*, u.name as author_name
+      FROM task_comments tc
+      LEFT JOIN users u ON u.id = tc.user_id
+      WHERE tc.task_id = ?
+      ORDER BY tc.created_at DESC, tc.id DESC
+    `, [id], (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    });
+  });
+});
+
+// POST /projects/:projectId/tasks/:id/comments â€” Ajouter un commentaire d'avancement
+router.post('/:id/comments', authMiddleware, (req, res) => {
+  const { id, projectId } = req.params;
+  const { content } = req.body;
+  const userId = req.user.id;
+
+  if (!content || !content.trim()) {
+    return res.status(400).json({ error: 'Commentaire requis' });
+  }
+
+  db.get('SELECT id FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], (taskErr, task) => {
+    if (taskErr) return res.status(500).json({ error: taskErr.message });
+    if (!task) return res.status(404).json({ error: 'Tâche non trouvée' });
+
+    db.run(`
+      INSERT INTO task_comments (task_id, user_id, content)
+      VALUES (?, ?, ?)
+    `, [id, userId, content.trim()], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      db.get(`
+        SELECT tc.*, u.name as author_name
+        FROM task_comments tc
+        LEFT JOIN users u ON u.id = tc.user_id
+        WHERE tc.id = ?
+      `, [this.lastID], (commentErr, comment) => {
+        if (commentErr) return res.status(500).json({ error: commentErr.message });
+        res.json(comment);
+      });
+    });
+  });
+});
+
 router.post('/', authMiddleware, (req, res) => {
   const { projectId } = req.params;
   const { title, description, parent_id, phase, priority, start_date, due_date, assigned_to } = req.body;

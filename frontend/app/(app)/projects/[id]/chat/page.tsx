@@ -93,12 +93,12 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="flex flex-col h-full bg-stone-50">
       {/* HEADER & INFO BULLE */}
-      <div className="px-8 py-5 border-b border-stone-200 bg-white shrink-0">
+      <div className="relative z-20 px-8 py-5 border-b border-stone-200 bg-white shrink-0">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold text-stone-900">Discussion</h2>
-          <div className="group relative">
+          <div className="group relative z-30">
             <div className="w-5 h-5 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-xs font-bold cursor-help hover:bg-orange-100 hover:text-orange-600 transition-colors">?</div>
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[80]">
               Espace d'échange du projet. Utilisez <strong>@NomDuMembre</strong> pour les notifier (les mentions s'afficheront en couleur). Les messages s'actualisent sans recharger la page.
               <div className="absolute left-1/2 -translate-x-1/2 bottom-full border-4 border-transparent border-b-stone-800"></div>
             </div>

@@ -1,10 +1,20 @@
 'use client';
 import { useState, useEffect, use } from 'react';
 import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+
+const KANBAN_COLUMNS = [
+  { key: 'todo', label: 'A faire', accent: 'bg-stone-700', soft: 'bg-stone-100 text-stone-700' },
+  { key: 'in_progress', label: 'En cours', accent: 'bg-amber-500', soft: 'bg-amber-100 text-amber-800' },
+  { key: 'done', label: 'Termine', accent: 'bg-emerald-500', soft: 'bg-emerald-100 text-emerald-800' },
+] as const;
+
+type ViewMode = 'list' | 'kanban';
 
 export default function TasksPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
+  const { user } = useAuth();
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
@@ -27,6 +37,15 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   
   const [searchUser, setSearchUser] = useState('');
   const [showUserList, setShowUserList] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const [draggedTaskId, setDraggedTaskId] = useState<number | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [taskComments, setTaskComments] = useState<any[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [newComment, setNewComment] = useState('');
+  const [commentSaving, setCommentSaving] = useState(false);
   
   const [saving, setSaving] = useState(false);
 
@@ -90,6 +109,31 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     setShowModal(true);
   }
 
+  async function openHistoryModal(task: any) {
+    setSelectedTask(task);
+    setShowHistoryModal(true);
+    setNewComment('');
+    setCommentsLoading(true);
+
+    try {
+      const comments = await api.get(`/projects/${projectId}/tasks/${task.id}/comments`);
+      setTaskComments(Array.isArray(comments) ? comments : []);
+    } catch (err) {
+      console.error(err);
+      setTaskComments([]);
+    } finally {
+      setCommentsLoading(false);
+    }
+  }
+
+  function closeHistoryModal() {
+    setShowHistoryModal(false);
+    setSelectedTask(null);
+    setTaskComments([]);
+    setNewComment('');
+    setCommentsLoading(false);
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -129,6 +173,24 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     }
   }
 
+  async function handleCommentSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedTask || !newComment.trim()) return;
+
+    setCommentSaving(true);
+    try {
+      const createdComment = await api.post(`/projects/${projectId}/tasks/${selectedTask.id}/comments`, {
+        content: newComment,
+      });
+      setTaskComments((current) => [createdComment, ...current]);
+      setNewComment('');
+    } catch (err) {
+      alert((err as Error).message);
+    } finally {
+      setCommentSaving(false);
+    }
+  }
+
   const filteredMembers = members.filter(m => 
     searchUser.trim() === '' || 
     m.name.toLowerCase().includes(searchUser.toLowerCase()) || 
@@ -152,6 +214,31 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     }
   }
 
+  async function moveTaskToStatus(taskId: number, newStatus: string) {
+    const currentTask = tasks.find((task) => task.id === taskId);
+    if (!currentTask || currentTask.status === newStatus) return;
+
+    const previousTasks = tasks;
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === taskId ? { ...task, status: newStatus } : task
+      )
+    );
+
+    try {
+      await api.patch(`/projects/${projectId}/tasks/${taskId}`, { status: newStatus });
+    } catch (err) {
+      setTasks(previousTasks);
+      console.error(err);
+    }
+  }
+
+  function startDragTask(event: React.DragEvent, taskId: number) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(taskId));
+    setDraggedTaskId(taskId);
+  }
+
   const renderPriority = (p: string) => {
     switch(p) {
       case 'urgent_important': return <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-md text-xs font-semibold">Urgent & Important</span>;
@@ -159,10 +246,32 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
       case 'not_urgent_important': return <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-xs font-semibold">Important</span>;
       default: return null;
     }
-  }
+  };
+
+  const renderStatusBadge = (currentStatus: string) => {
+    const column = KANBAN_COLUMNS.find((item) => item.key === currentStatus) || KANBAN_COLUMNS[0];
+    return (
+      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] ${column.soft}`}>
+        {column.label}
+      </span>
+    );
+  };
+
+  const formatCommentDate = (date: string) =>
+    new Date(date).toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
   const features = tasks.filter(t => !t.parent_id);
   const getTasksForFeature = (featureId: number) => tasks.filter(t => t.parent_id === featureId);
+  const kanbanTasks = tasks.filter(t => t.parent_id);
+  const tasksByStatus = KANBAN_COLUMNS.map((column) => ({
+    ...column,
+    tasks: kanbanTasks.filter((task) => (task.status || 'todo') === column.key),
+  }));
 
   const TaskRow = ({ task, isFeature = false }: { task: any, isFeature?: boolean }) => {
     const isDone = task.status === 'done';
@@ -176,6 +285,8 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         <div className="flex-1 min-w-0 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className={`${isFeature ? 'text-base font-bold text-stone-900' : 'text-sm font-medium'} truncate ${isDone ? 'line-through text-stone-500' : 'text-stone-900'}`}>{task.title}</span>
+            {!isFeature && renderStatusBadge(task.status || 'todo')}
+            {task.description && <span className="px-2 py-0.5 bg-stone-100 text-stone-500 rounded-md text-[10px] font-semibold uppercase tracking-wider">Description</span>}
             {renderPriority(task.priority)}
             {task.phase && <span className="px-2 py-0.5 bg-stone-100 text-stone-600 rounded-md text-[10px] font-bold uppercase tracking-wider">{task.phase}</span>}
           </div>
@@ -197,6 +308,9 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                   + Tâche
                 </button>
               )}
+              <button onClick={() => openHistoryModal(task)} className="px-2 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-200 bg-stone-100 rounded-lg transition-colors" title="Historique d'avancement">
+                Historique
+              </button>
               <button onClick={() => openEditModal(task)} className="p-1.5 text-stone-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors" title="Modifier">
                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               </button>
@@ -210,16 +324,99 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     );
   };
 
+  const KanbanCard = ({ task }: { task: any }) => {
+    const parentFeature = features.find((feature) => feature.id === task.parent_id);
+    const isDone = task.status === 'done';
+
+    return (
+      <div
+        onDragEnd={() => {
+          setDraggedTaskId(null);
+          setDragOverColumn(null);
+        }}
+        className={`rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-colors hover:border-stone-300 ${isDone ? 'opacity-75' : ''} ${draggedTaskId === task.id ? 'opacity-50' : ''}`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex items-center gap-2">
+              <div
+                draggable
+                onDragStart={(event) => startDragTask(event, task.id)}
+                onMouseDown={(event) => event.stopPropagation()}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 text-stone-400 transition-colors ${draggedTaskId === task.id ? 'cursor-grabbing' : 'cursor-grab hover:border-orange-300 hover:bg-orange-50 hover:text-orange-500'}`}
+                title="Glisser pour changer de colonne"
+              >
+                <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="9" cy="6" r="1.5" />
+                  <circle cx="15" cy="6" r="1.5" />
+                  <circle cx="9" cy="12" r="1.5" />
+                  <circle cx="15" cy="12" r="1.5" />
+                  <circle cx="9" cy="18" r="1.5" />
+                  <circle cx="15" cy="18" r="1.5" />
+                </svg>
+              </div>
+              {renderStatusBadge(task.status || 'todo')}
+              {task.description && <span className="px-2 py-0.5 bg-stone-100 text-stone-500 rounded-md text-[10px] font-semibold uppercase tracking-wider">Description</span>}
+            </div>
+            <p className={`text-sm font-semibold leading-5 ${isDone ? 'line-through text-stone-400' : 'text-stone-900'}`}>{task.title}</p>
+            {task.description && (
+              <p className="mt-2 text-xs leading-5 text-stone-500 line-clamp-3">{task.description}</p>
+            )}
+          </div>
+
+          <button onClick={() => toggleStatus(task)} className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${isDone ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-stone-300 text-transparent hover:border-orange-400'}`} title={isDone ? 'Marquer a faire' : 'Marquer termine'}>
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {parentFeature && (
+            <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-orange-700">
+              {parentFeature.title}
+            </span>
+          )}
+          {renderPriority(task.priority)}
+          {task.phase && <span className="px-2 py-0.5 bg-stone-100 text-stone-600 rounded-md text-[10px] font-bold uppercase tracking-wider">{task.phase}</span>}
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-3 text-xs text-stone-500">
+          <div className="flex flex-wrap items-center gap-2">
+            {task.due_date && (
+              <span className={new Date(task.due_date) < new Date() && !isDone ? 'font-semibold text-red-500' : ''}>
+                {new Date(task.due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+              </span>
+            )}
+            {task.assignee_name && (
+              <span className="rounded-full bg-stone-100 px-2 py-1 text-stone-600">{task.assignee_name}</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button onClick={() => openHistoryModal(task)} className="rounded-lg px-2 py-1 text-xs font-semibold text-stone-600 transition-colors hover:bg-stone-200 bg-stone-100" title="Historique d'avancement">
+              Historique
+            </button>
+            <button onClick={() => openEditModal(task)} className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-blue-50 hover:text-blue-500" title="Modifier">
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+            <button onClick={() => handleDelete(task.id)} className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500" title="Supprimer">
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
       {/* HEADER & INFO BULLE */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="relative z-20 flex items-start justify-between mb-8">
         <div>
           <h2 className="text-2xl font-bold text-stone-900 flex items-center gap-3">
             Fonctionnalités & Tâches
-            <div className="group relative">
+            <div className="group relative z-30">
               <div className="w-5 h-5 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-xs font-bold cursor-help hover:bg-orange-100 hover:text-orange-600 transition-colors">?</div>
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[80]">
                 Créez d'abord vos "Fonctionnalités" (ex: Page d'Accueil), puis insérez vos "Tâches" à l'intérieur (ex: Maquetter le Header).
                 <div className="absolute left-1/2 -translate-x-1/2 top-full border-4 border-transparent border-t-stone-800"></div>
               </div>
@@ -228,6 +425,14 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
           <p className="text-stone-400 text-sm mt-1">Séparez votre projet en grands blocs (Fonctionnalités) puis découpez-les (Tâches)</p>
         </div>
         <div className="flex gap-2">
+           <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-white p-1 shadow-sm">
+              <button onClick={() => setViewMode('list')} className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === 'list' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+                Liste
+              </button>
+              <button onClick={() => setViewMode('kanban')} className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${viewMode === 'kanban' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+                Kanban
+              </button>
+           </div>
            <button onClick={() => openCreateTask()} className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl text-sm transition-colors shadow-sm flex items-center gap-2">
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Nouvelle Tâche
@@ -245,6 +450,54 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         <div className="bg-white border text-center border-stone-200 rounded-2xl py-16">
           <p className="text-stone-400 mb-4">Votre projet est vide.</p>
           <button onClick={() => openCreateFeature()} className="text-orange-500 text-sm font-semibold hover:underline">Créer la première fonctionnalité</button>
+        </div>
+      ) : viewMode === 'kanban' ? (
+        <div className="grid gap-5 lg:grid-cols-3">
+          {tasksByStatus.map((column) => (
+            <section
+              key={column.key}
+              onDragOver={(event) => {
+                event.preventDefault();
+                if (dragOverColumn !== column.key) setDragOverColumn(column.key);
+              }}
+              onDragLeave={(event) => {
+                const nextTarget = event.relatedTarget as Node | null;
+                if (!nextTarget || !event.currentTarget.contains(nextTarget)) {
+                  setDragOverColumn((current) => (current === column.key ? null : current));
+                }
+              }}
+              onDrop={async (event) => {
+                event.preventDefault();
+                const droppedTaskId = Number(event.dataTransfer.getData('text/plain'));
+                setDragOverColumn(null);
+                setDraggedTaskId(null);
+                if (!Number.isNaN(droppedTaskId)) {
+                  await moveTaskToStatus(droppedTaskId, column.key);
+                }
+              }}
+              className={`overflow-hidden rounded-3xl border border-stone-200 bg-stone-50/80 shadow-sm transition-all ${dragOverColumn === column.key ? 'border-orange-300 ring-2 ring-orange-200' : ''}`}
+            >
+              <div className="border-b border-stone-200 bg-white/90 px-5 py-4 backdrop-blur">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className={`h-3 w-3 rounded-full ${column.accent}`}></span>
+                    <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-stone-700">{column.label}</h3>
+                  </div>
+                  <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-600">{column.tasks.length}</span>
+                </div>
+              </div>
+
+              <div className="space-y-3 p-4">
+                {column.tasks.length === 0 ? (
+                  <div className={`rounded-2xl border border-dashed bg-white/70 px-4 py-8 text-center text-sm transition-colors ${dragOverColumn === column.key ? 'border-orange-300 text-orange-500' : 'border-stone-300 text-stone-400'}`}>
+                    {dragOverColumn === column.key ? 'Deposez la tache ici.' : 'Aucune tache dans cette colonne.'}
+                  </div>
+                ) : (
+                  column.tasks.map((task) => <KanbanCard key={task.id} task={task} />)
+                )}
+              </div>
+            </section>
+          ))}
         </div>
       ) : (
         <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm">
@@ -282,6 +535,13 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                       placeholder={isFeatureModal ? "Ex: Espace Utilisateur" : "Ex: Maquetter la page d'accueil"} />
                   </div>
                   
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Description</label>
+                    <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4}
+                      className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 resize-none"
+                      placeholder="Ajoutez le contexte, les objectifs, les détails utiles ou les critères de validation..." />
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-stone-700 mb-1">Phase / Catégorie</label>
@@ -351,6 +611,25 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                     </div>
                   </div>
                   
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Statut</label>
+                      <select value={status} onChange={e => setStatus(e.target.value)}
+                        className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 bg-white">
+                        {KANBAN_COLUMNS.map((column) => (
+                          <option key={column.key} value={column.key}>{column.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-stone-500">Visualisation</p>
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <span className="text-sm text-stone-600">Colonne Kanban</span>
+                        {renderStatusBadge(status)}
+                      </div>
+                    </div>
+                  </div>
+
                   {!isFeatureModal && features.length > 0 && (
                     <div>
                       <label className="block text-sm font-medium text-stone-700 mb-1">Associer à la fonctionnalité</label>
@@ -374,6 +653,73 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                </form>
             </div>
          </div>
+      )}
+
+      {showHistoryModal && selectedTask && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-[fadeUp_0.3s_ease-out]">
+            <div className="px-6 py-4 border-b border-stone-100 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-stone-500">Historique d'avancement</p>
+                <h3 className="mt-1 text-lg font-semibold text-stone-900">{selectedTask.title}</h3>
+                {selectedTask.description && <p className="mt-2 text-sm text-stone-500">{selectedTask.description}</p>}
+              </div>
+              <button onClick={closeHistoryModal} className="text-stone-400 hover:text-stone-600 p-1">
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div className="grid gap-0 md:grid-cols-[1.3fr_0.9fr]">
+              <div className="border-r border-stone-100 p-6">
+                <form onSubmit={handleCommentSubmit} className="space-y-3">
+                  <label className="block text-sm font-medium text-stone-700">Ajouter un commentaire d'avancement</label>
+                  <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} rows={4}
+                    className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 resize-none"
+                    placeholder="Ex: API terminée, reste les tests et la validation UX." />
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-stone-400">Visible dans l'historique de la tâche.</span>
+                    <button type="submit" disabled={commentSaving || !newComment.trim()} className="px-4 py-2 bg-stone-900 hover:bg-stone-800 disabled:bg-stone-300 text-white rounded-xl text-sm font-medium">
+                      {commentSaving ? 'Publication...' : 'Publier'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="max-h-[32rem] overflow-y-auto bg-stone-50/60 p-6">
+                <p className="mb-4 text-sm font-semibold text-stone-700">Commentaires</p>
+                {commentsLoading ? (
+                  <div className="space-y-3">
+                    <div className="h-20 rounded-2xl bg-white border border-stone-200 animate-pulse"></div>
+                    <div className="h-20 rounded-2xl bg-white border border-stone-200 animate-pulse"></div>
+                  </div>
+                ) : taskComments.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-4 py-8 text-center text-sm text-stone-400">
+                    Aucun commentaire pour le moment.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {taskComments.map((comment) => (
+                      <article key={comment.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-8 h-8 rounded-full bg-stone-100 text-stone-700 flex items-center justify-center text-xs font-bold shrink-0">
+                              {(comment.author_name || user?.name || '?').substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-stone-900 truncate">{comment.author_name || 'Membre'}</p>
+                              <p className="text-xs text-stone-400">{formatCommentDate(comment.created_at)}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-sm leading-6 text-stone-600 whitespace-pre-wrap">{comment.content}</p>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <style jsx>{`
