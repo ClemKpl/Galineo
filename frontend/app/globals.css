@@ -24,6 +24,114 @@ html, body {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ══════════════════════════════════════════
+   ACCENT COLOR THEMES
+   Overrides all orange-* Tailwind classes
+   via data-accent attribute on <html>
+══════════════════════════════════════════ */
+
+/* ── Blue ── */
+[data-accent="blue"] .bg-orange-500 { background-color: #3b82f6 !important; }
+[data-accent="blue"] .bg-orange-600 { background-color: #2563eb !important; }
+[data-accent="blue"] .bg-orange-50  { background-color: #eff6ff !important; }
+[data-accent="blue"] .bg-orange-100 { background-color: #dbeafe !important; }
+[data-accent="blue"] .hover\:bg-orange-50:hover  { background-color: #eff6ff !important; }
+[data-accent="blue"] .hover\:bg-orange-100:hover { background-color: #dbeafe !important; }
+[data-accent="blue"] .hover\:bg-orange-600:hover { background-color: #2563eb !important; }
+[data-accent="blue"] .active\:bg-orange-700:active { background-color: #1d4ed8 !important; }
+[data-accent="blue"] .text-orange-400 { color: #60a5fa !important; }
+[data-accent="blue"] .text-orange-500 { color: #3b82f6 !important; }
+[data-accent="blue"] .text-orange-600 { color: #2563eb !important; }
+[data-accent="blue"] .text-orange-700 { color: #1d4ed8 !important; }
+[data-accent="blue"] .hover\:text-orange-400:hover { color: #60a5fa !important; }
+[data-accent="blue"] .hover\:text-orange-500:hover { color: #3b82f6 !important; }
+[data-accent="blue"] .hover\:text-orange-600:hover { color: #2563eb !important; }
+[data-accent="blue"] .border-orange-100 { border-color: #dbeafe !important; }
+[data-accent="blue"] .border-orange-200 { border-color: #bfdbfe !important; }
+[data-accent="blue"] .border-orange-400 { border-color: #60a5fa !important; }
+[data-accent="blue"] .focus\:border-orange-400:focus { border-color: #60a5fa !important; }
+[data-accent="blue"] .from-orange-400 { --tw-gradient-from: #60a5fa var(--tw-gradient-from-position) !important; }
+[data-accent="blue"] .to-orange-600   { --tw-gradient-to:   #2563eb var(--tw-gradient-to-position)   !important; }
+[data-accent="blue"] .bg-orange-500\/20 { background-color: rgb(59 130 246 / 0.2) !important; }
+[data-accent="blue"] .accent-orange-500 { accent-color: #3b82f6 !important; }
+
+/* ── Violet ── */
+[data-accent="violet"] .bg-orange-500 { background-color: #8b5cf6 !important; }
+[data-accent="violet"] .bg-orange-600 { background-color: #7c3aed !important; }
+[data-accent="violet"] .bg-orange-50  { background-color: #f5f3ff !important; }
+[data-accent="violet"] .bg-orange-100 { background-color: #ede9fe !important; }
+[data-accent="violet"] .hover\:bg-orange-50:hover  { background-color: #f5f3ff !important; }
+[data-accent="violet"] .hover\:bg-orange-100:hover { background-color: #ede9fe !important; }
+[data-accent="violet"] .hover\:bg-orange-600:hover { background-color: #7c3aed !important; }
+[data-accent="violet"] .active\:bg-orange-700:active { background-color: #6d28d9 !important; }
+[data-accent="violet"] .text-orange-400 { color: #a78bfa !important; }
+[data-accent="violet"] .text-orange-500 { color: #8b5cf6 !important; }
+[data-accent="violet"] .text-orange-600 { color: #7c3aed !important; }
+[data-accent="violet"] .text-orange-700 { color: #6d28d9 !important; }
+[data-accent="violet"] .hover\:text-orange-400:hover { color: #a78bfa !important; }
+[data-accent="violet"] .hover\:text-orange-500:hover { color: #8b5cf6 !important; }
+[data-accent="violet"] .hover\:text-orange-600:hover { color: #7c3aed !important; }
+[data-accent="violet"] .border-orange-100 { border-color: #ede9fe !important; }
+[data-accent="violet"] .border-orange-200 { border-color: #ddd6fe !important; }
+[data-accent="violet"] .border-orange-400 { border-color: #a78bfa !important; }
+[data-accent="violet"] .focus\:border-orange-400:focus { border-color: #a78bfa !important; }
+[data-accent="violet"] .from-orange-400 { --tw-gradient-from: #a78bfa var(--tw-gradient-from-position) !important; }
+[data-accent="violet"] .to-orange-600   { --tw-gradient-to:   #7c3aed var(--tw-gradient-to-position)   !important; }
+[data-accent="violet"] .bg-orange-500\/20 { background-color: rgb(139 92 246 / 0.2) !important; }
+[data-accent="violet"] .accent-orange-500 { accent-color: #8b5cf6 !important; }
+
+/* ── Emerald ── */
+[data-accent="emerald"] .bg-orange-500 { background-color: #10b981 !important; }
+[data-accent="emerald"] .bg-orange-600 { background-color: #059669 !important; }
+[data-accent="emerald"] .bg-orange-50  { background-color: #ecfdf5 !important; }
+[data-accent="emerald"] .bg-orange-100 { background-color: #d1fae5 !important; }
+[data-accent="emerald"] .hover\:bg-orange-50:hover  { background-color: #ecfdf5 !important; }
+[data-accent="emerald"] .hover\:bg-orange-100:hover { background-color: #d1fae5 !important; }
+[data-accent="emerald"] .hover\:bg-orange-600:hover { background-color: #059669 !important; }
+[data-accent="emerald"] .active\:bg-orange-700:active { background-color: #047857 !important; }
+[data-accent="emerald"] .text-orange-400 { color: #34d399 !important; }
+[data-accent="emerald"] .text-orange-500 { color: #10b981 !important; }
+[data-accent="emerald"] .text-orange-600 { color: #059669 !important; }
+[data-accent="emerald"] .text-orange-700 { color: #047857 !important; }
+[data-accent="emerald"] .hover\:text-orange-400:hover { color: #34d399 !important; }
+[data-accent="emerald"] .hover\:text-orange-500:hover { color: #10b981 !important; }
+[data-accent="emerald"] .hover\:text-orange-600:hover { color: #059669 !important; }
+[data-accent="emerald"] .border-orange-100 { border-color: #d1fae5 !important; }
+[data-accent="emerald"] .border-orange-200 { border-color: #a7f3d0 !important; }
+[data-accent="emerald"] .border-orange-400 { border-color: #34d399 !important; }
+[data-accent="emerald"] .focus\:border-orange-400:focus { border-color: #34d399 !important; }
+[data-accent="emerald"] .from-orange-400 { --tw-gradient-from: #34d399 var(--tw-gradient-from-position) !important; }
+[data-accent="emerald"] .to-orange-600   { --tw-gradient-to:   #059669 var(--tw-gradient-to-position)   !important; }
+[data-accent="emerald"] .bg-orange-500\/20 { background-color: rgb(16 185 129 / 0.2) !important; }
+[data-accent="emerald"] .accent-orange-500 { accent-color: #10b981 !important; }
+
+/* ── Rose ── */
+[data-accent="rose"] .bg-orange-500 { background-color: #f43f5e !important; }
+[data-accent="rose"] .bg-orange-600 { background-color: #e11d48 !important; }
+[data-accent="rose"] .bg-orange-50  { background-color: #fff1f2 !important; }
+[data-accent="rose"] .bg-orange-100 { background-color: #ffe4e6 !important; }
+[data-accent="rose"] .hover\:bg-orange-50:hover  { background-color: #fff1f2 !important; }
+[data-accent="rose"] .hover\:bg-orange-100:hover { background-color: #ffe4e6 !important; }
+[data-accent="rose"] .hover\:bg-orange-600:hover { background-color: #e11d48 !important; }
+[data-accent="rose"] .active\:bg-orange-700:active { background-color: #be123c !important; }
+[data-accent="rose"] .text-orange-400 { color: #fb7185 !important; }
+[data-accent="rose"] .text-orange-500 { color: #f43f5e !important; }
+[data-accent="rose"] .text-orange-600 { color: #e11d48 !important; }
+[data-accent="rose"] .text-orange-700 { color: #be123c !important; }
+[data-accent="rose"] .hover\:text-orange-400:hover { color: #fb7185 !important; }
+[data-accent="rose"] .hover\:text-orange-500:hover { color: #f43f5e !important; }
+[data-accent="rose"] .hover\:text-orange-600:hover { color: #e11d48 !important; }
+[data-accent="rose"] .border-orange-100 { border-color: #ffe4e6 !important; }
+[data-accent="rose"] .border-orange-200 { border-color: #fecdd3 !important; }
+[data-accent="rose"] .border-orange-400 { border-color: #fb7185 !important; }
+[data-accent="rose"] .focus\:border-orange-400:focus { border-color: #fb7185 !important; }
+[data-accent="rose"] .from-orange-400 { --tw-gradient-from: #fb7185 var(--tw-gradient-from-position) !important; }
+[data-accent="rose"] .to-orange-600   { --tw-gradient-to:   #e11d48 var(--tw-gradient-to-position)   !important; }
+[data-accent="rose"] .bg-orange-500\/20 { background-color: rgb(244 63 94 / 0.2) !important; }
+[data-accent="rose"] .accent-orange-500 { accent-color: #f43f5e !important; }
+

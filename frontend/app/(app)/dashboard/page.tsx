@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateProjectModal from '@/components/CreateProjectModal';
+import { useRouter } from 'next/navigation';
 
 interface Project {
   id: number;
@@ -96,6 +97,7 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading]   = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const router = useRouter();
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -158,7 +160,7 @@ export default function DashboardPage() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {ownedProjects.map((p) => (
-                  <ProjectCard key={p.id} project={p} currentUserId={user!.id} onClick={() => {}} />
+                  <ProjectCard key={p.id} project={p} currentUserId={user!.id} onClick={() => router.push(`/projects/${p.id}`)} />
                 ))}
               </div>
             </section>
@@ -170,7 +172,7 @@ export default function DashboardPage() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {memberProjects.map((p) => (
-                  <ProjectCard key={p.id} project={p} currentUserId={user!.id} onClick={() => {}} />
+                  <ProjectCard key={p.id} project={p} currentUserId={user!.id} onClick={() => router.push(`/projects/${p.id}`)} />
                 ))}
               </div>
             </section>

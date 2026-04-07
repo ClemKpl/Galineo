@@ -46,6 +46,7 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
 
   const navItems = [
     { href: '/dashboard', label: 'Tableau de bord', icon: <IconGrid /> },
+    { href: '/settings', label: 'Paramètres', icon: <IconSettings /> },
   ];
 
   return (
@@ -66,9 +67,6 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
             <p className="text-stone-100 text-sm font-medium truncate leading-tight">{user?.name}</p>
             <p className="text-stone-500 text-xs truncate">{user?.email}</p>
           </div>
-          <span className="text-stone-600 hover:text-stone-400 opacity-0 group-hover:opacity-100 transition-all p-1 rounded-lg hover:bg-stone-700">
-            <IconSettings />
-          </span>
         </div>
       </div>
 
