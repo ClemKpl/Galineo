@@ -14,7 +14,7 @@ router.post('/register', async (req, res) => {
   try {
     const hash = await bcrypt.hash(password, 10);
     db.run(
-      'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+      'INSERT INTO users (name, email, password_hash, last_login_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
       [name, email, hash],
       function (err) {
         if (err) {
@@ -44,8 +44,10 @@ router.post('/login', (req, res) => {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
 
-    const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    db.run('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id], () => {
+      const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+      res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+    });
   });
 });
 

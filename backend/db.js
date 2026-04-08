@@ -111,6 +111,7 @@ const initDb = async () => {
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       avatar TEXT,
+      last_login_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     `CREATE TABLE IF NOT EXISTS roles (
@@ -172,6 +173,13 @@ const initDb = async () => {
       content TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
+    `CREATE TABLE IF NOT EXISTS milestones (
+      id ${autoInc},
+      project_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      date TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
     `CREATE TABLE IF NOT EXISTS notifications (
       id ${autoInc},
       user_id INTEGER NOT NULL,
@@ -187,7 +195,23 @@ const initDb = async () => {
     `INSERT ${ignore} INTO roles (id, name, is_default) VALUES (1, 'Propriétaire', 1) ${conflict}`,
     `INSERT ${ignore} INTO roles (id, name, is_default) VALUES (2, 'Admin', 1) ${conflict}`,
     `INSERT ${ignore} INTO roles (id, name, is_default) VALUES (3, 'Membre', 1) ${conflict}`,
-    `INSERT ${ignore} INTO roles (id, name, is_default) VALUES (4, 'Observateur', 1) ${conflict}`
+    `INSERT ${ignore} INTO roles (id, name, is_default) VALUES (4, 'Observateur', 1) ${conflict}`,
+    `INSERT ${ignore} INTO permissions (id, name, description) VALUES (1, 'manage_members', 'Ajouter et retirer des membres') ${conflict}`,
+    `INSERT ${ignore} INTO permissions (id, name, description) VALUES (2, 'manage_roles', 'Créer et modifier des rôles') ${conflict}`,
+    `INSERT ${ignore} INTO permissions (id, name, description) VALUES (3, 'edit_project', 'Modifier les informations du projet') ${conflict}`,
+    `INSERT ${ignore} INTO permissions (id, name, description) VALUES (4, 'view_project', 'Voir le projet') ${conflict}`,
+    `INSERT ${ignore} INTO permissions (id, name, description) VALUES (5, 'delete_project', 'Supprimer le projet') ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (1,1) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (1,2) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (1,3) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (1,4) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (1,5) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (2,1) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (2,3) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (2,4) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (3,3) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (3,4) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (4,4) ${conflict}`
   ];
 
   if (isPostgres) {
@@ -198,6 +222,16 @@ const initDb = async () => {
   } else {
     db.serialize(() => {
       queries.forEach(q => db.run(q));
+      // Migration: add last_login_at if not exists
+      db.all(`PRAGMA table_info(users)`, [], (err, columns) => {
+        if (err) return console.error('DB migration error (users):', err.message);
+        const hasLastLoginAt = Array.isArray(columns) && columns.some((c) => c && c.name === 'last_login_at');
+        if (!hasLastLoginAt) {
+          db.run(`ALTER TABLE users ADD COLUMN last_login_at DATETIME`, (alterErr) => {
+            if (alterErr) console.error('DB migration error (add last_login_at):', alterErr.message);
+          });
+        }
+      });
       console.log('SQLite Tables Initialized 📁');
     });
   }
