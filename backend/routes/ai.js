@@ -166,6 +166,13 @@ router.post('/chat', authMiddleware, async (req, res) => {
 
   try {
     const userText = messages[messages.length - 1].content;
+    let projectTitle = 'ce projet';
+
+    // Récupérer le nom du projet si ID présent
+    if (projectId) {
+      const p = await dbGet(`SELECT title FROM projects WHERE id = ?`, [projectId]);
+      if (p) projectTitle = p.title;
+    }
 
     // Persister le message utilisateur si on est dans un projet persistant
     if (projectId && mode === 'project') {
@@ -194,12 +201,13 @@ router.post('/chat', authMiddleware, async (req, res) => {
       - Sois enthousiaste et structuré.`;
       currentTools = toolConfig;
     } else { // mode === 'project'
-      sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet ID ${projectId}.
+      sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet "${projectTitle}".
       TON RÔLE :
-      - Être l'expert technique du logiciel Galineo ET de ce projet spécifique.
+      - Être l'expert technique du logiciel Galineo ET du projet "${projectTitle}".
       - Tu as accès aux outils pour lister et modifier les tâches/membres de CE PROJET uniquement.
-      - ISOLATION CRITIQUE : Tu ne connais strictement rien des autres projets de l'utilisateur. Tu ne dois jamais mentionner ou chercher des infos ailleurs que dans le contexte du projet ${projectId}.
-      - Aide l'équipe à être productive en utilisant au mieux les outils (GANTT, priorités, etc.).`;
+      - IMPORTANT : Appelle toujours le projet par son nom ("${projectTitle}") et non par son ID.
+      - ISOLATION CRITIQUE : Tu ne connais strictement rien des autres projets de l'utilisateur. Ne mentionne jamais d'autres projets.
+      - Aide l'équipe à être productive sur "${projectTitle}".`;
       currentTools = toolConfig;
     }
 
