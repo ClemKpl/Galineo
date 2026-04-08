@@ -156,6 +156,36 @@ const functions = {
       WHERE t.project_id = ?
     `, [project_id]);
     return { tasks: rows };
+  },
+
+  voir_parametres_projet: async ({ project_id }) => {
+    const p = await dbGet(`SELECT title, description, start_date, deadline FROM projects WHERE id = ?`, [project_id]);
+    return p || { error: 'Projet non trouvé' };
+  },
+
+  modifier_parametres_projet: async ({ project_id, title, description }, userId) => {
+    const fields = []; const params = [];
+    if (title) { fields.push('title = ?'); params.push(title); }
+    if (description) { fields.push('description = ?'); params.push(description); }
+    if (fields.length === 0) return { message: 'Aucune modification demandée' };
+    
+    params.push(project_id);
+    await dbRun(`UPDATE projects SET ${fields.join(', ')} WHERE id = ?`, params);
+    
+    await logActivity(project_id, userId, 'project', project_id, 'updated', { title, description });
+    return { message: `Les paramètres du projet ${project_id} ont été mis à jour avec succès.` };
+  },
+
+  voir_liste_membres: async ({ project_id }) => {
+    const rows = await dbAll(`
+      SELECT u.name, u.email, r.name as role 
+      FROM project_members pm
+      JOIN users u ON u.id = pm.user_id
+      JOIN roles r ON r.id = pm.role_id
+      WHERE pm.project_id = ?
+      ORDER BY r.id ASC, u.name ASC
+    `, [project_id]);
+    return { members: rows };
   }
 };
 
@@ -238,6 +268,37 @@ const toolConfig = [
             action: { type: "string", enum: ["add", "remove"] }
           },
           required: ["project_id", "email", "action"]
+        }
+      },
+      {
+        name: "voir_parametres_projet",
+        description: "Consulte les paramètres généraux du projet (titre, description, dates)",
+        parameters: {
+          type: "object",
+          properties: { project_id: { type: "number" } },
+          required: ["project_id"]
+        }
+      },
+      {
+        name: "modifier_parametres_projet",
+        description: "Modifie le titre ou la description du projet principal",
+        parameters: {
+          type: "object",
+          properties: {
+            project_id: { type: "number" },
+            title: { type: "string" },
+            description: { type: "string" }
+          },
+          required: ["project_id"]
+        }
+      },
+      {
+        name: "voir_liste_membres",
+        description: "Récupère la liste complète des membres du projet avec leurs rôles",
+        parameters: {
+          type: "object",
+          properties: { project_id: { type: "number" } },
+          required: ["project_id"]
         }
       }
     ]
@@ -329,17 +390,22 @@ router.post('/chat', authMiddleware, async (req, res) => {
         sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet "${projectTitle}".
         TON RÔLE :
         - Être l'expert technique du logiciel Galineo ET du projet "${projectTitle}".
-        - Tu as accès aux outils pour lister et modifier les tâches/membres de CE PROJET uniquement.
-        - IMPORTANT : Appelle toujours le projet par son nom ("${projectTitle}") et non par son ID.
+        - Tu as accès aux outils pour gérer les tâches, les membres ET les paramètres de ce projet.
+        - Tu peux consulter le titre, la description et la liste des membres.
+        - Tu peux modifier le titre et la description si l'utilisateur te le demande.
+        
+        SÉCURITÉ ET RESTRICTIONS :
+        - Tu ne peux JAMAIS supprimer le projet.
+        - Tu ne peux JAMAIS marquer le projet comme 'Terminé' ou changer son statut global.
         - ISOLATION CRITIQUE : Tu ne connais strictement rien des autres projets de l'utilisateur.
         
         RÈGLE DE CONFIRMATION :
-        - AVANT toute modification (créer/modifier/supprimer une tâche ou un membre), décris précisément ce que tu vas faire ET demande "Confirmez-vous cette action ?".
-        - DÉCLENCHEMENT : Si l'utilisateur confirme (ex: "Oui", "OK", "Fais-le"), appelle l'outil IMMEDIATEMENT sans blabla inutile avant l'appel.
-        - APRÈS l'exécution de l'outil, confirme TOUJOURS le succès à l'utilisateur de manière concise mais claire.
+        - AVANT toute modification (projet, tâche ou membre), décris précisément ce que tu vas faire ET demande "Confirmez-vous cette action ?".
+        - DÉCLENCHEMENT : Si l'utilisateur confirme (ex: "Oui", "OK", "Fais-le"), appelle l'outil IMMEDIATEMENT.
+        - APRÈS l'exécution de l'outil, confirme TOUJOURS le succès.
         
         RÈGLE DE PLANNING :
-        - Pour CHAQUE tâche ou fonctionnalité créée, tu DOIS impérativement fournir une 'start_date' et une 'due_date' (format YYYY-MM-DD). C'est une obligation absolue.`;
+        - Pour CHAQUE tâche créée, fournis impérativement une 'start_date' et une 'due_date' (YYYY-MM-DD).`;
         currentTools = toolConfig;
       }
 
