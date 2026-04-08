@@ -1,3 +1,6 @@
+Write-Host "🔄 Synchronisation avec GitHub..." -ForegroundColor Cyan
+git pull origin main
+
 $message = Read-Host "Commentaire du commit"
 
 if ([string]::IsNullOrWhiteSpace($message)) {
