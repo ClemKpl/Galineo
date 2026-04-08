@@ -52,8 +52,12 @@ export default function ProjectLayout({ children, params }: { children: React.Re
         <header className="bg-white border-b border-stone-200 px-8 py-5 shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-sm">
-                {(project?.title || 'PR').substring(0, 2).toUpperCase()}
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-sm overflow-hidden">
+                {project.avatar ? (
+                  <img src={project.avatar} alt={project.title} className="w-full h-full object-cover" />
+                ) : (
+                  (project?.title || 'PR').substring(0, 2).toUpperCase()
+                )}
               </div>
               <div>
                 <h1 className="text-xl font-bold text-stone-900 leading-tight">{project.title}</h1>
