@@ -316,12 +316,14 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     (selectedMemberId === null || t.assigned_to === selectedMemberId)
   );
   
-  const tasksByStatus = KANBAN_COLUMNS.map((column) => ({
-    ...column,
-    tasks: kanbanTasks
-      .filter((task) => (task.status || 'todo') === column.key)
-      .sort((a, b) => (a.assignee_name || '').localeCompare(b.assignee_name || '')),
-  }));
+  const tasksByStatus = KANBAN_COLUMNS
+    .filter(column => column.key !== 'pending')
+    .map((column) => ({
+      ...column,
+      tasks: kanbanTasks
+        .filter((task) => (task.status || 'todo') === column.key)
+        .sort((a, b) => (a.assignee_name || '').localeCompare(b.assignee_name || '')),
+    }));
 
   const TaskRow = ({ task, isFeature = false, isExpanded = false }: { task: any, isFeature?: boolean, isExpanded?: boolean }) => {
     const isDone = task.status === 'done';
