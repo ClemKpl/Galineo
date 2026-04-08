@@ -13,6 +13,7 @@ const messageRoutes = require('./routes/messages');
 const notificationRoutes = require('./routes/notifications');
 const eventRoutes = require('./routes/events');
 const globalEventRoutes = require('./routes/events_global');
+const aiRoutes          = require('./routes/ai');
 
 const app = express();
 app.use(cors());
@@ -30,6 +31,7 @@ app.use('/users',    userRoutes);
 app.use('/roles',    roleRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/events', globalEventRoutes);
+app.use('/ai',    aiRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {

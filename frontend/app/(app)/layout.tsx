@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from '@/components/Sidebar';
 import CreateProjectModal from '@/components/CreateProjectModal';
+import AiChat from '@/components/AiChat';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -42,6 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           }}
         />
       )}
+      <AiChat />
     </div>
   );
 }
