@@ -36,28 +36,28 @@ router.post('/', authMiddleware, (req, res) => {
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       const projectId = this.lastID;
-      console.log('🚀 Nouveau projet créé avec ID:', projectId);
 
-      // Ajouter le créateur comme Propriétaire (role id 1)
-      console.log('👤 Ajout du propriétaire:', { projectId, ownerId, roleId: 1 });
-      db.run('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
-        [projectId, ownerId, 1], (errLink) => {
+      // Ajouter le créateur comme Propriétaire (role id 1) puis répondre
+      db.run(
+        'INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
+        [projectId, ownerId, 1],
+        (errLink) => {
           if (errLink) console.error('❌ Erreur lien propriétaire:', errLink.message);
-          else console.log('✅ Propriétaire lié avec succès');
-        });
 
-      // Ajouter les autres membres
-      if (members && Array.isArray(members)) {
-        console.log('👥 Ajout des autres membres:', members.length);
-        const stmt = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)');
-        members.forEach(({ userId, roleId }) => {
-          console.log(' - Membre:', { userId, roleId });
-          stmt.run(projectId, userId, roleId || 3);
-        });
-        stmt.finalize();
-      }
+          // Ajouter les autres membres
+          if (members && Array.isArray(members) && members.length > 0) {
+            const stmt = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)');
+            members.forEach(({ userId: memberId, roleId }) => {
+              if (memberId !== ownerId) { // éviter doublon propriétaire
+                stmt.run(projectId, memberId, roleId || 3);
+              }
+            });
+            stmt.finalize();
+          }
 
-      res.status(201).json({ id: projectId, title, description, deadline, owner_id: ownerId });
+          res.status(201).json({ id: projectId, title, description, deadline, owner_id: ownerId });
+        }
+      );
     }
   );
 });
