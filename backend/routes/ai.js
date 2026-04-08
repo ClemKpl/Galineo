@@ -39,16 +39,16 @@ const functions = {
     const featureMap = {};
     for (const el of elements.filter(e => e.type === 'feature')) {
       const r = await dbRun(
-        `INSERT INTO tasks (project_id, title, description, status, priority, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
-        [project_id, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', userId]
+        `INSERT INTO tasks (project_id, title, description, status, priority, start_date, due_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [project_id, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId]
       );
       featureMap[el.title] = r.lastID;
       created++;
     }
     for (const el of elements.filter(e => e.type === 'task')) {
       const r = await dbRun(
-        `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, due_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [project_id, featureMap[el.parent_title] || null, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.due_date || null, userId]
+        `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, start_date, due_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [project_id, featureMap[el.parent_title] || null, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId]
       );
       created++;
     }
@@ -72,6 +72,7 @@ const functions = {
     if (title) { fields.push('title = ?'); params.push(title); }
     if (status) { fields.push('status = ?'); params.push(status); }
     if (priority) { fields.push('priority = ?'); params.push(priority); }
+    if (start_date) { fields.push('start_date = ?'); params.push(start_date); }
     if (due_date) { fields.push('due_date = ?'); params.push(due_date); }
     if (assignedTo !== undefined) { fields.push('assigned_to = ?'); params.push(assignedTo); }
     if (fields.length === 0) return { message: 'Aucune modification' };
@@ -105,7 +106,7 @@ const functions = {
 
   voir_taches: async ({ project_id }) => {
     const rows = await dbAll(`
-      SELECT t.id, t.title, t.status, t.priority, t.due_date, u.email as assigned_email, u.name as assigned_name
+      SELECT t.id, t.title, t.status, t.priority, t.start_date, t.due_date, u.email as assigned_email, u.name as assigned_name
       FROM tasks t
       LEFT JOIN users u ON t.assigned_to = u.id
       WHERE t.project_id = ?
@@ -146,9 +147,10 @@ const toolConfig = [
                   type: { type: "string", enum: ["feature", "task"] },
                   title: { type: "string" },
                   parent_title: { type: "string" },
-                  due_date: { type: "string" }
+                  start_date: { type: "string", description: "Date de début obligatoire (YYYY-MM-DD)" },
+                  due_date: { type: "string", description: "Date d'échéance obligatoire (YYYY-MM-DD)" }
                 },
-                required: ["type", "title"]
+                required: ["type", "title", "start_date", "due_date"]
               }
             }
           },
@@ -163,7 +165,8 @@ const toolConfig = [
           properties: {
             task_id: { type: "number" },
             status: { type: "string", enum: ["todo", "in_progress", "done"] },
-            due_date: { type: "string" },
+            start_date: { type: "string", description: "Nouvelle date de début (YYYY-MM-DD)" },
+            due_date: { type: "string", description: "Nouvelle date d'échéance (YYYY-MM-DD)" },
             assigned_email: { type: "string" }
           },
           required: ["task_id"]
@@ -286,7 +289,10 @@ router.post('/chat', authMiddleware, async (req, res) => {
         RÈGLE DE CONFIRMATION :
         - AVANT toute modification (créer/modifier/supprimer une tâche ou un membre), décris précisément ce que tu vas faire ET demande "Confirmez-vous cette action ?".
         - DÉCLENCHEMENT : Si le message précédent de l'utilisateur est une confirmation (ex: "Oui", "OK", "Fais-le"), appelle l'outil DIRECTEMENT sans aucun blabla et sans reposer de question.
-        - Ne redemande JAMAIS deux fois.`;
+        - Ne redemande JAMAIS deux fois.
+        
+        RÈGLE DE PLANNING :
+        - Pour CHAQUE tâche ou fonctionnalité créée, tu DOIS impérativement fournir une 'start_date' et une 'due_date' (format YYYY-MM-DD). C'est une obligation absolue.`;
         currentTools = toolConfig;
       }
 
