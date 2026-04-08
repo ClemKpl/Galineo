@@ -65,7 +65,7 @@ function ProjectCard({ project, currentUserId, onClick, onManageMembers }: { pro
             }}
             className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50"
           >
-            GÃ©rer les membres
+            Gérer les membres
           </button>
         </div>
       )}
@@ -165,9 +165,9 @@ export default function DashboardPage() {
   const memberProjects = projects.filter((p) => p.owner_id !== user?.id);
 
   const statusLabel = (s: string) => {
-    if (s === 'todo') return 'Ã€ faire';
+    if (s === 'todo') return 'À faire';
     if (s === 'in_progress') return 'En cours';
-    if (s === 'done') return 'TerminÃ©';
+    if (s === 'done') return 'Terminé';
     return s;
   };
 
@@ -193,12 +193,12 @@ export default function DashboardPage() {
       {/* Assigned tasks */}
       <section className="mb-10">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Mes tÃ¢ches assignÃ©es</h2>
+          <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Mes tâches assignées</h2>
           <button
             onClick={() => { setAssignedLoading(true); fetchAssignedTasks(); }}
             className="text-xs font-semibold text-stone-500 hover:text-stone-800"
           >
-            RafraÃ®chir
+            Rafraîchir
           </button>
         </div>
 
@@ -210,7 +210,7 @@ export default function DashboardPage() {
           </div>
         ) : assignedTasks.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-5 py-6 text-sm text-stone-400">
-            Aucune tÃ¢che assignÃ©e pour le moment.
+            Aucune tâche assignée pour le moment.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -234,7 +234,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-stone-400">
                     <span>#{t.id}</span>
-                    <span>{dueText ? `Ã‰chÃ©ance: ${dueText}` : 'Aucune Ã©chÃ©ance'}</span>
+                    <span>{dueText ? `Échéance: ${dueText}` : 'Aucune échéance'}</span>
                   </div>
                 </button>
               );

@@ -52,7 +52,7 @@ export default function ProjectDashboardPage() {
                      <div className="min-w-0">
                        <p className="text-sm font-semibold text-stone-900 truncate">{m.name}</p>
                        <p className="text-xs text-stone-400 truncate">{m.email}</p>
-                       <p className="text-xs text-stone-500 mt-1">DerniÃ¨re connexion : {formatLastLogin(m.last_login_at)}</p>
+                       <p className="text-xs text-stone-500 mt-1">Dernière connexion : {formatLastLogin(m.last_login_at)}</p>
                      </div>
                      <span className="shrink-0 text-[11px] font-bold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full bg-stone-100 text-stone-700">
                        {m.role_name}
