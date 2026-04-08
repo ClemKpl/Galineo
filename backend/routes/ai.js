@@ -4,7 +4,7 @@ const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const MODEL_NAME = "gemini-1.5-flash";
+const MODEL_NAME = "gemini-pro";
 
 // ─── Promisify db ─────────────────────────────────────────────────────────────
 const dbGet = (sql, params) =>
@@ -150,10 +150,11 @@ router.post('/chat', authMiddleware, async (req, res) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
       model: MODEL_NAME,
-      systemInstruction: `Tu es Galineo AI. Date actuelle: ${new Date().toISOString().split('T')[0]}.
-      ${projectId ? `ID Projet actuel: ${projectId}.` : "Sur le dashboard global."}
-      Tu es un assistant de gestion de projet Galineo. Réponds en français de façon concise.`
-    }, { apiVersion: 'v1' });
+      systemInstruction: {
+        role: "system",
+        parts: [{ text: `Tu es Galineo AI. Date: ${new Date().toISOString().split('T')[0]}. ${projectId ? `ID Projet: ${projectId}.` : "Dashboard."} Assistant de gestion de projet. Réponds en français.` }]
+      }
+    }, { apiVersion: 'v1beta' });
 
     const chat = model.startChat({
       history: messages.slice(0, -1).map(m => ({
