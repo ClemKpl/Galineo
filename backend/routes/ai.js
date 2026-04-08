@@ -417,6 +417,16 @@ router.get('/history/:projectId', authMiddleware, async (req, res) => {
   }
 });
 
+router.delete('/history/:projectId', authMiddleware, async (req, res) => {
+  const { projectId } = req.params;
+  try {
+    await dbRun(`DELETE FROM ai_messages WHERE project_id = ?`, [projectId]);
+    res.json({ message: 'Historique réinitialisé avec succès.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Route Chat ───────────────────────────────────────────────────────────────
 router.post('/chat', authMiddleware, async (req, res) => {
   const { messages, projectId, mode = 'project' } = req.body;
@@ -478,7 +488,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
         - Liste des fonctionnalités/tâches (si acceptées).
         
         PROCÉDURE FINALE :
-        - **Récapitulatif** : Présente un "Plan de Lancement" clair résumant tout (Projet, Équipe, Tâches).
+        - **Récapitulatif** : Présente un "Plan de Lancement" clair résumant tout (Projet, Équipe, Tâches). **IMPORTANT** : Utilise un markdown propre et standard (ex: "**Projet** : Nom" et non "Projet :* Nom").
         - **Validation** : Demande "Tout vous semble-t-il prêt pour le décollage ?".
         - **ACTION** : Dès le "Oui", appelle 'creer_projet' IMMÉDIATEMENT avec TOUS les paramètres (members, elements, etc.).
         - **SUCCÈS** : Confirme la création et invite l'utilisateur à voir son nouveau dashboard. Les notifications ont été envoyées automatiquement.`;

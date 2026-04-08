@@ -84,6 +84,32 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  async function handleResetHistory() {
+    if (!confirm("Voulez-vous vraiment effacer tout l'historique de cette Galineo Room ? Cette action est irréversible pour tous les membres.")) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/ai/history/${projectId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      if (!res.ok) throw new Error("Échec de la réinitialisation");
+      
+      // Reset local messages
+      setMessages([
+        {
+          role: 'assistant',
+          content: "L'historique a été réinitialisé. Comment puis-je vous aider à nouveau sur ce projet ?",
+        },
+      ]);
+    } catch (err) {
+      console.error('Reset failed', err);
+      alert("Une erreur est survenue lors de la réinitialisation.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function loadHistory() {
     setFetchingHistory(true);
     try {
@@ -180,9 +206,21 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
             <p className="text-[11px] text-stone-500 uppercase tracking-wider font-semibold">Assistant IA du Projet</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-           <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-           <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">En ligne</span>
+        <div className="flex items-center gap-4">
+           <button 
+             onClick={handleResetHistory}
+             className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-stone-200 hover:bg-stone-50 text-stone-500 hover:text-red-500 hover:border-red-100 transition-all cursor-pointer group"
+             title="Réinitialiser la conversation"
+           >
+             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+               <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+             </svg>
+             <span className="text-[10px] font-bold uppercase tracking-wider">Réinitialiser</span>
+           </button>
+           <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">En ligne</span>
+           </div>
         </div>
       </div>
 
