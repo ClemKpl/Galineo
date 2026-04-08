@@ -59,7 +59,7 @@ export default function AiChat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Bonjour ! Je suis **Galineo AI**.\nDécris-moi ton projet et je le crée directement dans Galineo — features, tâches, deadlines, assignations.\n\nPar exemple : *"Crée un projet e-commerce avec un module catalogue, panier et paiement, deadline fin juin."*',
+      content: "Bonjour ! Je suis **Galineo AI**.\nJe suis là pour t'aider à gérer ton projet : réajuster les dates, assigner des membres, ou encore créer de nouvelles tâches.\n\nDemande-moi par exemple : *\"Assigne la tâche X à l'utilisateur Y\"* ou *\"Décale les échéances d'une semaine\"*.",
     },
   ]);
   const [input, setInput] = useState('');
