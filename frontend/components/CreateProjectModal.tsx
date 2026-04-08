@@ -16,6 +16,46 @@ function initials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
+// Markdown très léger pour le Wizard
+function renderMarkdown(text: string) {
+  const lines = text.split('\n');
+  const result: React.ReactNode[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.startsWith('- ') || line.startsWith('• ')) {
+      const items: string[] = [];
+      while (i < lines.length && (lines[i].startsWith('- ') || lines[i].startsWith('• '))) {
+        items.push(lines[i].slice(2));
+        i++;
+      }
+      result.push(
+        <ul key={i} className="list-disc list-inside space-y-1 my-2 text-stone-700">
+          {items.map((it, k) => <li key={k}>{formatInline(it)}</li>)}
+        </ul>
+      );
+    } else if (line.trim() === '') {
+      result.push(<div key={i} className="h-2" />);
+      i++;
+    } else {
+      result.push(<p key={i} className="leading-relaxed mb-2">{formatInline(line)}</p>);
+      i++;
+    }
+  }
+  return result;
+}
+
+function formatInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**'))
+      return <strong key={i} className="font-bold text-stone-900">{part.slice(2, -2)}</strong>;
+    if (part.startsWith('*') && part.endsWith('*'))
+      return <em key={i} className="italic text-stone-600">{part.slice(1, -1)}</em>;
+    return part;
+  });
+}
+
 type ModalView = 'choice' | 'manual' | 'wizard';
 
 export default function CreateProjectModal({ onClose, onCreated }: Props) {
@@ -207,7 +247,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                     <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
                       m.role === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-white text-stone-700 border border-stone-200 rounded-tl-none font-medium'
                     }`}>
-                      {m.content}
+                      {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
                     </div>
                   </div>
                 ))}
@@ -238,7 +278,9 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                          try {
                            const res = await api.post('/ai/chat', { messages: next, mode: 'wizard' });
                            setWizardMessages(prev => [...prev, { role: 'assistant', content: res.reply }]);
-                           if (res.reply.includes('[Actions: creer_projet]')) {
+                           
+                           // Détection via le nouveau champ d'actions
+                           if (res.actions && res.actions.includes('creer_projet')) {
                               setTimeout(() => onCreated(), 1500);
                            }
                          } catch (err) {

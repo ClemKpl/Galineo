@@ -321,13 +321,9 @@ router.post('/chat', authMiddleware, async (req, res) => {
         text = response.text();
       }
 
-      // Persister la réponse de l'IA
-      if (projectId && mode === 'project') {
-        await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
-      }
-
       // Si on arrive ici, c'est un succès, on sort de la boucle
-      return res.json({ reply: text });
+      const actions = calls && calls.length > 0 ? toolLogs.map(l => l.name) : [];
+      return res.json({ reply: text, actions });
 
     } catch (err) {
       lastError = err;
