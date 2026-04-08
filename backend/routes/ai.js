@@ -40,19 +40,48 @@ const functions = {
     let created = 0;
     const featureMap = {};
     for (const el of elements.filter(e => e.type === 'feature')) {
+      let assignedTo = null;
+      if (el.assigned_email) {
+        const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [el.assigned_email]);
+        if (u) assignedTo = u.id;
+      }
       const r = await dbRun(
-        `INSERT INTO tasks (project_id, title, description, status, priority, start_date, due_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [project_id, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId]
+        `INSERT INTO tasks (project_id, title, description, status, priority, start_date, due_date, created_by, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [project_id, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId, assignedTo]
       );
-      featureMap[el.title] = r.lastID;
+      const taskId = r.lastID;
+      featureMap[el.title] = taskId;
       created++;
+
+      // Notifier si assignation
+      if (assignedTo && assignedTo !== userId) {
+        await dbRun(
+          'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [assignedTo, 'task_assigned', 'Nouvelle fonctionnalité', `"${el.title}" vous a été assignée par l'Assistant IA.`, project_id, taskId, userId]
+        );
+      }
     }
     for (const el of elements.filter(e => e.type === 'task')) {
+      let assignedTo = null;
+      if (el.assigned_email) {
+        const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [el.assigned_email]);
+        if (u) assignedTo = u.id;
+      }
+      const parentId = featureMap[el.parent_title] || null;
       const r = await dbRun(
-        `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, start_date, due_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [project_id, featureMap[el.parent_title] || null, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId]
+        `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, start_date, due_date, created_by, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [project_id, parentId, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId, assignedTo]
       );
+      const taskId = r.lastID;
       created++;
+
+      // Notifier si assignation
+      if (assignedTo && assignedTo !== userId) {
+        await dbRun(
+          'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [assignedTo, 'task_assigned', 'Nouvelle tâche', `"${el.title}" vous a été assignée par l'Assistant IA.`, project_id, taskId, userId]
+        );
+      }
     }
 
     // Log the batch creation
@@ -84,6 +113,14 @@ const functions = {
     if (fields.length === 0) return { message: 'Aucune modification' };
     params.push(task_id);
     await dbRun(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, params);
+
+    // Notifier si nouvelle assignation
+    if (assignedTo && assignedTo !== userId) {
+      await dbRun(
+        'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [assignedTo, 'task_assigned', 'Tâche assignée', `La tâche #${task_id} ("${title || 'sans titre'}") vous a été assignée par l'Assistant IA.`, projectId, task_id, userId]
+      );
+    }
 
     // Log modification
     await logActivity(projectId, userId, 'task', task_id, 'updated', {
@@ -154,8 +191,10 @@ const toolConfig = [
                   type: { type: "string", enum: ["feature", "task"] },
                   title: { type: "string" },
                   parent_title: { type: "string" },
+                  priority: { type: "string" },
                   start_date: { type: "string", description: "Date de début obligatoire (YYYY-MM-DD)" },
-                  due_date: { type: "string", description: "Date d'échéance obligatoire (YYYY-MM-DD)" }
+                  due_date: { type: "string", description: "Date d'échéance obligatoire (YYYY-MM-DD)" },
+                  assigned_email: { type: "string", description: "Email de la personne à assigner" }
                 },
                 required: ["type", "title", "start_date", "due_date"]
               }
