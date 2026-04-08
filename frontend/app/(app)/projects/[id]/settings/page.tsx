@@ -1,12 +1,14 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useProject } from '../ProjectContext';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import ManageMembersModal from '@/components/ManageMembersModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProjectSettingsPage() {
   const project = useProject();
+  const { user } = useAuth();
   const router = useRouter();
   
   const [title, setTitle] = useState(project.title);
@@ -46,7 +48,7 @@ export default function ProjectSettingsPage() {
     }
   }
 
-  const isOwner = project.my_role_id === 1 || project.owner_id === project.my_user_id;
+  const isOwner = project.my_role_id === 1 || project.owner_id === user?.id;
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 animate-[fadeIn_0.3s_ease-out]">
