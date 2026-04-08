@@ -162,7 +162,15 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
 
         const now = new Date();
         const normalizedTasks = Array.isArray(tasks) ? tasks : [];
-        const taskCounts = normalizedTasks.reduce((acc, task) => {
+        const features = normalizedTasks
+          .filter((task) => task.parent_id == null)
+          .map((task) => ({
+            id: task.id,
+            title: task.title
+          }));
+        const actionableTasks = normalizedTasks.filter((task) => task.parent_id != null);
+
+        const taskCounts = actionableTasks.reduce((acc, task) => {
           const status = task.status || 'todo';
           acc.total += 1;
           if (status === 'done') acc.done += 1;
@@ -180,7 +188,7 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
           ? Math.round((taskCounts.done / taskCounts.total) * 100)
           : 0;
 
-        const urgentTasks = normalizedTasks
+        const urgentTasks = actionableTasks
           .filter((task) => task.due_date && (task.status || 'todo') !== 'done')
           .slice(0, 5)
           .map((task) => {
@@ -200,7 +208,7 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
           });
 
         const memberLoad = (Array.isArray(members) ? members : []).map((member) => {
-          const assignedTasks = normalizedTasks.filter((task) => task.assigned_to === member.id);
+          const assignedTasks = actionableTasks.filter((task) => task.assigned_to === member.id);
           const openTasks = assignedTasks.filter((task) => (task.status || 'todo') !== 'done');
           const overdueTasks = openTasks.filter((task) => {
             const due = task.due_date ? new Date(task.due_date) : null;
@@ -229,6 +237,7 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
             ...taskCounts,
             completion_rate: completionRate
           },
+          features,
           urgent_tasks: urgentTasks,
           member_load: memberLoad
         });
