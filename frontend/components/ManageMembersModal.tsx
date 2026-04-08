@@ -80,8 +80,8 @@ export default function ManageMembersModal({
   }, [search]);
 
   const roleOptions = useMemo(() => {
-    const list = roles.length ? roles : [{ id: 1, name: 'PropriÃ©taire' }, { id: 2, name: 'Admin' }, { id: 3, name: 'Membre' }, { id: 4, name: 'Observateur' }];
-    return list.filter((r) => r.id !== 1); // pas d'ajout direct en propriÃ©taire
+    const list = roles.length ? roles : [{ id: 1, name: 'Propriétaire' }, { id: 2, name: 'Admin' }, { id: 3, name: 'Membre' }, { id: 4, name: 'Observateur' }];
+    return list.filter((r) => r.id !== 1); // pas d'ajout direct en propriétaire
   }, [roles]);
 
   const formatLastLogin = (value?: string | null) => {
@@ -221,14 +221,14 @@ export default function ManageMembersModal({
             </div>
 
             {error && <div className="text-sm text-red-600">{error}</div>}
-            <p className="text-xs text-stone-400">RÃ´le PropriÃ©taire non assignable ici.</p>
+            <p className="text-xs text-stone-400">Rôle Propriétaire non assignable ici.</p>
           </section>
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold text-stone-900">Membres ({members.length})</h4>
               <button onClick={() => refreshMembers()} className="text-xs font-semibold text-stone-500 hover:text-stone-800">
-                RafraÃ®chir
+                Rafraîchir
               </button>
             </div>
 
@@ -247,7 +247,7 @@ export default function ManageMembersModal({
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-stone-900 truncate">{m.name}</p>
                         <p className="text-xs text-stone-400 truncate">{m.email}</p>
-                        <p className="text-xs text-stone-500 mt-1">DerniÃ¨re connexion : {formatLastLogin(m.last_login_at)}</p>
+                        <p className="text-xs text-stone-500 mt-1">Dernière connexion : {formatLastLogin(m.last_login_at)}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <select

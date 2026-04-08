@@ -20,9 +20,17 @@ if (isProd) {
       .replace(/DATETIME DEFAULT CURRENT_TIMESTAMP/gi, 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
       .replace(/DATETIME/gi, 'TIMESTAMP');
     
-    // Add ON CONFLICT DO NOTHING for pseudo-IGNORE
+    // Add ON CONFLICT DO NOTHING for pseudo-IGNORE or DO UPDATE for REPLACE
     if (sql.toUpperCase().includes('INSERT OR IGNORE')) {
       converted += ' ON CONFLICT DO NOTHING';
+    } else if (sql.toUpperCase().includes('INSERT OR REPLACE')) {
+      // Specifically for project_members which uses project_id, user_id as PK
+      if (sql.toLowerCase().includes('project_members')) {
+        converted = converted.replace(/INSERT OR REPLACE/gi, 'INSERT');
+        converted += ' ON CONFLICT (project_id, user_id) DO UPDATE SET role_id = EXCLUDED.role_id';
+      } else {
+        converted = converted.replace(/INSERT OR REPLACE/gi, 'INSERT');
+      }
     }
     
     // Auto-return ID for inserts if needed (except for link tables without 'id' column)
