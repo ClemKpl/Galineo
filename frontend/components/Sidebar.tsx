@@ -182,7 +182,11 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
   useEffect(() => {
     fetchProjects();
     window.addEventListener('project-created', fetchProjects);
-    return () => window.removeEventListener('project-created', fetchProjects);
+    window.addEventListener('project-updated', fetchProjects);
+    return () => {
+      window.removeEventListener('project-created', fetchProjects);
+      window.removeEventListener('project-updated', fetchProjects);
+    };
   }, [fetchProjects]);
 
   const navItems = [

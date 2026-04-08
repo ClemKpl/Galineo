@@ -15,6 +15,7 @@ export default function ProjectDashboardPage() {
     if (!confirm('Voulez-vous marquer ce projet comme TERMINÉ ? Il sera déplacé dans l\'historique.')) return;
     try {
       await api.patch(`/projects/${project.id}/complete`, {});
+      window.dispatchEvent(new Event('project-updated'));
       router.push('/history');
     } catch (err) {
       alert((err as Error).message);

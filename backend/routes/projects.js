@@ -192,7 +192,7 @@ router.get('/history', authMiddleware, (req, res) => {
     LEFT JOIN users u ON p.owner_id = u.id
     LEFT JOIN project_members pm ON pm.project_id = p.id
     WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'completed'
-    ORDER BY p.updated_at DESC
+    ORDER BY p.created_at DESC
   `, [userId, userId], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
