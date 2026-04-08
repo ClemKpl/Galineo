@@ -252,6 +252,14 @@ const initDb = async () => {
       notified INTEGER DEFAULT 0,
       PRIMARY KEY (event_id, user_id)
     )`,
+    `CREATE TABLE IF NOT EXISTS ai_messages (
+      id ${autoInc},
+      project_id INTEGER,
+      user_id INTEGER,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
     `CREATE TABLE IF NOT EXISTS calendar_date_notes (
       id ${autoInc},
       project_id INTEGER NOT NULL,

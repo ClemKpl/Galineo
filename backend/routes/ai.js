@@ -139,6 +139,24 @@ const toolConfig = [
   }
 ];
 
+// ─── Historique ──────────────────────────────────────────────────────────────
+router.get('/history/:projectId', authMiddleware, async (req, res) => {
+  const { projectId } = req.params;
+  try {
+    const rows = await dbAll(
+      `SELECT m.role, m.content, u.name as user_name 
+       FROM ai_messages m 
+       LEFT JOIN users u ON u.id = m.user_id 
+       WHERE m.project_id = ? 
+       ORDER BY m.id ASC`,
+      [projectId]
+    );
+    res.json({ history: rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── Route Chat ───────────────────────────────────────────────────────────────
 router.post('/chat', authMiddleware, async (req, res) => {
   const { messages, projectId } = req.body;
@@ -147,6 +165,16 @@ router.post('/chat', authMiddleware, async (req, res) => {
   if (!apiKey) return res.status(500).json({ error: "Clé API Gemini manquante. Configurez GEMINI_API_KEY sur Render." });
 
   try {
+    const userText = messages[messages.length - 1].content;
+
+    // Persister le message utilisateur si on est dans un projet
+    if (projectId) {
+      await dbRun(
+        `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'user', ?)`,
+        [projectId, req.user.id, userText]
+      );
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
       model: MODEL_NAME,
@@ -158,18 +186,16 @@ router.post('/chat', authMiddleware, async (req, res) => {
 
     const chat = model.startChat({
       history: messages.slice(0, -1).map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
+        role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
         parts: [{ text: m.content }]
       })),
       tools: toolConfig
     });
 
-    const userText = messages[messages.length - 1].content;
     let result = await chat.sendMessage(userText);
     let response = result.response;
     let text = "";
 
-    // Gérer les appels d'outils (une seule itération pour simplicité)
     const calls = response.functionCalls();
     if (calls && calls.length > 0) {
       const toolLogs = [];
@@ -180,20 +206,23 @@ router.post('/chat', authMiddleware, async (req, res) => {
           toolLogs.push({ name: call.name, res: apiRes });
         }
       }
-      
-      // On déclenche un second tour avec les résultats (optionnel mais recommandé pour une réponse cohérente)
       const toolResponses = toolLogs.map(l => ({
         functionResponse: { name: l.name, response: l.res }
       }));
-      
       const secondResult = await chat.sendMessage(toolResponses);
       text = secondResult.response.text();
-      
-      // On préfixe discrètement pour confirmer l'action
       const actionNames = toolLogs.map(l => l.name).join(', ');
       text = `[Actions: ${actionNames}] ${text}`;
     } else {
       text = response.text();
+    }
+
+    // Persister la réponse de l'IA si on est dans un projet
+    if (projectId) {
+      await dbRun(
+        `INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`,
+        [projectId, text]
+      );
     }
 
     res.json({ reply: text });
