@@ -1,33 +1,124 @@
+const { Pool } = require('pg');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const db = new sqlite3.Database(path.join(__dirname, '../database/dev.db'), (err) => {
-  if (err) {
-    console.error('DB connection error:', err.message);
-  } else {
-    console.log('Connected to SQLite database ✅');
-  }
-});
+const isProd = !!process.env.DATABASE_URL;
+let db;
 
+if (isProd) {
+  console.log('Using PostgreSQL (Production) 🐘');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+
+  // Helper to convert SQLite syntax to PostgreSQL
+  const convertSql = (sql) => {
+    let converted = sql
+      .replace(/\?/g, (_, i, s) => `$${s.substring(0, i).split('?').length}`) // ? -> $1, $2...
+      .replace(/INTEGER PRIMARY KEY AUTOINCREMENT/gi, 'SERIAL PRIMARY KEY')
+      .replace(/INSERT OR IGNORE/gi, 'INSERT')
+      .replace(/DATETIME DEFAULT CURRENT_TIMESTAMP/gi, 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+      .replace(/DATETIME/gi, 'TIMESTAMP');
+    
+    // Add ON CONFLICT DO NOTHING for pseudo-IGNORE
+    if (sql.toUpperCase().includes('INSERT OR IGNORE')) {
+      converted += ' ON CONFLICT DO NOTHING';
+    }
+    
+    // Auto-return ID for inserts if needed
+    if (sql.toUpperCase().includes('INSERT') && !sql.toUpperCase().includes('RETURNING')) {
+      converted += ' RETURNING id';
+    }
+    return converted;
+  };
+
+  db = {
+    serialize: (cb) => cb(),
+    run: function (sql, params, cb) {
+      if (typeof params === 'function') { cb = params; params = []; }
+      const finalSql = convertSql(sql);
+      pool.query(finalSql, params || [])
+        .then(res => {
+          const result = { lastID: res.rows[0]?.id || null, changes: res.rowCount };
+          if (cb) cb.call(result, null);
+        })
+        .catch(err => {
+          console.error('PG Run Error:', err.message, '| SQL:', finalSql);
+          if (cb) cb(err);
+        });
+      return this;
+    },
+    get: function (sql, params, cb) {
+      if (typeof params === 'function') { cb = params; params = []; }
+      const finalSql = convertSql(sql);
+      pool.query(finalSql, params || [])
+        .then(res => {
+          if (cb) cb(null, res.rows[0]);
+        })
+        .catch(err => {
+          console.error('PG Get Error:', err.message);
+          if (cb) cb(err);
+        });
+      return this;
+    },
+    all: function (sql, params, cb) {
+      if (typeof params === 'function') { cb = params; params = []; }
+      const finalSql = convertSql(sql);
+      pool.query(finalSql, params || [])
+        .then(res => {
+          if (cb) cb(null, res.rows);
+        })
+        .catch(err => {
+          console.error('PG All Error:', err.message);
+          if (cb) cb(err);
+        });
+      return this;
+    },
+    prepare: function(sql) {
+      return {
+        run: (...args) => {
+          const cb = typeof args[args.length-1] === 'function' ? args.pop() : null;
+          db.run(sql, args, cb);
+        },
+        finalize: () => {}
+      };
+    }
+  };
+} else {
+  console.log('Using SQLite (Local) 📁');
+  const sqliteDb = new sqlite3.Database(path.join(__dirname, '../database/dev.db'), (err) => {
+    if (err) console.error('DB connection error:', err.message);
+    else console.log('Connected to SQLite database ✅');
+  });
+  db = sqliteDb;
+}
+
+// Initialisation des tables (Identique pour les deux)
 db.serialize(() => {
+  const isPostgres = !!process.env.DATABASE_URL;
+  const autoInc = isPostgres ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
+  const ignore = isPostgres ? '' : 'OR IGNORE';
+  const conflict = isPostgres ? 'ON CONFLICT DO NOTHING' : '';
+
   db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id ${autoInc},
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     avatar TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS roles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id ${autoInc},
     name TEXT NOT NULL,
     is_default INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS permissions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id ${autoInc},
     name TEXT NOT NULL UNIQUE,
     description TEXT
   )`);
@@ -35,33 +126,27 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS role_permissions (
     role_id INTEGER,
     permission_id INTEGER,
-    PRIMARY KEY (role_id, permission_id),
-    FOREIGN KEY (role_id) REFERENCES roles(id),
-    FOREIGN KEY (permission_id) REFERENCES permissions(id)
+    PRIMARY KEY (role_id, permission_id)
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS projects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id ${autoInc},
     title TEXT NOT NULL,
     description TEXT,
     deadline TEXT,
     owner_id INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (owner_id) REFERENCES users(id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS project_members (
     project_id INTEGER,
     user_id INTEGER,
     role_id INTEGER,
-    PRIMARY KEY (project_id, user_id),
-    FOREIGN KEY (project_id) REFERENCES projects(id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (role_id) REFERENCES roles(id)
+    PRIMARY KEY (project_id, user_id)
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id ${autoInc},
     project_id INTEGER NOT NULL,
     parent_id INTEGER,
     title TEXT NOT NULL,
@@ -73,44 +158,27 @@ db.serialize(() => {
     due_date TEXT,
     created_by INTEGER NOT NULL,
     assigned_to INTEGER,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (created_by) REFERENCES users(id),
-    FOREIGN KEY (assigned_to) REFERENCES users(id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS task_comments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id ${autoInc},
     task_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS messages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id ${autoInc},
     project_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS milestones (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER NOT NULL,
-    title TEXT NOT NULL,
-    date TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS notifications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id ${autoInc},
     user_id INTEGER NOT NULL,
     type TEXT NOT NULL,
     title TEXT NOT NULL,
@@ -119,33 +187,14 @@ db.serialize(() => {
     task_id INTEGER,
     from_user_id INTEGER,
     is_read INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL,
-    FOREIGN KEY (from_user_id) REFERENCES users(id) ON DELETE SET NULL
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  // Seed default roles
-  db.run(`INSERT OR IGNORE INTO roles (id, name, is_default) VALUES
-    (1, 'Propriétaire', 1),
-    (2, 'Admin', 1),
-    (3, 'Membre', 1),
-    (4, 'Observateur', 1)`);
-
-  // Seed permissions
-  db.run(`INSERT OR IGNORE INTO permissions (id, name, description) VALUES
-    (1, 'manage_members', 'Ajouter et retirer des membres'),
-    (2, 'manage_roles', 'Créer et modifier des rôles'),
-    (3, 'edit_project', 'Modifier les informations du projet'),
-    (4, 'view_project', 'Voir le projet'),
-    (5, 'delete_project', 'Supprimer le projet')`);
-
-  // Seed role_permissions
-  db.run(`INSERT OR IGNORE INTO role_permissions VALUES (1,1),(1,2),(1,3),(1,4),(1,5)`);
-  db.run(`INSERT OR IGNORE INTO role_permissions VALUES (2,1),(2,3),(2,4)`);
-  db.run(`INSERT OR IGNORE INTO role_permissions VALUES (3,3),(3,4)`);
-  db.run(`INSERT OR IGNORE INTO role_permissions VALUES (4,4)`);
+  // Seed default data
+  db.run(`INSERT ${ignore} INTO roles (id, name, is_default) VALUES (1, 'Propriétaire', 1) ${conflict}`);
+  db.run(`INSERT ${ignore} INTO roles (id, name, is_default) VALUES (2, 'Admin', 1) ${conflict}`);
+  db.run(`INSERT ${ignore} INTO roles (id, name, is_default) VALUES (3, 'Membre', 1) ${conflict}`);
+  db.run(`INSERT ${ignore} INTO roles (id, name, is_default) VALUES (4, 'Observateur', 1) ${conflict}`);
 });
 
 module.exports = db;
