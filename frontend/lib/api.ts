@@ -13,7 +13,9 @@ async function request(path: string, options: RequestInit = {}) {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  const cleanApiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+  const cleanPath = path.replace(/^\//, '');
+  const res = await fetch(`${cleanApiUrl}/${cleanPath}`, { ...options, headers });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Erreur serveur');
   return data;
