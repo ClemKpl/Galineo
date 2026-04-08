@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const MODEL = 'gemini-1.5-flash';
+const MODEL_NAME = "gemini-1.5-flash";
 
 // ─── Promisify db ─────────────────────────────────────────────────────────────
 const dbGet = (sql, params) =>
@@ -13,143 +14,125 @@ const dbAll = (sql, params) =>
 const dbRun = (sql, params) =>
   new Promise((res, rej) => db.run(sql, params, function (err) { err ? rej(err) : res({ lastID: this.lastID, changes: this.changes }); }));
 
-// ─── Outils (Tools) ───────────────────────────────────────────────────────────
-async function toolCreerProjet({ titre, description, deadline, start_date }, userId) {
-  const result = await dbRun(
-    `INSERT INTO projects (title, description, deadline, start_date, owner_id, status) VALUES (?, ?, ?, ?, ?, 'active')`,
-    [titre, description || null, deadline || null, start_date || null, userId]
-  );
-  const projectId = result.lastID;
-  await dbRun(
-    `INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 1)`,
-    [projectId, userId]
-  );
-  return { project_id: projectId, titre, message: `Projet "${titre}" créé (ID: ${projectId})` };
-}
-
-async function toolCreerElements({ project_id, elements }, userId) {
-  let created = 0;
-  const featureMap = {};
-  for (const el of elements.filter(e => e.type === 'feature')) {
-    const r = await dbRun(
-      `INSERT INTO tasks (project_id, title, description, status, priority, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
-      [project_id, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', userId]
+// ─── Outils (Tools/Functions) ────────────────────────────────────────────────
+const functions = {
+  creer_projet: async ({ titre, description, deadline, start_date }, userId) => {
+    const result = await dbRun(
+      `INSERT INTO projects (title, description, deadline, start_date, owner_id, status) VALUES (?, ?, ?, ?, ?, 'active')`,
+      [titre, description || null, deadline || null, start_date || null, userId]
     );
-    featureMap[el.title] = r.lastID;
-    created++;
-  }
-  for (const el of elements.filter(e => e.type === 'task')) {
-    const parentId = featureMap[el.parent_title] || null;
-    let assignedTo = null;
-    if (el.assigned_email) {
-      const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [el.assigned_email]);
+    const projectId = result.lastID;
+    await dbRun(`INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 1)`, [projectId, userId]);
+    return { message: `Projet "${titre}" créé avec succès (ID: ${projectId})` };
+  },
+
+  creer_elements: async ({ project_id, elements }, userId) => {
+    let created = 0;
+    const featureMap = {};
+    for (const el of elements.filter(e => e.type === 'feature')) {
+      const r = await dbRun(
+        `INSERT INTO tasks (project_id, title, description, status, priority, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
+        [project_id, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', userId]
+      );
+      featureMap[el.title] = r.lastID;
+      created++;
+    }
+    for (const el of elements.filter(e => e.type === 'task')) {
+      const r = await dbRun(
+        `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, due_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [project_id, featureMap[el.parent_title] || null, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.due_date || null, userId]
+      );
+      created++;
+    }
+    return { message: `${created} éléments créés dans le projet ${project_id}` };
+  },
+
+  modifier_tache: async ({ task_id, title, status, priority, due_date, assigned_email }) => {
+    let assignedTo = undefined;
+    if (assigned_email) {
+      const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [assigned_email]);
       if (u) assignedTo = u.id;
     }
-    await dbRun(
-      `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, due_date, created_by, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [project_id, parentId, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.due_date || null, userId, assignedTo]
-    );
-    created++;
+    const fields = []; const params = [];
+    if (title) { fields.push('title = ?'); params.push(title); }
+    if (status) { fields.push('status = ?'); params.push(status); }
+    if (priority) { fields.push('priority = ?'); params.push(priority); }
+    if (due_date) { fields.push('due_date = ?'); params.push(due_date); }
+    if (assignedTo !== undefined) { fields.push('assigned_to = ?'); params.push(assignedTo); }
+    if (fields.length === 0) return { message: 'Aucune modification' };
+    params.push(task_id);
+    await dbRun(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, params);
+    return { message: `Tâche ${task_id} mise à jour` };
+  },
+
+  voir_taches: async ({ project_id }) => {
+    const rows = await dbAll(`SELECT id, title, status, priority, due_date FROM tasks WHERE project_id = ?`, [project_id]);
+    return { tasks: rows };
   }
-  return { succes: true, crees: created, message: `${created} élément(s) créé(s)` };
-}
+};
 
-async function toolModifierTache({ task_id, title, status, priority, due_date, assigned_email }, userId) {
-  const task = await dbGet('SELECT project_id FROM tasks WHERE id = ?', [task_id]);
-  if (!task) throw new Error('Tâche introuvable');
-  
-  let assignedTo = undefined;
-  if (assigned_email) {
-    const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [assigned_email]);
-    if (u) assignedTo = u.id;
-  }
-
-  const fields = [];
-  const params = [];
-  if (title !== undefined) { fields.push('title = ?'); params.push(title); }
-  if (status !== undefined) { fields.push('status = ?'); params.push(status); }
-  if (priority !== undefined) { fields.push('priority = ?'); params.push(priority); }
-  if (due_date !== undefined) { fields.push('due_date = ?'); params.push(due_date); }
-  if (assignedTo !== undefined) { fields.push('assigned_to = ?'); params.push(assignedTo); }
-
-  if (fields.length === 0) return { message: 'Aucune modification demandée' };
-  
-  params.push(task_id);
-  await dbRun(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, params);
-  return { message: `Tâche ${task_id} mise à jour avec succès` };
-}
-
-async function toolVoirTaches({ project_id }, userId) {
-  const rows = await dbAll(`SELECT id, title, status, priority, due_date FROM tasks WHERE project_id = ?`, [project_id]);
-  return { tasks: rows };
-}
-
-// ─── Définition des outils ───────────────────────────────────────────────────
-const GOOGLE_TOOLS = [
+const toolConfig = [
   {
-    function_declarations: [
+    functionDeclarations: [
       {
-        name: 'creer_projet',
-        description: 'Créer un nouveau projet Galineo.',
+        name: "creer_projet",
+        description: "Crée un nouveau projet Galineo",
         parameters: {
-          type: 'OBJECT',
+          type: "object",
           properties: {
-            titre: { type: 'STRING' },
-            description: { type: 'STRING' },
-            deadline: { type: 'STRING' },
-            start_date: { type: 'STRING' }
+            titre: { type: "string" },
+            description: { type: "string" },
+            deadline: { type: "string" },
+            start_date: { type: "string" }
           },
-          required: ['titre']
+          required: ["titre"]
         }
       },
       {
-        name: 'creer_elements',
-        description: 'Créer des fonctionnalités et tâches.',
+        name: "creer_elements",
+        description: "Ajoute des fonctionnalités et tâches à un projet",
         parameters: {
-          type: 'OBJECT',
+          type: "object",
           properties: {
-            project_id: { type: 'NUMBER' },
+            project_id: { type: "number" },
             elements: {
-              type: 'ARRAY',
+              type: "array",
               items: {
-                type: 'OBJECT',
+                type: "object",
                 properties: {
-                  type: { type: 'STRING', enum: ['feature', 'task'] },
-                  title: { type: 'STRING' },
-                  description: { type: 'STRING' },
-                  parent_title: { type: 'STRING' },
-                  due_date: { type: 'STRING' }
+                  type: { type: "string", enum: ["feature", "task"] },
+                  title: { type: "string" },
+                  parent_title: { type: "string" },
+                  due_date: { type: "string" }
                 },
-                required: ['type', 'title']
+                required: ["type", "title"]
               }
             }
           },
-          required: ['project_id', 'elements']
+          required: ["project_id", "elements"]
         }
       },
       {
-        name: 'modifier_tache',
-        description: 'Modifier une tâche existante (date, assignation, statut).',
+        name: "modifier_tache",
+        description: "Modifie une tâche existante (date, statut, assignation)",
         parameters: {
-          type: 'OBJECT',
+          type: "object",
           properties: {
-            task_id: { type: 'NUMBER' },
-            title: { type: 'STRING' },
-            status: { type: 'STRING', enum: ['todo', 'in_progress', 'done'] },
-            priority: { type: 'STRING' },
-            due_date: { type: 'STRING' },
-            assigned_email: { type: 'STRING' }
+            task_id: { type: "number" },
+            status: { type: "string", enum: ["todo", "in_progress", "done"] },
+            due_date: { type: "string" },
+            assigned_email: { type: "string" }
           },
-          required: ['task_id']
+          required: ["task_id"]
         }
       },
       {
-        name: 'voir_taches',
-        description: 'Voir les tâches d\'un projet pour avoir du contexte.',
+        name: "voir_taches",
+        description: "Récupère la liste des tâches d'un projet pour analyse",
         parameters: {
-          type: 'OBJECT',
-          properties: { project_id: { type: 'NUMBER' } },
-          required: ['project_id']
+          type: "object",
+          properties: { project_id: { type: "number" } },
+          required: ["project_id"]
         }
       }
     ]
@@ -159,74 +142,62 @@ const GOOGLE_TOOLS = [
 // ─── Route Chat ───────────────────────────────────────────────────────────────
 router.post('/chat', authMiddleware, async (req, res) => {
   const { messages, projectId } = req.body;
-  const API_KEY = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
 
-  if (!API_KEY) {
-    console.error('[AI] GEMINI_API_KEY manquante');
-    return res.status(500).json({ error: 'La clé API Gemini n\'est pas configurée sur le serveur (Render).' });
-  }
+  if (!apiKey) return res.status(500).json({ error: "Clé API Gemini manquante. Configurez GEMINI_API_KEY sur Render." });
 
   try {
-    const contents = messages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    }));
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ 
+      model: MODEL_NAME,
+      systemInstruction: `Tu es Galineo AI. Date: ${new Date().toISOString().split('T')[0]}.
+      ${projectId ? `ID Projet actuel: ${projectId}.` : "Sur le dashboard."}
+      Tu gères les projets Galineo. Utilise les outils pour agir (créer, lister, modifier). Réponds en français.`
+    }, { apiVersion: 'v1beta' });
 
-    const sysInstruct = `Tu es Galineo AI. Date actuelle: ${new Date().toISOString().split('T')[0]}.
-    Tu es un assistant de gestion de projet. ${projectId ? `Tu es actuellement DANS le projet ID ${projectId}.` : 'Tu es sur le dashboard global.'}
-    Actions autorisées : 
-    - Réajuster des dates (modifier_tache)
-    - Assigner des membres par email (modifier_tache)
-    - Créer des tâches/fonctionnalités (creer_elements)
-    - Créer de nouveaux projets (creer_projet)
-    Toujours demander confirmation avant de grosses modifications. Réponds en français de façon concise.`;
-
-    const fetchImpl = globalThis.fetch;
-    if (!fetchImpl) throw new Error('Global fetch is not available. Ensure Node version is 18+');
-
-    const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents,
-        tools: GOOGLE_TOOLS,
-        system_instruction: { parts: [{ text: sysInstruct }] }
-      })
+    const chat = model.startChat({
+      history: messages.slice(0, -1).map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      })),
+      tools: toolConfig
     });
 
-    const data = await response.json();
-    if (!response.ok) {
-      console.error('[AI] Gemini Error:', data.error);
-      throw new Error(data.error?.message || 'Erreur API Gemini');
-    }
+    const userText = messages[messages.length - 1].content;
+    let result = await chat.sendMessage(userText);
+    let response = result.response;
+    let text = "";
 
-    let candidate = data.candidates?.[0]?.content;
-    if (!candidate) return res.json({ reply: "Désolé, je n'ai pas pu générer de réponse." });
-
-    let finalMessage = "";
-    const textPart = candidate.parts.find(p => p.text);
-    if (textPart) finalMessage = textPart.text;
-
-    const toolPart = candidate.parts.find(p => p.functionCall);
-    if (toolPart) {
-      const { name, args } = toolPart.functionCall;
-      let result;
-      try {
-        if (name === 'creer_projet') result = await toolCreerProjet(args, req.user.id);
-        else if (name === 'creer_elements') result = await toolCreerElements(args, req.user.id);
-        else if (name === 'modifier_tache') result = await toolModifierTache(args, req.user.id);
-        else if (name === 'voir_taches') result = await toolVoirTaches(args, req.user.id);
-        
-        finalMessage = `[Action: ${name}] ${result?.message || 'Exécuté'}. ${finalMessage}`;
-      } catch (toolErr) {
-        console.error(`[AI] Tool Error (${name}):`, toolErr);
-        finalMessage = `(Erreur lors de l'action ${name}) ${finalMessage}`;
+    // Gérer les appels d'outils (une seule itération pour simplicité)
+    const calls = response.functionCalls();
+    if (calls && calls.length > 0) {
+      const toolLogs = [];
+      for (const call of calls) {
+        const fn = functions[call.name];
+        if (fn) {
+          const apiRes = await fn(call.args, req.user.id);
+          toolLogs.push({ name: call.name, res: apiRes });
+        }
       }
+      
+      // On déclenche un second tour avec les résultats (optionnel mais recommandé pour une réponse cohérente)
+      const toolResponses = toolLogs.map(l => ({
+        functionResponse: { name: l.name, response: l.res }
+      }));
+      
+      const secondResult = await chat.sendMessage(toolResponses);
+      text = secondResult.response.text();
+      
+      // On préfixe discrètement pour confirmer l'action
+      const actionNames = toolLogs.map(l => l.name).join(', ');
+      text = `[Actions: ${actionNames}] ${text}`;
+    } else {
+      text = response.text();
     }
 
-    res.json({ reply: finalMessage || "J'ai bien pris en compte votre demande." });
+    res.json({ reply: text });
   } catch (err) {
-    console.error('[AI] Request Error:', err);
+    console.error('[AI Error]', err);
     res.status(500).json({ error: err.message });
   }
 });
