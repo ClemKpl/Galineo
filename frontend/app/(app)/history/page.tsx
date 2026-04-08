@@ -81,7 +81,7 @@ export default function HistoryPage() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500 font-bold">
-                  {p.title.substring(0,2).toUpperCase()}
+                  {(p.title || 'PR').substring(0, 2).toUpperCase()}
                 </div>
                 {p.owner_id === user?.id && (
                   <button onClick={(e) => restoreProject(e, p.id)} title="Restaurer" className="p-1.5 text-stone-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors">

@@ -53,7 +53,7 @@ export default function ProjectLayout({ children, params }: { children: React.Re
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-sm">
-                {project.title.substring(0,2).toUpperCase()}
+                {(project?.title || 'PR').substring(0, 2).toUpperCase()}
               </div>
               <div>
                 <h1 className="text-xl font-bold text-stone-900 leading-tight">{project.title}</h1>

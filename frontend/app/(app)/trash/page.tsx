@@ -90,7 +90,7 @@ export default function TrashPage() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-red-500 font-bold">
-                  {p.title.substring(0,2).toUpperCase()}
+                  {(p.title || 'PR').substring(0, 2).toUpperCase()}
                 </div>
                 
                 <div className="flex gap-2">

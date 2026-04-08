@@ -289,11 +289,12 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
   // Map events by date key for quick lookup
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
-    for (const event of events) {
+    events.forEach((event) => {
+      if (!event.start_datetime) return;
       const key = event.start_datetime.substring(0, 10);
       if (!map[key]) map[key] = [];
       map[key].push(event);
-    }
+    });
     return map;
   }, [events]);
 
