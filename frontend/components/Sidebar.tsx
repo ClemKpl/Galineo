@@ -42,6 +42,12 @@ const IconSettings = () => (
   </svg>
 );
 
+const IconTrash = () => (
+  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+  </svg>
+);
+
 function NotifIcon({ type }: { type: string }) {
   if (type === 'mention') return (
     <div className="w-8 h-8 rounded-full bg-blue-500/15 text-blue-500 flex items-center justify-center shrink-0">
@@ -192,6 +198,7 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
   const navItems = [
     { href: '/dashboard', label: 'Tableau de bord', icon: <IconGrid /> },
     { href: '/history', label: 'Historique', icon: <IconFolder /> },
+    { href: '/trash', label: 'Corbeille', icon: <IconTrash /> },
     { href: '/settings', label: 'Paramètres', icon: <IconSettings /> },
   ];
 

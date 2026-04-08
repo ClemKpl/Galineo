@@ -79,6 +79,58 @@ router.get('/history', authMiddleware, (req, res) => {
   });
 });
 
+// GET /projects/trash — corbeille (projets supprimés)
+router.get('/trash', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  db.all(`
+    SELECT DISTINCT p.*, u.name as owner_name,
+      (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
+    FROM projects p
+    LEFT JOIN users u ON p.owner_id = u.id
+    LEFT JOIN project_members pm ON pm.project_id = p.id
+    WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'deleted'
+    ORDER BY p.updated_at DESC
+  `, [userId, userId], (err, rows) => {
+    // Si updated_at n'existe pas, on trie par created_at
+    if (err) {
+      db.all(`
+        SELECT DISTINCT p.*, u.name as owner_name,
+          (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
+        FROM projects p
+        LEFT JOIN users u ON p.owner_id = u.id
+        LEFT JOIN project_members pm ON pm.project_id = p.id
+        WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'deleted'
+        ORDER BY p.created_at DESC
+      `, [userId, userId], (err2, rows2) => {
+        if (err2) return res.status(500).json({ error: err2.message });
+        res.json(rows2);
+      });
+    } else {
+      res.json(rows);
+    }
+  });
+});
+
+// PATCH /projects/:id/restore — restaurer un projet
+router.patch('/:id/restore', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const userId = req.user.id;
+
+  canManageMembers(userId, projectId, (permErr, perm) => {
+    if (permErr) return res.status(500).json({ error: permErr.message });
+    if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
+
+    db.run(
+      "UPDATE projects SET status = 'active' WHERE id = ?",
+      [projectId],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Projet restauré' });
+      }
+    );
+  });
+});
+
 // GET /projects/:id — détails d'un projet
 router.get('/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
@@ -242,8 +294,29 @@ router.patch('/:id', authMiddleware, (req, res) => {
   });
 });
 
-// DELETE /projects/:id — supprimer un projet (Propriétaire uniquement)
+// DELETE /projects/:id — supprimer un projet SOFT DELETE (Propriétaire uniquement)
 router.delete('/:id', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const userId = req.user.id;
+
+  db.get('SELECT owner_id FROM projects WHERE id = ?', [projectId], (pErr, project) => {
+    if (pErr) return res.status(500).json({ error: pErr.message });
+    if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
+    
+    if (project.owner_id !== userId) {
+      return res.status(403).json({ error: 'Seul le propriétaire peut supprimer le projet' });
+    }
+
+    // Soft delete
+    db.run("UPDATE projects SET status = 'deleted' WHERE id = ?", [projectId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Projet placé dans la corbeille' });
+    });
+  });
+});
+
+// DELETE /projects/:id/hard — supprimer un projet DEFINITIVEMENT (Propriétaire uniquement)
+router.delete('/:id/hard', authMiddleware, (req, res) => {
   const projectId = Number(req.params.id);
   const userId = req.user.id;
 
@@ -257,9 +330,8 @@ router.delete('/:id', authMiddleware, (req, res) => {
 
     db.run('DELETE FROM projects WHERE id = ?', [projectId], (err) => {
       if (err) return res.status(500).json({ error: err.message });
-      // Supprimer aussi les membres (normalement géré par CASCADE mais on assure le coup)
       db.run('DELETE FROM project_members WHERE project_id = ?', [projectId]);
-      res.json({ message: 'Projet supprimé' });
+      res.json({ message: 'Projet supprimé définitivement' });
     });
   });
 });
