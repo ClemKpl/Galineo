@@ -25,6 +25,7 @@ app.use('/users',    userRoutes);
 app.use('/roles',    roleRoutes);
 app.use('/notifications', notificationRoutes);
 
-app.listen(3001, '0.0.0.0', () => {
-  console.log('🚀 Galineo API running on port 3001 (accessible on network)');
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Galineo API running on port ${PORT}`);
 });

@@ -1,6 +1,4 @@
-const API_URL = (typeof window !== 'undefined' && window.location.hostname !== 'localhost') 
-  ? `http://${window.location.hostname}:3001` 
-  : 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
