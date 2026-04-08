@@ -84,7 +84,7 @@ async function toolVoirTaches({ project_id }, userId) {
   return { tasks: rows };
 }
 
-// ─── Définition des outils pour Gemini ───────────────────────────────────────
+// ─── Définition des outils ───────────────────────────────────────────────────
 const GOOGLE_TOOLS = [
   {
     function_declarations: [
@@ -161,7 +161,10 @@ router.post('/chat', authMiddleware, async (req, res) => {
   const { messages, projectId } = req.body;
   const API_KEY = process.env.GEMINI_API_KEY;
 
-  if (!API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY non configurée.' });
+  if (!API_KEY) {
+    console.error('[AI] GEMINI_API_KEY manquante');
+    return res.status(500).json({ error: 'La clé API Gemini n\'est pas configurée sur le serveur (Render).' });
+  }
 
   try {
     const contents = messages.map(m => ({
@@ -178,7 +181,10 @@ router.post('/chat', authMiddleware, async (req, res) => {
     - Créer de nouveaux projets (creer_projet)
     Toujours demander confirmation avant de grosses modifications. Réponds en français de façon concise.`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`, {
+    const fetchImpl = globalThis.fetch;
+    if (!fetchImpl) throw new Error('Global fetch is not available. Ensure Node version is 18+');
+
+    const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -189,7 +195,10 @@ router.post('/chat', authMiddleware, async (req, res) => {
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || 'Erreur Gemini');
+    if (!response.ok) {
+      console.error('[AI] Gemini Error:', data.error);
+      throw new Error(data.error?.message || 'Erreur API Gemini');
+    }
 
     let candidate = data.candidates?.[0]?.content;
     if (!candidate) return res.json({ reply: "Désolé, je n'ai pas pu générer de réponse." });
@@ -202,16 +211,22 @@ router.post('/chat', authMiddleware, async (req, res) => {
     if (toolPart) {
       const { name, args } = toolPart.functionCall;
       let result;
-      if (name === 'creer_projet') result = await toolCreerProjet(args, req.user.id);
-      else if (name === 'creer_elements') result = await toolCreerElements(args, req.user.id);
-      else if (name === 'modifier_tache') result = await toolModifierTache(args, req.user.id);
-      else if (name === 'voir_taches') result = await toolVoirTaches(args, req.user.id);
-      
-      finalMessage = `[Action: ${name}] ${result?.message || 'Exécuté'}. ${finalMessage}`;
+      try {
+        if (name === 'creer_projet') result = await toolCreerProjet(args, req.user.id);
+        else if (name === 'creer_elements') result = await toolCreerElements(args, req.user.id);
+        else if (name === 'modifier_tache') result = await toolModifierTache(args, req.user.id);
+        else if (name === 'voir_taches') result = await toolVoirTaches(args, req.user.id);
+        
+        finalMessage = `[Action: ${name}] ${result?.message || 'Exécuté'}. ${finalMessage}`;
+      } catch (toolErr) {
+        console.error(`[AI] Tool Error (${name}):`, toolErr);
+        finalMessage = `(Erreur lors de l'action ${name}) ${finalMessage}`;
+      }
     }
 
     res.json({ reply: finalMessage || "J'ai bien pris en compte votre demande." });
   } catch (err) {
+    console.error('[AI] Request Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
