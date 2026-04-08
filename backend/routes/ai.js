@@ -4,7 +4,7 @@ const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const MODEL_NAME = "gemini-1.5-flash";
+const MODEL_NAME = "gemini-1.5-flash-latest";
 
 // ─── Promisify db ─────────────────────────────────────────────────────────────
 const dbGet = (sql, params) =>
@@ -153,7 +153,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
       systemInstruction: `Tu es Galineo AI. Date: ${new Date().toISOString().split('T')[0]}.
       ${projectId ? `ID Projet actuel: ${projectId}.` : "Sur le dashboard."}
       Tu gères les projets Galineo. Utilise les outils pour agir (créer, lister, modifier). Réponds en français.`
-    }, { apiVersion: 'v1beta' });
+    });
 
     const chat = model.startChat({
       history: messages.slice(0, -1).map(m => ({
