@@ -354,10 +354,9 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     e.preventDefault();
     if (!editingTask) return;
     try {
-      await api.patch(`/projects/${projectId}/tasks/${editingTask.id}`, {
+      const payload: any = {
         title: title.trim(),
         description: description || null,
-        status,
         priority,
         start_date: startDate,
         due_date: dueDate,
@@ -365,7 +364,14 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
         parent_id: parentId ? Number(parentId) : null,
         phase: phase || null,
         color
-      });
+      };
+
+      // Only subtasks have a manually settable status
+      if (editingTask.parent_id) {
+        payload.status = status;
+      }
+
+      await api.patch(`/projects/${projectId}/tasks/${editingTask.id}`, payload);
       setEditingTask(null);
       fetchData(true);
     } catch (err) {
@@ -615,11 +621,20 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-400 uppercase tracking-widest mb-2">Statut</label>
-                  <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 appearance-none">
+                  <select 
+                    value={status} 
+                    onChange={(e) => setStatus(e.target.value)} 
+                    disabled={!editingTask.parent_id}
+                    className={`w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 appearance-none ${!editingTask.parent_id ? 'opacity-50 cursor-not-allowed bg-stone-100' : ''}`}
+                  >
                     <option value="todo">À faire</option>
                     <option value="in_progress">En cours</option>
                     <option value="done">Terminé</option>
+                    <option value="pending">En attente de tâches</option>
                   </select>
+                  {!editingTask.parent_id && (
+                    <p className="text-[9px] font-bold text-stone-400 uppercase mt-1.5 tracking-tighter">Automatique</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-stone-400 uppercase tracking-widest mb-2">Priorité</label>

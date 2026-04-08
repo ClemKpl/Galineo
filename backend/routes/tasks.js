@@ -3,6 +3,42 @@ const router = express.Router({ mergeParams: true });
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
+ 
+/**
+ * Helper to sync a parent task's status based on its children's status
+ * Rules:
+ * - No children: 'pending' (En attente de tâches)
+ * - All children done: 'done'
+ * - At least one in_progress or done (but not all done): 'in_progress'
+ * - All children todo: 'todo'
+ */
+const syncParentStatus = (parentId, projectId) => {
+  if (!parentId) return;
+
+  db.all('SELECT status FROM tasks WHERE parent_id = ?', [parentId], (err, children) => {
+    if (err) {
+      console.error('Error syncing parent status:', err);
+      return;
+    }
+
+    let newStatus = 'pending';
+    if (children.length > 0) {
+      const statuses = children.map(c => c.status || 'todo');
+      const allDone = statuses.every(s => s === 'done');
+      const anyProgressOrDone = statuses.some(s => s === 'in_progress' || s === 'done');
+
+      if (allDone) {
+        newStatus = 'done';
+      } else if (anyProgressOrDone) {
+        newStatus = 'in_progress';
+      } else {
+        newStatus = 'todo';
+      }
+    }
+
+    db.run('UPDATE tasks SET status = ? WHERE id = ? AND project_id = ?', [newStatus, parentId, projectId]);
+  });
+};
 
 function csvEscape(str) {
   if (!str) return '""';
@@ -208,6 +244,14 @@ router.post('/', authMiddleware, (req, res) => {
       db.run('INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [assigned_to, 'task_assigned', 'Nouvelle tâche', `"${title}" vous a été assignée.`, projectId, taskId, createdBy]);
     }
+
+    if (parent_id) {
+      syncParentStatus(parent_id, projectId);
+    } else {
+      // Force status to 'pending' for new features
+      db.run('UPDATE tasks SET status = ? WHERE id = ?', ['pending', taskId]);
+    }
+
     res.json({ id: taskId, ...req.body, project_id: projectId });
   });
 });
@@ -230,10 +274,22 @@ router.patch('/:id', authMiddleware, (req, res) => {
   if (updates.length === 0) return res.status(400).json({ error: 'Aucun champ à modifier' });
 
   const doUpdate = () => {
-    values.push(id, projectId);
-    db.run(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND project_id = ?`, values, async function(err) {
+    const values_final = [...values, id, projectId];
+    db.run(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND project_id = ?`, values_final, async function(err) {
       if (err) return res.status(500).json({ error: err.message });
       
+      // If we updated a task, sync its parent
+      db.get('SELECT parent_id FROM tasks WHERE id = ?', [id], (err2, task) => {
+        if (task && task.parent_id) {
+          syncParentStatus(task.parent_id, projectId);
+        }
+      });
+
+      // If we moved a task to a DIFFERENT parent, sync the OLD parent too if needed
+      // (This is advanced but good to have)
+      const oldParentId = req.body.old_parent_id; 
+      if (oldParentId) syncParentStatus(oldParentId, projectId);
+
       // Log critical updates
       await logActivity(projectId, userId, 'task', id, 'updated', req.body);
       
@@ -257,10 +313,21 @@ router.patch('/:id', authMiddleware, (req, res) => {
 // DELETE /:id — Supprimer une tâche
 router.delete('/:id', authMiddleware, (req, res) => {
   const { id, projectId } = req.params;
-  db.run('DELETE FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], async (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    await logActivity(projectId, req.user.id, 'task', id, 'deleted');
-    res.json({ message: 'Supprimé' });
+  
+  // Get parent_id before deleting
+  db.get('SELECT parent_id FROM tasks WHERE id = ?', [id], (err, task) => {
+    const parentId = task ? task.parent_id : null;
+    
+    db.run('DELETE FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], async (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      if (parentId) {
+        syncParentStatus(parentId, projectId);
+      }
+      
+      await logActivity(projectId, req.user.id, 'task', id, 'deleted');
+      res.json({ message: 'Supprimé' });
+    });
   });
 });
 

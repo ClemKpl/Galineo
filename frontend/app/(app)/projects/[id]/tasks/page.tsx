@@ -4,9 +4,10 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 const KANBAN_COLUMNS = [
-  { key: 'todo', label: 'A faire', accent: 'bg-stone-700', soft: 'bg-stone-100 text-stone-700' },
+  { key: 'todo', label: 'À faire', accent: 'bg-stone-700', soft: 'bg-stone-100 text-stone-700' },
   { key: 'in_progress', label: 'En cours', accent: 'bg-amber-500', soft: 'bg-amber-100 text-amber-800' },
-  { key: 'done', label: 'Termine', accent: 'bg-emerald-500', soft: 'bg-emerald-100 text-emerald-800' },
+  { key: 'done', label: 'Terminée', accent: 'bg-emerald-500', soft: 'bg-emerald-100 text-emerald-800' },
+  { key: 'pending', label: 'En attente de tâches', accent: 'bg-stone-400', soft: 'bg-stone-50 text-stone-400' },
 ] as const;
 
 type ViewMode = 'list' | 'kanban';
@@ -148,7 +149,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = {
+      const payload: any = {
         title,
         description,
         priority,
@@ -157,9 +158,13 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         due_date: dueDate || null,
         assigned_to: assignedTo ? parseInt(assignedTo) : null,
         parent_id: parentId ? parseInt(parentId) : null,
-        status,
         color
       };
+
+      // Only subtasks have a manually settable status
+      if (parentId) {
+        payload.status = status;
+      }
 
       if (editingTask) {
         await api.patch(`/projects/${projectId}/tasks/${editingTask.id}`, payload);
@@ -277,7 +282,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const renderStatusBadge = (currentStatus: string) => {
     const column = KANBAN_COLUMNS.find((item) => item.key === currentStatus) || KANBAN_COLUMNS[0];
     return (
-      <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] ${column.soft}`}>
+      <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-current transition-all ${column.soft}`}>
         {column.label}
       </span>
     );
@@ -303,7 +308,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     });
   };
 
-  const kanbanTasks = tasks.filter(t => t.parent_id && (selectedFeatureId === null || t.parent_id === selectedFeatureId));
+  const kanbanTasks = tasks.filter(t => t.parent_id && t.status !== 'pending' && (selectedFeatureId === null || t.parent_id === selectedFeatureId));
   const tasksByStatus = KANBAN_COLUMNS.map((column) => ({
     ...column,
     tasks: kanbanTasks.filter((task) => (task.status || 'todo') === column.key),
@@ -710,12 +715,22 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-stone-700 mb-1">Statut</label>
-                      <select value={status} onChange={e => setStatus(e.target.value)}
-                        className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 bg-white">
+                      <select 
+                        value={status} 
+                        onChange={e => setStatus(e.target.value)}
+                        disabled={!parentId}
+                        className={`w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 bg-white ${!parentId ? 'opacity-50 cursor-not-allowed bg-stone-50' : ''}`}
+                      >
                         {KANBAN_COLUMNS.map((column) => (
-                          <option key={column.key} value={column.key}>{column.label}</option>
+                           // For subtasks, don't show "pending" as an option
+                           column.key === 'pending' && parentId ? null : (
+                             <option key={column.key} value={column.key}>{column.label}</option>
+                           )
                         ))}
                       </select>
+                      {!parentId && (
+                        <p className="text-[9px] font-bold text-stone-400 uppercase mt-1.5 tracking-tighter">Le statut est calculé automatiquement</p>
+                      )}
                     </div>
                     <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-stone-500">Visualisation</p>
