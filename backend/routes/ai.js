@@ -53,11 +53,11 @@ const functions = {
       featureMap[el.title] = taskId;
       created++;
 
-      // Notifier si assignation
-      if (assignedTo && assignedTo !== userId) {
+      // Notifier si assignation (même si c'est soi-même, car via IA)
+      if (assignedTo) {
         await dbRun(
           'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [assignedTo, 'task_assigned', 'Nouvelle fonctionnalité', `"${el.title}" vous a été assignée par l'Assistant IA.`, project_id, taskId, userId]
+          [assignedTo, 'task_assigned', 'Nouvelle fonctionnalité', `"${el.title}" vous a été assignée par l'Assistant IA.`, project_id, taskId, null]
         );
       }
     }
@@ -75,17 +75,17 @@ const functions = {
       const taskId = r.lastID;
       created++;
 
-      // Notifier si assignation
-      if (assignedTo && assignedTo !== userId) {
+      // Notifier si assignation (même si c'est soi-même, car via IA)
+      if (assignedTo) {
         await dbRun(
           'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [assignedTo, 'task_assigned', 'Nouvelle tâche', `"${el.title}" vous a été assignée par l'Assistant IA.`, project_id, taskId, userId]
+          [assignedTo, 'task_assigned', 'Nouvelle tâche', `"${el.title}" vous a été assignée par l'Assistant IA.`, project_id, taskId, null]
         );
       }
     }
 
-    // Log the batch creation
-    await logActivity(project_id, userId, 'task', null, 'created_batch', {
+    // Log the batch creation (Attribuer à l'IA via null)
+    await logActivity(project_id, null, 'task', null, 'created_batch', {
       batch_count: created,
       details: "Génération automatique d'éléments de projet via Assistant IA"
     });
@@ -114,16 +114,16 @@ const functions = {
     params.push(task_id);
     await dbRun(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, params);
 
-    // Notifier si nouvelle assignation
-    if (assignedTo && assignedTo !== userId) {
+    // Notifier si nouvelle assignation (même si c'est soi-même, car via IA)
+    if (assignedTo) {
       await dbRun(
         'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [assignedTo, 'task_assigned', 'Tâche assignée', `La tâche #${task_id} ("${title || 'sans titre'}") vous a été assignée par l'Assistant IA.`, projectId, task_id, userId]
+        [assignedTo, 'task_assigned', 'Tâche assignée', `La tâche #${task_id} ("${title || 'sans titre'}") vous a été assignée par l'Assistant IA.`, projectId, task_id, null]
       );
     }
 
-    // Log modification
-    await logActivity(projectId, userId, 'task', task_id, 'updated', {
+    // Log modification (Attribuer à l'IA via null)
+    await logActivity(projectId, null, 'task', task_id, 'updated', {
       task_id,
       changes: fields.join(', '),
       details: "Modification via Assistant IA"

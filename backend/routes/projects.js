@@ -522,9 +522,8 @@ router.get('/:id/activities', authMiddleware, (req, res) => {
         return res.status(403).json({ error: 'Accès au journal d\'activités refusé (Hauts droits requis)' });
       }
 
-      // Fetch logs
       db.all(`
-        SELECT al.*, u.name as user_name
+        SELECT al.*, COALESCE(u.name, 'Assistant IA') as user_name
         FROM activity_logs al
         LEFT JOIN users u ON al.user_id = u.id
         WHERE al.project_id = ?
