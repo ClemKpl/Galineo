@@ -114,6 +114,7 @@ const initDb = async () => {
       last_login_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP`,
     `CREATE TABLE IF NOT EXISTS roles (
       id ${autoInc},
       name TEXT NOT NULL,
