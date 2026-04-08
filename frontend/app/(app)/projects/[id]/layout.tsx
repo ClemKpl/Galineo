@@ -40,6 +40,11 @@ export default function ProjectLayout({ children, params }: { children: React.Re
     { name: 'Chat', path: `/projects/${projectId}/chat` },
   ];
 
+  const isAdmin = project.owner_id === project.my_user_id || project.my_role_id === 1 || project.my_role_id === 2;
+  if (isAdmin) {
+    tabs.push({ name: 'Paramètres', path: `/projects/${projectId}/settings` });
+  }
+
   return (
     <ProjectProvider value={project}>
       <div className="flex flex-col h-full bg-stone-50">

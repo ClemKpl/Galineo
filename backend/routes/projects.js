@@ -66,9 +66,12 @@ router.post('/', authMiddleware, (req, res) => {
 router.get('/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   db.get(`
-    SELECT p.*, u.name as owner_name FROM projects p
-    LEFT JOIN users u ON p.owner_id = u.id WHERE p.id = ?
-  `, [id], (err, project) => {
+    SELECT p.*, u.name as owner_name, pm.role_id as my_role_id
+    FROM projects p
+    LEFT JOIN users u ON p.owner_id = u.id 
+    LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ?
+    WHERE p.id = ?
+  `, [req.user.id, id], (err, project) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
 
@@ -175,6 +178,49 @@ router.delete('/:id/members/:userId', authMiddleware, (req, res) => {
           res.json({ message: 'Membre retirÃ©' });
         }
       );
+    });
+  });
+});
+
+// PATCH /projects/:id — modifier les informations du projet
+router.patch('/:id', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const userId = req.user.id;
+  const { title, description, deadline } = req.body;
+
+  canManageMembers(userId, projectId, (permErr, perm) => {
+    if (permErr) return res.status(500).json({ error: permErr.message });
+    if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
+
+    db.run(
+      'UPDATE projects SET title = ?, description = ?, deadline = ? WHERE id = ?',
+      [title, description || null, deadline || null, projectId],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Projet mis à jour' });
+      }
+    );
+  });
+});
+
+// DELETE /projects/:id — supprimer un projet (Propriétaire uniquement)
+router.delete('/:id', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const userId = req.user.id;
+
+  db.get('SELECT owner_id FROM projects WHERE id = ?', [projectId], (pErr, project) => {
+    if (pErr) return res.status(500).json({ error: pErr.message });
+    if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
+    
+    if (project.owner_id !== userId) {
+      return res.status(403).json({ error: 'Seul le propriétaire peut supprimer le projet' });
+    }
+
+    db.run('DELETE FROM projects WHERE id = ?', [projectId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      // Supprimer aussi les membres (normalement géré par CASCADE mais on assure le coup)
+      db.run('DELETE FROM project_members WHERE project_id = ?', [projectId]);
+      res.json({ message: 'Projet supprimé' });
     });
   });
 });
