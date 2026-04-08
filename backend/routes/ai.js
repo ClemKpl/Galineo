@@ -65,6 +65,10 @@ const functions = {
   },
 
   modifier_tache: async ({ task_id, title, status, priority, start_date, due_date, assigned_email }, userId) => {
+    const task = await dbGet('SELECT project_id FROM tasks WHERE id = ?', [task_id]);
+    if (!task) return { error: `Tâche #${task_id} introuvable.` };
+    const projectId = task.project_id;
+
     let assignedTo = undefined;
     if (assigned_email) {
       const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [assigned_email]);
@@ -82,7 +86,7 @@ const functions = {
     await dbRun(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, params);
 
     // Log modification
-    await logActivity(null, userId, 'task', task_id, 'updated', {
+    await logActivity(projectId, userId, 'task', task_id, 'updated', {
       task_id,
       changes: fields.join(', '),
       details: "Modification via Assistant IA"
