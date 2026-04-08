@@ -1,52 +1,41 @@
 const express = require('express');
-const router = express.Router({ mergeParams: true }); // Permet d'utiliser /projects/:projectId/tasks
+const router = express.Router({ mergeParams: true });
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 
-function csvEscape(value) {
-  if (value === null || value === undefined) return '';
-  const stringValue = String(value);
-  if (/[",\n]/.test(stringValue)) {
-    return `"${stringValue.replace(/"/g, '""')}"`;
-  }
-  return stringValue;
+function csvEscape(str) {
+  if (!str) return '""';
+  if (typeof str !== 'string') str = String(str);
+  return `"${str.replace(/"/g, '""')}"`;
 }
 
-function parseCsv(csvText) {
-  const rows = [];
-  let current = '';
-  let row = [];
-  let inQuotes = false;
+function parseCsv(csv) {
+  const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return [];
 
-  for (let i = 0; i < csvText.length; i += 1) {
-    const char = csvText[i];
-    const next = csvText[i + 1];
-
-    if (char === '"') {
-      if (inQuotes && next === '"') {
-        current += '"';
-        i += 1;
+  const rows = lines.map((line) => {
+    const result = [];
+    let cur = '';
+    let inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuote && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuote = !inQuote;
+        }
+      } else if (char === ',' && !inQuote) {
+        result.push(cur);
+        cur = '';
       } else {
-        inQuotes = !inQuotes;
+        cur += char;
       }
-    } else if (char === ',' && !inQuotes) {
-      row.push(current);
-      current = '';
-    } else if ((char === '\n' || char === '\r') && !inQuotes) {
-      if (char === '\r' && next === '\n') i += 1;
-      row.push(current);
-      if (row.some((cell) => cell !== '')) rows.push(row);
-      row = [];
-      current = '';
-    } else {
-      current += char;
     }
-  }
-
-  if (current !== '' || row.length > 0) {
-    row.push(current);
-    if (row.some((cell) => cell !== '')) rows.push(row);
-  }
+    result.push(cur);
+    return result;
+  });
 
   if (rows.length === 0) return [];
 
@@ -63,7 +52,6 @@ function parseCsv(csvText) {
 // GET /projects/:projectId/tasks — Liste des tâches
 router.get('/', authMiddleware, (req, res) => {
   const { projectId } = req.params;
-  
   db.all(`
     SELECT t.*, u1.name as creator_name, u2.name as assignee_name
     FROM tasks t
@@ -77,17 +65,11 @@ router.get('/', authMiddleware, (req, res) => {
   });
 });
 
-
-// POST /projects/:projectId/tasks — Créer une tâche
-// GET /projects/:projectId/tasks/:id/comments â€” Historique / commentaires d'avancement
+// GET /projects/:projectId/tasks/export
 router.get('/export', authMiddleware, (req, res) => {
   const { projectId } = req.params;
-
   db.all(`
-    SELECT
-      t.*,
-      parent.title as parent_title,
-      assignee.email as assignee_email
+    SELECT t.*, parent.title as parent_title, assignee.email as assignee_email
     FROM tasks t
     LEFT JOIN tasks parent ON parent.id = t.parent_id
     LEFT JOIN users assignee ON assignee.id = t.assigned_to
@@ -97,16 +79,7 @@ router.get('/export', authMiddleware, (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
 
     const csvRows = [[
-      'type',
-      'title',
-      'description',
-      'status',
-      'priority',
-      'phase',
-      'start_date',
-      'due_date',
-      'assigned_email',
-      'parent_title'
+      'type', 'title', 'description', 'status', 'priority', 'phase', 'start_date', 'due_date', 'assigned_email', 'parent_title'
     ].join(',')];
 
     rows.forEach((task) => {
@@ -130,192 +103,113 @@ router.get('/export', authMiddleware, (req, res) => {
   });
 });
 
+// POST /projects/:projectId/tasks/import
 router.post('/import', authMiddleware, (req, res) => {
   const { projectId } = req.params;
   const { csv } = req.body || {};
   const createdBy = req.user.id;
 
-  if (!csv || typeof csv !== 'string') {
-    return res.status(400).json({ error: 'CSV requis' });
-  }
+  if (!csv || typeof csv !== 'string') return res.status(400).json({ error: 'CSV requis' });
 
   const records = parseCsv(csv);
-  if (records.length === 0) {
-    return res.status(400).json({ error: 'Aucune ligne importable' });
-  }
+  if (records.length === 0) return res.status(400).json({ error: 'Aucune ligne importable' });
 
-  const featureRows = records.filter((record) => (record.type || 'task').toLowerCase() === 'feature');
-  const taskRows = records.filter((record) => (record.type || 'task').toLowerCase() !== 'feature');
   const featureIdByTitle = {};
-  let createdCount = 0;
+  const createTaskRecord = (record, parentId, cb) => {
+    const { title, description, status, priority, phase, start_date, due_date } = record;
+    db.run(`
+      INSERT INTO tasks (project_id, parent_id, title, description, status, priority, phase, start_date, due_date, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [projectId, parentId, title, description || null, status || 'todo', priority || 'normal', phase || null, start_date || null, due_date || null, createdBy],
+    function(err) { cb(err, this.lastID); });
+  };
 
-  db.all('SELECT id, email FROM users', [], (usersErr, users) => {
-    if (usersErr) return res.status(500).json({ error: usersErr.message });
+  const featureRows = records.filter(r => (r.type || '').toLowerCase() === 'feature');
+  const taskRows = records.filter(r => (r.type || '').toLowerCase() !== 'feature');
 
-    const userIdByEmail = {};
-    (users || []).forEach((user) => {
-      if (user.email) userIdByEmail[String(user.email).toLowerCase()] = user.id;
+  const processFeatures = (idx) => {
+    if (idx >= featureRows.length) return processTasks(0);
+    createTaskRecord(featureRows[idx], null, (err, id) => {
+      if (err) return res.status(500).json({ error: err.message });
+      featureIdByTitle[featureRows[idx].title] = id;
+      processFeatures(idx + 1);
     });
+  };
 
-    const createTaskRecord = (record, parentId, done) => {
-      if (!record.title) return done();
+  const processTasks = (idx) => {
+    if (idx >= taskRows.length) return res.json({ message: 'Import réussi' });
+    const parentId = taskRows[idx].parent_title ? featureIdByTitle[taskRows[idx].parent_title] : null;
+    createTaskRecord(taskRows[idx], parentId, (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      processTasks(idx + 1);
+    });
+  };
 
-      db.run(`
-        INSERT INTO tasks (project_id, parent_id, title, description, status, priority, phase, start_date, due_date, created_by, assigned_to)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        projectId,
-        parentId || null,
-        record.title,
-        record.description || null,
-        record.status || 'todo',
-        record.priority || 'normal',
-        record.phase || null,
-        record.start_date || null,
-        record.due_date || null,
-        createdBy,
-        record.assigned_email ? userIdByEmail[String(record.assigned_email).toLowerCase()] || null : null,
-      ], function (insertErr) {
-        if (!insertErr) createdCount += 1;
-        done(insertErr, this.lastID);
-      });
-    };
-
-    const createFeatures = (index) => {
-      if (index >= featureRows.length) return createTasks(0);
-      const record = featureRows[index];
-
-      createTaskRecord(record, null, (insertErr, featureId) => {
-        if (insertErr) return res.status(500).json({ error: insertErr.message });
-        featureIdByTitle[record.title] = featureId;
-        createFeatures(index + 1);
-      });
-    };
-
-    const createTasks = (index) => {
-      if (index >= taskRows.length) {
-        return res.json({ message: 'Import terminé', created: createdCount });
-      }
-
-      const record = taskRows[index];
-      const parentTitle = record.parent_title;
-
-      if (parentTitle && !featureIdByTitle[parentTitle]) {
-        return createTaskRecord({ type: 'feature', title: parentTitle }, null, (featureErr, featureId) => {
-          if (featureErr) return res.status(500).json({ error: featureErr.message });
-          featureIdByTitle[parentTitle] = featureId;
-          createTasks(index);
-        });
-      }
-
-      createTaskRecord(record, parentTitle ? featureIdByTitle[parentTitle] : null, (insertErr) => {
-        if (insertErr) return res.status(500).json({ error: insertErr.message });
-        createTasks(index + 1);
-      });
-    };
-
-    createFeatures(0);
-  });
+  processFeatures(0);
 });
 
+// GET /projects/:projectId/tasks/:id/comments
 router.get('/:id/comments', authMiddleware, (req, res) => {
   const { id, projectId } = req.params;
-
-  db.get('SELECT id FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], (taskErr, task) => {
-    if (taskErr) return res.status(500).json({ error: taskErr.message });
-    if (!task) return res.status(404).json({ error: 'Tâche non trouvée' });
-
-    db.all(`
-      SELECT tc.*, u.name as author_name
-      FROM task_comments tc
-      LEFT JOIN users u ON u.id = tc.user_id
-      WHERE tc.task_id = ?
-      ORDER BY tc.created_at DESC, tc.id DESC
-    `, [id], (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
-    });
+  db.all(`
+    SELECT tc.*, u.name as author_name
+    FROM task_comments tc
+    LEFT JOIN users u ON u.id = tc.user_id
+    WHERE tc.task_id = ?
+    ORDER BY tc.created_at DESC
+  `, [id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
   });
 });
 
-// POST /projects/:projectId/tasks/:id/comments â€” Ajouter un commentaire d'avancement
+// POST /projects/:projectId/tasks/:id/comments
 router.post('/:id/comments', authMiddleware, (req, res) => {
-  const { id, projectId } = req.params;
+  const { id } = req.params;
   const { content } = req.body;
   const userId = req.user.id;
+  if (!content) return res.status(400).json({ error: 'Contenu requis' });
 
-  if (!content || !content.trim()) {
-    return res.status(400).json({ error: 'Commentaire requis' });
-  }
-
-  db.get('SELECT id FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], (taskErr, task) => {
-    if (taskErr) return res.status(500).json({ error: taskErr.message });
-    if (!task) return res.status(404).json({ error: 'Tâche non trouvée' });
-
-    db.run(`
-      INSERT INTO task_comments (task_id, user_id, content)
-      VALUES (?, ?, ?)
-    `, [id, userId, content.trim()], function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-
-      db.get(`
-        SELECT tc.*, u.name as author_name
-        FROM task_comments tc
-        LEFT JOIN users u ON u.id = tc.user_id
-        WHERE tc.id = ?
-      `, [this.lastID], (commentErr, comment) => {
-        if (commentErr) return res.status(500).json({ error: commentErr.message });
-        res.json(comment);
-      });
+  db.run('INSERT INTO task_comments (task_id, user_id, content) VALUES (?, ?, ?)', [id, userId, content], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    db.get('SELECT tc.*, u.name as author_name FROM task_comments tc LEFT JOIN users u ON u.id = tc.user_id WHERE tc.id = ?', [this.lastID], (err2, row) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+      res.json(row);
     });
   });
 });
 
+// POST / — Créer une tâche
 router.post('/', authMiddleware, (req, res) => {
   const { projectId } = req.params;
-  const { title, description, parent_id, phase, priority, start_date, due_date, assigned_to } = req.body;
+  const { title, description, parent_id, phase, priority, start_date, due_date, assigned_to, color } = req.body;
   const createdBy = req.user.id;
 
-  if (!title) return res.status(400).json({ error: 'Titre de la tâche requis' });
+  if (!title) return res.status(400).json({ error: 'Titre requis' });
 
   db.run(`
-    INSERT INTO tasks (project_id, parent_id, title, description, phase, priority, start_date, due_date, created_by, assigned_to)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `, [
-    projectId, parent_id || null, title, description || null, phase || null, 
-    priority || 'normal', start_date || null, due_date || null, createdBy, assigned_to || null
-  ], function (err) {
+    INSERT INTO tasks (project_id, parent_id, title, description, phase, priority, start_date, due_date, created_by, assigned_to, color)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `, [projectId, parent_id || null, title, description || null, phase || null, priority || 'normal', start_date || null, due_date || null, createdBy, assigned_to || null, color || null],
+  function(err) {
     if (err) return res.status(500).json({ error: err.message });
     const taskId = this.lastID;
-
-    // Notification: task assigned to someone
     if (assigned_to && assigned_to !== createdBy) {
-      db.run(`
-        INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id)
-        VALUES (?, 'task_assigned', ?, ?, ?, ?, ?)
-      `, [
-        assigned_to,
-        'Nouvelle tâche assignée',
-        `"${title}" vous a été assignée par ${req.user.name}`,
-        projectId,
-        taskId,
-        createdBy
-      ]);
+      db.run('INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [assigned_to, 'task_assigned', 'Nouvelle tâche', `"${title}" vous a été assignée.`, projectId, taskId, createdBy]);
     }
-
     res.json({ id: taskId, ...req.body, project_id: projectId });
   });
 });
 
-// PATCH /projects/:projectId/tasks/:id — Modifier une tâche
+// PATCH /:id — Modifier une tâche
 router.patch('/:id', authMiddleware, (req, res) => {
   const { id, projectId } = req.params;
   const userId = req.user.id;
   const updates = [];
   const values = [];
+  const fields = ['title', 'description', 'status', 'priority', 'phase', 'start_date', 'due_date', 'assigned_to', 'parent_id', 'color'];
 
-  const fields = ['title', 'description', 'status', 'priority', 'phase', 'start_date', 'due_date', 'assigned_to', 'parent_id'];
-  
   fields.forEach(f => {
     if (req.body[f] !== undefined) {
       updates.push(`${f} = ?`);
@@ -325,48 +219,33 @@ router.patch('/:id', authMiddleware, (req, res) => {
 
   if (updates.length === 0) return res.status(400).json({ error: 'Aucun champ à modifier' });
 
-  // Check if assigned_to changed — need old value
+  const doUpdate = () => {
+    values.push(id, projectId);
+    db.run(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND project_id = ?`, values, function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Tâche modifiée' });
+    });
+  };
+
   if (req.body.assigned_to !== undefined) {
-    db.get('SELECT assigned_to, title FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], (findErr, oldTask) => {
-      if (findErr || !oldTask) {
-        // fallback: just do the update
-        return doUpdate();
+    db.get('SELECT title, assigned_to FROM tasks WHERE id = ?', [id], (err, oldTask) => {
+      if (oldTask && req.body.assigned_to && req.body.assigned_to !== oldTask.assigned_to) {
+        db.run('INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [req.body.assigned_to, 'task_assigned', 'Tâche assignée', `"${oldTask.title}" vous a été assignée.`, projectId, id, userId]);
       }
-      doUpdate(() => {
-        const newAssignee = req.body.assigned_to;
-        if (newAssignee && newAssignee !== userId && newAssignee !== oldTask.assigned_to) {
-          db.run(`
-            INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id)
-            VALUES (?, 'task_assigned', ?, ?, ?, ?, ?)
-          `, [
-            newAssignee,
-            'Tâche assignée',
-            `"${oldTask.title}" vous a été assignée par ${req.user.name}`,
-            projectId, id, userId
-          ]);
-        }
-      });
+      doUpdate();
     });
   } else {
     doUpdate();
   }
-
-  function doUpdate(afterCb) {
-    const vals = [...values, id, projectId];
-    db.run(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND project_id = ?`, vals, function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (afterCb) afterCb();
-      res.json({ message: 'Tâche modifiée' });
-    });
-  }
 });
 
-// DELETE /projects/:projectId/tasks/:id — Supprimer une tâche
+// DELETE /:id — Supprimer une tâche
 router.delete('/:id', authMiddleware, (req, res) => {
   const { id, projectId } = req.params;
-  db.run('DELETE FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], function(err) {
+  db.run('DELETE FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], (err) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: 'Tâche supprimée' });
+    res.json({ message: 'Supprimé' });
   });
 });
 

@@ -35,6 +35,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const [assignedTo, setAssignedTo] = useState('');
   const [parentId, setParentId] = useState('');
   const [status, setStatus] = useState('todo'); // todo, in_progress, done
+  const [color, setColor] = useState('#f97316');
   
   const [searchUser, setSearchUser] = useState('');
   const [showUserList, setShowUserList] = useState(false);
@@ -81,6 +82,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     setAssignedTo('');
     setParentId('');
     setStatus('todo');
+    setColor('#f97316');
     setIsFeatureModal(true);
     setShowModal(true);
   }
@@ -96,6 +98,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     setAssignedTo('');
     setParentId(parentTaskId.toString());
     setStatus('todo');
+    setColor('#f97316');
     setIsFeatureModal(false);
     setShowModal(true);
   }
@@ -111,6 +114,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     setAssignedTo(task.assigned_to ? task.assigned_to.toString() : '');
     setParentId(task.parent_id ? task.parent_id.toString() : '');
     setStatus(task.status || 'todo');
+    setColor(task.color || '#f97316');
     setIsFeatureModal(!task.parent_id);
     setShowModal(true);
   }
@@ -153,7 +157,8 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         due_date: dueDate || null,
         assigned_to: assignedTo ? parseInt(assignedTo) : null,
         parent_id: parentId ? parseInt(parentId) : null,
-        status
+        status,
+        color
       };
 
       if (editingTask) {
@@ -585,6 +590,23 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                       className="w-full px-4 py-2 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900" 
                       placeholder={isFeatureModal ? "Ex: Espace Utilisateur" : "Ex: Maquetter la page d'accueil"} />
                   </div>
+                  
+                  {!isFeatureModal && (
+                    <div>
+                      <label className="block text-sm font-medium text-stone-700 mb-1">Couleur de la tâche (GANTT)</label>
+                      <div className="flex items-center gap-3">
+                         <input type="color" value={color} onChange={e => setColor(e.target.value)}
+                           className="h-10 w-20 p-1 bg-white border border-stone-200 rounded-xl cursor-pointer" />
+                         <div className="flex-1 flex gap-2">
+                            {['#f97316', '#ef4444', '#3b82f6', '#10b981', '#a855f7', '#64748b'].map(c => (
+                              <button key={c} type="button" onClick={() => setColor(c)}
+                                className={`w-6 h-6 rounded-full border-2 ${color === c ? 'border-stone-900 shadow-sm' : 'border-transparent'}`}
+                                style={{ backgroundColor: c }} />
+                            ))}
+                         </div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div>
                     <label className="block text-sm font-medium text-stone-700 mb-1">Description</label>

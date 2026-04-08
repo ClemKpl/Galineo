@@ -180,6 +180,7 @@ const initDb = async () => {
       assigned_to INTEGER,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
+    `ALTER TABLE tasks ADD COLUMN IF NOT EXISTS color TEXT`,
     `CREATE TABLE IF NOT EXISTS task_comments (
       id ${autoInc},
       task_id INTEGER NOT NULL,

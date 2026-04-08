@@ -18,6 +18,7 @@ type CalendarTask = {
   parent_id?: number | null;
   phase?: string | null;
   project_id: number;
+  color?: string | null;
 };
 
 type CalendarDay = {
@@ -98,6 +99,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   const [dueDate, setDueDate] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [parentId, setParentId] = useState('');
+  const [color, setColor] = useState('#f97316');
 
   useEffect(() => {
     fetchData();
@@ -115,6 +117,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     setDueDate(editingTask.due_date ? editingTask.due_date.substring(0, 10) : '');
     setAssignedTo(editingTask.assigned_to ? String(editingTask.assigned_to) : '');
     setParentId(editingTask.parent_id ? String(editingTask.parent_id) : '');
+    setColor(editingTask.color || '#f97316');
   }, [editingTask]);
 
   async function fetchData(nextRefreshing = false) {
@@ -357,6 +360,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
         assigned_to: assignedTo ? Number(assignedTo) : null,
         parent_id: parentId ? Number(parentId) : null,
         phase: phase || null,
+        color
       });
       setEditingTask(null);
       fetchData(true);
@@ -518,22 +522,13 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                         const isDone = task.status === 'done';
                         const isDragging = draggingTaskId === task.id;
 
-                        const priorityColors: Record<string, string> = {
-                          high: 'bg-red-500',
-                          urgent: 'bg-rose-600',
-                          normal: 'bg-sky-500',
-                          low: 'bg-stone-400',
-                        };
-
                         return (
                           <div
                             key={`${task.id}-${segment.startCol}-${segment.endCol}-${segment.lane}`}
                             draggable
                             onDragStart={(e) => handleDragStart(e, task.id)}
                             onClick={() => setEditingTask(task)}
-                            className={`absolute flex items-center px-3 h-7 rounded-lg text-[11px] font-bold text-white shadow-sm cursor-grab active:cursor-grabbing transition-all hover:brightness-110 group ${
-                              priorityColors[task.priority] || 'bg-sky-500'
-                            } ${isDone ? 'opacity-40 grayscale-[0.5]' : ''} ${isDragging ? 'opacity-20 scale-95' : ''}`}
+                            className={`absolute flex items-center px-3 h-7 rounded-lg text-[11px] font-bold text-white shadow-sm cursor-grab active:cursor-grabbing transition-all hover:brightness-110 group ${isDone ? 'opacity-40 grayscale-[0.5]' : ''} ${isDragging ? 'opacity-20 scale-95' : ''}`}
                             style={{
                               left: `${((segment.startCol - 1) * 100) / 7}%`,
                               width: `${((segment.endCol - segment.startCol + 1) * 100) / 7}%`,
@@ -544,6 +539,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                               borderBottomLeftRadius: segment.isStart ? '8px' : '0',
                               borderTopRightRadius: segment.isEnd ? '8px' : '0',
                               borderBottomRightRadius: segment.isEnd ? '8px' : '0',
+                              backgroundColor: task.color || '#f97316'
                             }}
                           >
                             <span className="truncate">{task.title}</span>
@@ -602,13 +598,31 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                     <option value="urgent">Urgente</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-stone-400 uppercase tracking-widest mb-2">Date début</label>
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20" />
+                <div className="col-span-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Date de début</label>
+                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-stone-900 transition-all font-medium" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1.5">Date d'échéance</label>
+                    <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-stone-900 transition-all font-medium" />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-stone-400 uppercase tracking-widest mb-2">Date fin</label>
-                  <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20" />
+                <div className="col-span-2">
+                   <label className="block text-sm font-medium text-stone-700 mb-1.5">Couleur de la barre</label>
+                   <div className="flex items-center gap-4">
+                      <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
+                        className="w-20 h-10 p-1 bg-white border border-stone-200 rounded-xl cursor-pointer" />
+                      <div className="flex flex-wrap gap-2">
+                         {['#f97316', '#ef4444', '#3b82f6', '#10b981', '#a855f7', '#64748b'].map(c => (
+                           <button key={c} type="button" onClick={() => setColor(c)}
+                             className={`w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${color === c ? 'border-stone-900 shadow-md' : 'border-transparent'}`}
+                             style={{ backgroundColor: c }} />
+                         ))}
+                      </div>
+                   </div>
                 </div>
               </div>
               <div className="mt-8 flex justify-end gap-3">
