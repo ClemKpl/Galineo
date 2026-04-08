@@ -181,7 +181,15 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
         
         // Find features that are pending (have no sub-tasks)
         const pendingFeatures = normalizedTasks
-          .filter((task) => task.parent_id == null && task.status === 'pending')
+          .filter((task) => {
+            // It's a feature
+            const isFeature = task.parent_id == null;
+            if (!isFeature) return false;
+            
+            // Check if it has any children in the current tasks array
+            const hasChildren = normalizedTasks.some(child => child.parent_id === task.id);
+            return !hasChildren;
+          })
           .map((task) => ({
             id: task.id,
             title: task.title,

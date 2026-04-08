@@ -400,8 +400,8 @@ export default function ProjectDashboardPage() {
           <article className="rounded-[28px] border border-stone-200 bg-white/90 p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <div className="flex flex-col">
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-orange-500">Fonctionnalités vides</p>
-                <p className="text-[10px] text-stone-400 mt-1">À détailler en tâches</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-orange-500">En attente de tâches</p>
+                <p className="text-[10px] text-stone-400 mt-1">Fonctionnalités sans sous-tâches</p>
               </div>
               <button onClick={() => router.push(`/projects/${project.id}/tasks`)} className="text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-orange-500 transition-colors">Gérer</button>
             </div>
