@@ -165,7 +165,7 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
 
   const [projects, setProjects] = useState<any[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
-  const [groupByRole, setGroupByRole] = useState(false);
+  const [groupByRole, setGroupByRole] = useState(true);
 
   const fetchProjects = useCallback(async () => {
     setProjectsLoading(true);
