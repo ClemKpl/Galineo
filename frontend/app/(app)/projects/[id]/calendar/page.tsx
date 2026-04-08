@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, use } from 'react';
 import { api } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { startOfDay } from 'date-fns';
 
 type CalendarTask = {
@@ -327,7 +327,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     e.preventDefault();
     if (!editingTask) return;
     try {
-      await api.put(`/projects/${projectId}/tasks/${editingTask.id}`, {
+      await api.patch(`/projects/${projectId}/tasks/${editingTask.id}`, {
         title: title.trim(),
         description: description || null,
         status,
@@ -372,7 +372,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     const newDue = new Date(newStart.getTime() + duration);
 
     try {
-      await api.put(`/projects/${projectId}/tasks/${taskId}`, {
+      await api.patch(`/projects/${projectId}/tasks/${taskId}`, {
         ...task,
         start_date: formatDateInput(newStart),
         due_date: formatDateInput(newDue),
