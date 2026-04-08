@@ -529,7 +529,7 @@ export default function ProjectDashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {dashboard.pending_features.map((feature) => (
+              {dashboard?.pending_features?.map((feature) => (
                 <div 
                   key={feature.id} 
                   onClick={() => router.push(`/projects/${project.id}/tasks`)}
