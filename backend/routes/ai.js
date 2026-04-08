@@ -403,6 +403,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
         - AVANT toute modification (projet, tâche ou membre), décris précisément ce que tu vas faire ET demande "Confirmez-vous cette action ?".
         - DÉCLENCHEMENT : Si l'utilisateur confirme (ex: "Oui", "OK", "Fais-le"), appelle l'outil IMMEDIATEMENT.
         - APRÈS l'exécution de l'outil, confirme TOUJOURS le succès.
+        - INTERDICTION : Ne mentionne JAMAIS les noms techniques des fonctions (ex: "voir_parametres_projet") dans tes messages. Parle uniquement en langage naturel.
         
         RÈGLE DE PLANNING :
         - Pour CHAQUE tâche créée, fournis impérativement une 'start_date' et une 'due_date' (YYYY-MM-DD).`;
@@ -477,6 +478,10 @@ router.post('/chat', authMiddleware, async (req, res) => {
         } catch (e) {
           console.warn("⚠️ [AI] Pas de texte trouvé dans la réponse finale, utilisation du fallback.");
         }
+
+        // Nettoyage final : supprimer les résidus techniques si jamais ils apparaissent
+        text = text.replace(/\[Actions:.*?\]/g, '').trim();
+        text = text.replace(/voir_parametres_projet|voir_liste_membres|modifier_parametres_projet/g, '').trim();
 
         // Fallback si le texte est vide (évite les bulles vides côté frontend)
         if (!text || text.trim() === "") {
