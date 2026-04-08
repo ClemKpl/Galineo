@@ -42,6 +42,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const [showUserList, setShowUserList] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [expandedFeatures, setExpandedFeatures] = useState<Set<number>>(new Set());
   const [draggedTaskId, setDraggedTaskId] = useState<number | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
@@ -308,10 +309,18 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     });
   };
 
-  const kanbanTasks = tasks.filter(t => t.parent_id && t.status !== 'pending' && (selectedFeatureId === null || t.parent_id === selectedFeatureId));
+  const kanbanTasks = tasks.filter(t => 
+    t.parent_id && 
+    t.status !== 'pending' && 
+    (selectedFeatureId === null || t.parent_id === selectedFeatureId) &&
+    (selectedMemberId === null || t.assigned_to === selectedMemberId)
+  );
+  
   const tasksByStatus = KANBAN_COLUMNS.map((column) => ({
     ...column,
-    tasks: kanbanTasks.filter((task) => (task.status || 'todo') === column.key),
+    tasks: kanbanTasks
+      .filter((task) => (task.status || 'todo') === column.key)
+      .sort((a, b) => (a.assignee_name || '').localeCompare(b.assignee_name || '')),
   }));
 
   const TaskRow = ({ task, isFeature = false, isExpanded = false }: { task: any, isFeature?: boolean, isExpanded?: boolean }) => {
@@ -510,6 +519,38 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
               }`}
             >
               {f.title}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {viewMode === 'kanban' && (
+        <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mr-2 shrink-0">Par membre :</span>
+          <button
+            onClick={() => setSelectedMemberId(null)}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
+              selectedMemberId === null
+                ? 'bg-stone-900 border-stone-900 text-white shadow-md'
+                : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+            }`}
+          >
+            Tous
+          </button>
+          {members.map((m: any) => (
+            <button
+              key={m.id}
+              onClick={() => setSelectedMemberId(m.id)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
+                selectedMemberId === m.id
+                  ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-100'
+                  : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+              }`}
+            >
+              <div className="w-5 h-5 rounded-full bg-stone-100 flex items-center justify-center text-[10px] font-black uppercase text-stone-600 border border-stone-200 shrink-0">
+                {m.avatar ? <img src={m.avatar} alt={m.name} className="w-full h-full rounded-full object-cover" /> : m.name.substring(0, 2)}
+              </div>
+              {m.name}
             </button>
           ))}
         </div>
