@@ -104,7 +104,12 @@ const functions = {
   },
 
   voir_taches: async ({ project_id }) => {
-    const rows = await dbAll(`SELECT id, title, status, priority, due_date FROM tasks WHERE project_id = ?`, [project_id]);
+    const rows = await dbAll(`
+      SELECT t.id, t.title, t.status, t.priority, t.due_date, u.email as assigned_email, u.name as assigned_name
+      FROM tasks t
+      LEFT JOIN users u ON t.assigned_to = u.id
+      WHERE t.project_id = ?
+    `, [project_id]);
     return { tasks: rows };
   }
 };
