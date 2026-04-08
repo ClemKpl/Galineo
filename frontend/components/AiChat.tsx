@@ -127,13 +127,13 @@ export default function AiChat() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white pl-4 pr-5 py-3 rounded-full shadow-lg shadow-orange-500/30 transition-all duration-150 cursor-pointer"
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white flex items-center justify-center rounded-full shadow-lg shadow-orange-500/30 transition-all duration-150 cursor-pointer group"
+          title="Galineo AI Advisor"
         >
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.96 9.96 0 0 1-5.06-1.37L2 22l1.37-4.94A9.96 9.96 0 0 1 2 12C2 6.48 6.48 2 12 2z"/>
-            <path d="M8 10h.01M12 10h.01M16 10h.01" strokeLinecap="round" strokeWidth="2.5"/>
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 10L12 5L2 10L12 15L22 10z" />
+            <path d="M6 12V17c0 0 3 2 6 2s6-2 6-2V12" />
           </svg>
-          <span className="text-sm font-semibold whitespace-nowrap">Galineo AI</span>
         </button>
       )}
 
