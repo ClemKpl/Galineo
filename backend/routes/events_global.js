@@ -15,14 +15,13 @@ router.get('/upcoming', authMiddleware, (req, res) => {
       (SELECT GROUP_CONCAT(u2.name) FROM event_attendees ea2 JOIN users u2 ON ea2.user_id = u2.id WHERE ea2.event_id = e.id) as attendee_names,
       (SELECT COUNT(*) FROM event_attendees ea3 WHERE ea3.event_id = e.id) as attendee_count
      FROM calendar_events e
-     JOIN event_attendees ea ON ea.event_id = e.id AND ea.user_id = ?
-     JOIN projects p ON e.project_id = p.id
-     LEFT JOIN users u ON e.created_by = u.id
-     WHERE e.start_datetime >= ?
-     ORDER BY e.start_datetime ASC
-     LIMIT 20`,
-    [userId, now],
-    (err, rows) => {
+    JOIN projects p ON p.id = e.project_id
+    JOIN event_attendees ea ON ea.event_id = e.id
+    LEFT JOIN users u ON e.created_by = u.id
+    WHERE ea.user_id = ? AND e.start_datetime >= ?
+    ORDER BY e.start_datetime ASC
+    LIMIT 10
+  `, [userId, now], (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
 
       const events = rows || [];

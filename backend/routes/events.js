@@ -16,7 +16,8 @@ router.get('/', authMiddleware, (req, res) => {
     LEFT JOIN users u ON e.created_by = u.id
     WHERE e.project_id = ?
   `;
-  const params = [projectId];
+  const id = Number(projectId);
+  const params = [id];
 
   if (month) {
     sql += ` AND (e.start_datetime LIKE ? OR e.end_datetime LIKE ?)`;
@@ -49,7 +50,7 @@ router.post('/', authMiddleware, (req, res) => {
   db.run(
     `INSERT INTO calendar_events (project_id, title, description, start_datetime, end_datetime, location, created_by)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [projectId, title, description || null, start_datetime, end_datetime, location || null, userId],
+    [Number(projectId), title, description || null, start_datetime, end_datetime, location || null, userId],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       const eventId = this.lastID;
@@ -107,7 +108,7 @@ router.patch('/:id', authMiddleware, (req, res) => {
 
   db.get(
     `SELECT * FROM calendar_events WHERE id = ? AND project_id = ?`,
-    [id, projectId],
+    [id, Number(projectId)],
     (err, event) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
@@ -162,7 +163,7 @@ router.delete('/:id', authMiddleware, (req, res) => {
   db.run(`DELETE FROM event_attendees WHERE event_id = ?`, [id], () => {
     db.run(
       `DELETE FROM calendar_events WHERE id = ? AND project_id = ?`,
-      [id, projectId],
+      [id, Number(projectId)],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Événement supprimé' });
@@ -181,7 +182,7 @@ router.get('/date-notes/:date', authMiddleware, (req, res) => {
      JOIN users u ON n.user_id = u.id
      WHERE n.project_id = ? AND n.date = ?
      ORDER BY n.created_at ASC`,
-    [projectId, date],
+    [Number(projectId), date],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows || []);
@@ -201,7 +202,7 @@ router.post('/date-notes/:date', authMiddleware, (req, res) => {
 
   db.run(
     `INSERT INTO calendar_date_notes (project_id, date, content, user_id) VALUES (?, ?, ?, ?)`,
-    [projectId, date, content.trim(), userId],
+    [Number(projectId), date, content.trim(), userId],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.status(201).json({ id: this.lastID, message: 'Note ajoutée' });
@@ -216,7 +217,7 @@ router.delete('/date-notes/:noteId', authMiddleware, (req, res) => {
 
   db.run(
     `DELETE FROM calendar_date_notes WHERE id = ? AND project_id = ? AND user_id = ?`,
-    [noteId, projectId, userId],
+    [noteId, Number(projectId), userId],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ error: 'Note non trouvée ou non autorisé' });

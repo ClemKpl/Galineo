@@ -71,11 +71,12 @@ router.get('/', authMiddleware, (req, res) => {
     LEFT JOIN users u2 ON t.assigned_to = u2.id
     WHERE t.project_id = ?
     ORDER BY t.created_at ASC
-  `, [projectId], (err, rows) => {
+  `, [Number(projectId)], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });
+
 
 // POST /projects/:projectId/tasks — Créer une tâche
 // GET /projects/:projectId/tasks/:id/comments â€” Historique / commentaires d'avancement

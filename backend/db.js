@@ -18,7 +18,8 @@ if (isProd) {
       .replace(/INTEGER PRIMARY KEY AUTOINCREMENT/gi, 'SERIAL PRIMARY KEY')
       .replace(/INSERT OR IGNORE/gi, 'INSERT')
       .replace(/DATETIME DEFAULT CURRENT_TIMESTAMP/gi, 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
-      .replace(/DATETIME/gi, 'TIMESTAMP');
+      .replace(/DATETIME/gi, 'TIMESTAMP')
+      .replace(/GROUP_CONCAT\((.*?)\)/gi, "string_agg($1::text, ',')");
     
     // Add ON CONFLICT DO NOTHING for pseudo-IGNORE or DO UPDATE for REPLACE
     if (sql.toUpperCase().includes('INSERT OR IGNORE')) {
