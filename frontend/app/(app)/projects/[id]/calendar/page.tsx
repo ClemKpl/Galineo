@@ -196,7 +196,7 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
       ]);
       setDayNotes(Array.isArray(notesData) ? notesData : []);
       setDayEvents(
-        allEvents.filter((e) => e.start_datetime.startsWith(dateKey) || e.end_datetime.startsWith(dateKey))
+        allEvents.filter((e) => (e.start_datetime && e.start_datetime.startsWith(dateKey)) || (e.end_datetime && e.end_datetime.startsWith(dateKey)))
       );
     } catch (err) {
       console.error(err);
