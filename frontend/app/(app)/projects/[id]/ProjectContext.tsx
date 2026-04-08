@@ -9,6 +9,7 @@ export type ProjectMember = {
   role_id: number;
   role_name: string;
   last_login_at?: string | null;
+  avatar?: string | null;
 };
 
 export type Project = {
@@ -20,7 +21,8 @@ export type Project = {
   owner_name?: string;
   members?: ProjectMember[];
   my_role_id?: number;
-  status: 'active' | 'completed';
+  status: 'active' | 'completed' | 'deleted';
+  avatar?: string | null;
 };
 
 const ProjectContext = createContext<Project | null>(null);

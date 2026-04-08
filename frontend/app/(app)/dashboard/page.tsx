@@ -17,6 +17,7 @@ interface Project {
   my_role_id?: number | null;
   my_role_name?: string | null;
   created_at: string;
+  avatar?: string | null;
 }
 
 interface AssignedTask {
@@ -53,17 +54,26 @@ function ProjectCard({ project, currentUserId, onClick, onManageMembers }: { pro
   return (
     <div onClick={onClick}
       className="bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-md hover:border-stone-300 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group">
-      <div className="flex items-start justify-between mb-2 gap-3">
-        <h3 className="font-semibold text-stone-900 text-base group-hover:text-orange-500 transition-colors leading-snug">
-          {project.title}
-        </h3>
-        <span className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full border ${
-          isOwner
-            ? 'bg-orange-50 text-orange-600 border-orange-100'
-            : 'bg-stone-50 text-stone-500 border-stone-200'
-        }`}>
-          {isOwner ? 'Propriétaire' : 'Membre'}
-        </span>
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center text-stone-500 font-bold overflow-hidden shadow-sm shrink-0">
+          {project.avatar ? (
+            <img src={project.avatar} alt={project.title} className="w-full h-full object-cover" />
+          ) : (
+            project.title[0].toUpperCase()
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold text-stone-900 text-base group-hover:text-orange-500 transition-colors leading-tight truncate">
+            {project.title}
+          </h3>
+          <span className={`inline-block mt-1 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md border ${
+            isOwner
+              ? 'bg-orange-50 text-orange-600 border-orange-100'
+              : 'bg-stone-50 text-stone-500 border-stone-200'
+          }`}>
+            {isOwner ? 'Propriétaire' : 'Membre'}
+          </span>
+        </div>
       </div>
 
       {project.description && (

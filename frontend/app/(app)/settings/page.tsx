@@ -65,6 +65,7 @@ export default function SettingsPage() {
   // Profil
   const [name, setName]   = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
+  const [avatar, setAvatar] = useState(user?.avatar ?? '');
   const [profileLoading, setProfileLoading] = useState(false);
 
   // Mot de passe
@@ -97,9 +98,9 @@ export default function SettingsPage() {
     e.preventDefault();
     setProfileLoading(true);
     try {
-      const updated = await api.patch('/users/me', { name, email });
-      // Update auth context with new name/email
-      if (token) login(token, { id: user!.id, name: updated.name, email: updated.email });
+      const updated = await api.patch('/users/me', { name, email, avatar });
+      // Update auth context with new name/email/avatar
+      if (token) login(token, { id: user!.id, name: updated.name, email: updated.email, avatar: updated.avatar });
       showToast('Profil mis à jour !');
     } catch (err: unknown) {
       showToast((err as Error).message, 'error');
@@ -154,8 +155,12 @@ export default function SettingsPage() {
 
       {/* ── Avatar + Infos rapides ── */}
       <div className="bg-white rounded-2xl border border-stone-200 p-6 flex items-center gap-5">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-xl shadow-sm shrink-0">
-          {user ? initials(user.name) : '?'}
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-xl shadow-sm shrink-0 overflow-hidden">
+          {avatar ? (
+            <img src={avatar} alt={name} className="w-full h-full object-cover" />
+          ) : (
+            user ? initials(user.name) : '?'
+          )}
         </div>
         <div>
           <p className="font-semibold text-stone-900 text-lg leading-tight">{user?.name}</p>
@@ -174,6 +179,12 @@ export default function SettingsPage() {
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1.5">Adresse email</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
+              className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">Photo de de profil (URL)</label>
+            <input type="url" value={avatar} onChange={(e) => setAvatar(e.target.value)}
+              placeholder="https://votre-image.jpg"
               className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all" />
           </div>
           <div className="flex justify-end pt-1">

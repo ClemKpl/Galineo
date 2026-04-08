@@ -22,24 +22,25 @@ router.get('/search', authMiddleware, (req, res) => {
 
 // GET /users/me — profil de l'utilisateur connecté
 router.get('/me', authMiddleware, (req, res) => {
-  db.get('SELECT id, name, email, created_at FROM users WHERE id = ?', [req.user.id], (err, row) => {
+  db.get('SELECT id, name, email, avatar, created_at FROM users WHERE id = ?', [req.user.id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(404).json({ error: 'Utilisateur non trouvé' });
     res.json(row);
   });
 });
 
-// PATCH /users/me — modifier nom et/ou email
+// PATCH /users/me — modifier profil
 router.patch('/me', authMiddleware, (req, res) => {
   const { name, email } = req.body;
   const userId = req.user.id;
 
-  if (!name && !email) return res.status(400).json({ error: 'Aucune donnée à modifier' });
+  if (!name && !email && req.body.avatar === undefined) return res.status(400).json({ error: 'Aucune donnée à modifier' });
 
   const updates = [];
   const values = [];
   if (name)  { updates.push('name = ?');  values.push(name); }
   if (email) { updates.push('email = ?'); values.push(email); }
+  if (req.body.avatar !== undefined) { updates.push('avatar = ?'); values.push(req.body.avatar); }
   values.push(userId);
 
   db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values, function (err) {
@@ -47,7 +48,7 @@ router.patch('/me', authMiddleware, (req, res) => {
       if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Email déjà utilisé' });
       return res.status(500).json({ error: err.message });
     }
-    db.get('SELECT id, name, email FROM users WHERE id = ?', [userId], (err2, row) => {
+    db.get('SELECT id, name, email, avatar FROM users WHERE id = ?', [userId], (err2, row) => {
       if (err2) return res.status(500).json({ error: err2.message });
       res.json(row);
     });

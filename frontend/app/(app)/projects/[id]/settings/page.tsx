@@ -14,6 +14,7 @@ export default function ProjectSettingsPage() {
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description || '');
   const [deadline, setDeadline] = useState(project.deadline ? project.deadline.substring(0, 10) : '');
+  const [projectAvatar, setProjectAvatar] = useState(project.avatar || '');
   const [saving, setSaving] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -22,7 +23,7 @@ export default function ProjectSettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.patch(`/projects/${project.id}`, { title, description, deadline: deadline || null });
+      await api.patch(`/projects/${project.id}`, { title, description, deadline: deadline || null, avatar: projectAvatar || null });
       alert('Projet mis à jour avec succès !');
       // On rafraîchit la page pour mettre à jour le context
       window.location.reload();
@@ -89,6 +90,17 @@ export default function ProjectSettingsPage() {
                 value={deadline} 
                 onChange={(e) => setDeadline(e.target.value)}
                 className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 transition-all"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-semibold text-stone-700 mb-2">Avatar du projet (URL)</label>
+              <input 
+                type="url" 
+                value={projectAvatar} 
+                onChange={(e) => setProjectAvatar(e.target.value)}
+                placeholder="https://votre-image.jpg"
+                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 transition-all font-medium"
               />
             </div>
           </div>

@@ -211,8 +211,12 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
           onClick={() => router.push('/settings')}
           className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-stone-800 transition-colors cursor-pointer group text-left"
         >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-semibold text-xs shrink-0 shadow-sm">
-            {user ? initials(user.name) : '?'}
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-stone-700 to-stone-900 border border-stone-800 flex items-center justify-center text-white font-semibold text-xs shrink-0 shadow-sm overflow-hidden">
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+            ) : (
+              user ? initials(user.name) : '?'
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-stone-100 text-sm font-medium truncate leading-tight">{user?.name}</p>
@@ -352,7 +356,9 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
                       {projects.filter(p => p.owner_id === user?.id).map(p => (
                         <Link key={p.id} href={`/projects/${p.id}`}
                           className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
-                          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                          <div className="w-5 h-5 rounded-md bg-stone-800 flex items-center justify-center text-[8px] font-bold text-stone-500 overflow-hidden shrink-0 border border-stone-700/50">
+                            {p.avatar ? <img src={p.avatar} alt="" className="w-full h-full object-cover" /> : p.title[0].toUpperCase()}
+                          </div>
                           <span className="truncate">{p.title}</span>
                         </Link>
                       ))}
@@ -365,7 +371,9 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
                       {projects.filter(p => p.owner_id !== user?.id).map(p => (
                         <Link key={p.id} href={`/projects/${p.id}`}
                           className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
-                          <span className="w-1.5 h-1.5 rounded-full bg-stone-600 shrink-0" />
+                          <div className="w-5 h-5 rounded-md bg-stone-800 flex items-center justify-center text-[8px] font-bold text-stone-500 overflow-hidden shrink-0 border border-stone-700/50">
+                            {p.avatar ? <img src={p.avatar} alt="" className="w-full h-full object-cover" /> : p.title[0].toUpperCase()}
+                          </div>
                           <span className="truncate">{p.title}</span>
                         </Link>
                       ))}
@@ -376,7 +384,9 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
                 sortedProjects.map(p => (
                   <Link key={p.id} href={`/projects/${p.id}`}
                     className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
-                    <IconFolder />
+                    <div className="w-5 h-5 rounded-md bg-stone-800 flex items-center justify-center text-[8px] font-bold text-stone-500 overflow-hidden shrink-0 border border-stone-700/50">
+                       {p.avatar ? <img src={p.avatar} alt="" className="w-full h-full object-cover" /> : p.title[0].toUpperCase()}
+                    </div>
                     <span className="truncate">{p.title}</span>
                   </Link>
                 ))

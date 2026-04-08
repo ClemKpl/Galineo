@@ -20,6 +20,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
   const [title, setTitle]       = useState('');
   const [desc, setDesc]         = useState('');
   const [deadline, setDeadline] = useState('');
+  const [avatar, setAvatar]     = useState('');
   const [members, setMembers]   = useState<Member[]>([]);
   const [roles, setRoles]       = useState<Role[]>([]);
   const [perms, setPerms]       = useState<Permission[]>([]);
@@ -96,6 +97,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
         title: title.trim(),
         description: desc.trim() || null,
         deadline: deadline || null,
+        avatar: avatar || null,
         members: members.map((m) => ({ userId: m.user.id, roleId: m.roleId })),
       });
       onCreated();
@@ -155,6 +157,16 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
             </label>
             <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)}
               className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all" />
+          </div>
+
+          {/* Avatar */}
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1.5">
+              Avatar du projet <span className="text-stone-400 font-normal">(URL)</span>
+            </label>
+            <input type="url" value={avatar} onChange={(e) => setAvatar(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all"
+              placeholder="https://votre-image.jpg" />
           </div>
 
           {/* Members */}

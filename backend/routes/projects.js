@@ -26,13 +26,13 @@ router.get('/', authMiddleware, (req, res) => {
 
 // POST /projects — créer un projet
 router.post('/', authMiddleware, (req, res) => {
-  const { title, description, deadline, members } = req.body;
+  const { title, description, deadline, members, avatar } = req.body;
   const ownerId = req.user.id;
   if (!title) return res.status(400).json({ error: 'Titre requis' });
 
   db.run(
-    'INSERT INTO projects (title, description, deadline, owner_id) VALUES (?, ?, ?, ?)',
-    [title, description || null, deadline || null, ownerId],
+    'INSERT INTO projects (title, description, deadline, owner_id, avatar) VALUES (?, ?, ?, ?, ?)',
+    [title, description || null, deadline || null, ownerId, avatar || null],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       const projectId = this.lastID;
@@ -55,7 +55,7 @@ router.post('/', authMiddleware, (req, res) => {
             stmt.finalize();
           }
 
-          res.status(201).json({ id: projectId, title, description, deadline, owner_id: ownerId });
+          res.status(201).json({ id: projectId, title, description, deadline, owner_id: ownerId, avatar });
         }
       );
     }
@@ -117,7 +117,7 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
   const userId = req.user.id;
 
   db.get(`
-    SELECT DISTINCT p.id, p.title, p.deadline, p.status
+    SELECT DISTINCT p.id, p.title, p.deadline, p.status, p.avatar
     FROM projects p
     LEFT JOIN project_members pm ON pm.project_id = p.id
     WHERE p.id = ? AND (p.owner_id = ? OR pm.user_id = ?)
@@ -168,7 +168,7 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
             id: task.id,
             title: task.title
           }));
-        const actionableTasks = normalizedTasks.filter((task) => task.parent_id != null);
+        const actionableTasks = normalizedTasks;
 
         const taskCounts = actionableTasks.reduce((acc, task) => {
           const status = task.status || 'todo';
@@ -412,20 +412,26 @@ router.patch('/:id/complete', authMiddleware, (req, res) => {
 router.patch('/:id', authMiddleware, (req, res) => {
   const projectId = Number(req.params.id);
   const userId = req.user.id;
-  const { title, description, deadline } = req.body;
+  const { title, description, deadline, avatar } = req.body;
 
   canManageMembers(userId, projectId, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
     if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
-    db.run(
-      'UPDATE projects SET title = ?, description = ?, deadline = ? WHERE id = ?',
-      [title, description || null, deadline || null, projectId],
-      function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Projet mis à jour' });
-      }
-    );
+    const updates = [];
+    const values = [];
+    if (title !== undefined)       { updates.push('title = ?');       values.push(title); }
+    if (description !== undefined) { updates.push('description = ?'); values.push(description); }
+    if (deadline !== undefined)    { updates.push('deadline = ?');    values.push(deadline); }
+    if (avatar !== undefined)      { updates.push('avatar = ?');      values.push(avatar); }
+
+    if (updates.length === 0) return res.status(400).json({ error: 'Aucune donnée à modifier' });
+    values.push(projectId);
+
+    db.run(`UPDATE projects SET ${updates.join(', ')} WHERE id = ?`, values, function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Projet mis à jour' });
+    });
   });
 });
 
