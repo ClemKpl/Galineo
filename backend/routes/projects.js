@@ -62,6 +62,23 @@ router.post('/', authMiddleware, (req, res) => {
   );
 });
 
+// GET /projects/history — mes projets terminés
+router.get('/history', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  db.all(`
+    SELECT DISTINCT p.*, u.name as owner_name,
+      (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
+    FROM projects p
+    LEFT JOIN users u ON p.owner_id = u.id
+    LEFT JOIN project_members pm ON pm.project_id = p.id
+    WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'completed'
+    ORDER BY p.created_at DESC
+  `, [userId, userId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
 // GET /projects/:id — détails d'un projet
 router.get('/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
@@ -182,22 +199,7 @@ router.delete('/:id/members/:userId', authMiddleware, (req, res) => {
   });
 });
 
-// GET /projects/history — mes projets terminés
-router.get('/history', authMiddleware, (req, res) => {
-  const userId = req.user.id;
-  db.all(`
-    SELECT DISTINCT p.*, u.name as owner_name,
-      (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
-    FROM projects p
-    LEFT JOIN users u ON p.owner_id = u.id
-    LEFT JOIN project_members pm ON pm.project_id = p.id
-    WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'completed'
-    ORDER BY p.created_at DESC
-  `, [userId, userId], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
-});
+
 
 // PATCH /projects/:id/complete — terminer un projet
 router.patch('/:id/complete', authMiddleware, (req, res) => {
