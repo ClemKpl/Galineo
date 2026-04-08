@@ -94,107 +94,112 @@ if (isProd) {
   db = sqliteDb;
 }
 
-// Initialisation des tables (Identique pour les deux)
-db.serialize(() => {
+// Initialisation des tables (Séquentielle pour éviter les erreurs au démarrage)
+const initDb = async () => {
   const isPostgres = !!process.env.DATABASE_URL;
   const autoInc = isPostgres ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
   const ignore = isPostgres ? '' : 'OR IGNORE';
   const conflict = isPostgres ? 'ON CONFLICT DO NOTHING' : '';
 
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id ${autoInc},
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    avatar TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`);
+  const queries = [
+    `CREATE TABLE IF NOT EXISTS users (
+      id ${autoInc},
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      avatar TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS roles (
+      id ${autoInc},
+      name TEXT NOT NULL,
+      is_default INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS permissions (
+      id ${autoInc},
+      name TEXT NOT NULL UNIQUE,
+      description TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS role_permissions (
+      role_id INTEGER,
+      permission_id INTEGER,
+      PRIMARY KEY (role_id, permission_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS projects (
+      id ${autoInc},
+      title TEXT NOT NULL,
+      description TEXT,
+      deadline TEXT,
+      owner_id INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS project_members (
+      project_id INTEGER,
+      user_id INTEGER,
+      role_id INTEGER,
+      PRIMARY KEY (project_id, user_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS tasks (
+      id ${autoInc},
+      project_id INTEGER NOT NULL,
+      parent_id INTEGER,
+      title TEXT NOT NULL,
+      description TEXT,
+      status TEXT DEFAULT 'todo',
+      priority TEXT DEFAULT 'normal',
+      phase TEXT,
+      start_date TEXT,
+      due_date TEXT,
+      created_by INTEGER NOT NULL,
+      assigned_to INTEGER,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS task_comments (
+      id ${autoInc},
+      task_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS messages (
+      id ${autoInc},
+      project_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS notifications (
+      id ${autoInc},
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      message TEXT,
+      project_id INTEGER,
+      task_id INTEGER,
+      from_user_id INTEGER,
+      is_read INTEGER DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `INSERT ${ignore} INTO roles (id, name, is_default) VALUES (1, 'Propriétaire', 1) ${conflict}`,
+    `INSERT ${ignore} INTO roles (id, name, is_default) VALUES (2, 'Admin', 1) ${conflict}`,
+    `INSERT ${ignore} INTO roles (id, name, is_default) VALUES (3, 'Membre', 1) ${conflict}`,
+    `INSERT ${ignore} INTO roles (id, name, is_default) VALUES (4, 'Observateur', 1) ${conflict}`
+  ];
 
-  db.run(`CREATE TABLE IF NOT EXISTS roles (
-    id ${autoInc},
-    name TEXT NOT NULL,
-    is_default INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`);
+  if (isPostgres) {
+    for (const q of queries) {
+      await new Promise((resolve) => db.run(q, resolve));
+    }
+    console.log('PostgreSQL Tables Initialized 🐘');
+  } else {
+    db.serialize(() => {
+      queries.forEach(q => db.run(q));
+      console.log('SQLite Tables Initialized 📁');
+    });
+  }
+};
 
-  db.run(`CREATE TABLE IF NOT EXISTS permissions (
-    id ${autoInc},
-    name TEXT NOT NULL UNIQUE,
-    description TEXT
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS role_permissions (
-    role_id INTEGER,
-    permission_id INTEGER,
-    PRIMARY KEY (role_id, permission_id)
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS projects (
-    id ${autoInc},
-    title TEXT NOT NULL,
-    description TEXT,
-    deadline TEXT,
-    owner_id INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS project_members (
-    project_id INTEGER,
-    user_id INTEGER,
-    role_id INTEGER,
-    PRIMARY KEY (project_id, user_id)
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS tasks (
-    id ${autoInc},
-    project_id INTEGER NOT NULL,
-    parent_id INTEGER,
-    title TEXT NOT NULL,
-    description TEXT,
-    status TEXT DEFAULT 'todo',
-    priority TEXT DEFAULT 'normal',
-    phase TEXT,
-    start_date TEXT,
-    due_date TEXT,
-    created_by INTEGER NOT NULL,
-    assigned_to INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS task_comments (
-    id ${autoInc},
-    task_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS messages (
-    id ${autoInc},
-    project_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS notifications (
-    id ${autoInc},
-    user_id INTEGER NOT NULL,
-    type TEXT NOT NULL,
-    title TEXT NOT NULL,
-    message TEXT,
-    project_id INTEGER,
-    task_id INTEGER,
-    from_user_id INTEGER,
-    is_read INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  // Seed default data
-  db.run(`INSERT ${ignore} INTO roles (id, name, is_default) VALUES (1, 'Propriétaire', 1) ${conflict}`);
-  db.run(`INSERT ${ignore} INTO roles (id, name, is_default) VALUES (2, 'Admin', 1) ${conflict}`);
-  db.run(`INSERT ${ignore} INTO roles (id, name, is_default) VALUES (3, 'Membre', 1) ${conflict}`);
-  db.run(`INSERT ${ignore} INTO roles (id, name, is_default) VALUES (4, 'Observateur', 1) ${conflict}`);
-});
+initDb();
 
 module.exports = db;
