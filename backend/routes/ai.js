@@ -302,6 +302,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
       let response = result.response;
       let text = "";
 
+      let actions = [];
       const calls = response.functionCalls();
       if (calls && calls.length > 0) {
         const toolLogs = [];
@@ -312,6 +313,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
             toolLogs.push({ name: call.name, res: apiRes });
           }
         }
+        actions = toolLogs.map(l => l.name);
         const toolResponses = toolLogs.map(l => ({
           functionResponse: { name: l.name, response: l.res }
         }));
@@ -321,8 +323,12 @@ router.post('/chat', authMiddleware, async (req, res) => {
         text = response.text();
       }
 
+      // Persister la réponse de l'IA
+      if (projectId && mode === 'project') {
+        await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
+      }
+
       // Si on arrive ici, c'est un succès, on sort de la boucle
-      const actions = calls && calls.length > 0 ? toolLogs.map(l => l.name) : [];
       return res.json({ reply: text, actions });
 
     } catch (err) {
