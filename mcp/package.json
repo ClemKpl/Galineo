@@ -1,0 +1,13 @@
+{
+  "name": "galineo-mcp",
+  "version": "1.0.0",
+  "description": "MCP server exposing the full Galineo API",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.0"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "galineo": {
+      "command": "node",
+      "args": ["C:/Users/Flavien/Downloads/Galineo GitHub/Galineo/mcp/server.js"],
+      "env": {
+        "GALINEO_API_URL": "http://localhost:3001"
+      }
+    }
+  }
+}
