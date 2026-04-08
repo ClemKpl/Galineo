@@ -74,32 +74,6 @@ export default function AiChat() {
     }
   }, [open, messages]);
 
-  useEffect(() => {
-    if (open && currentProjectId) {
-      loadHistory();
-    }
-  }, [open, currentProjectId]);
-
-  async function loadHistory() {
-    setFetchingHistory(true);
-    try {
-      const res = await fetch(`${API_URL}/ai/history/${currentProjectId}`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-      });
-      const data = await res.json();
-      if (res.ok && data.history && data.history.length > 0) {
-        setMessages(data.history.map((h: any) => ({
-          role: h.role === 'model' ? 'assistant' : 'user',
-          content: h.role === 'user' && h.user_name ? `**${h.user_name}** : ${h.content}` : h.content,
-        })));
-      }
-    } catch (err) {
-      console.error('Failed to load history', err);
-    } finally {
-      setFetchingHistory(false);
-    }
-  }
-
   async function send() {
     const text = input.trim();
     if (!text || loading) return;
@@ -124,7 +98,7 @@ export default function AiChat() {
         },
         body: JSON.stringify({ 
           messages: history,
-          projectId: currentProjectId 
+          mode: 'global'
         }),
       });
 
@@ -193,12 +167,6 @@ export default function AiChat() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-stone-50 relative">
-            {fetchingHistory && (
-              <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center animate-in fade-in duration-300">
-                <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mb-2" />
-                <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Chargement...</p>
-              </div>
-            )}
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {m.role === 'assistant' && (
