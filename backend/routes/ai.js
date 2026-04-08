@@ -344,87 +344,94 @@ router.post('/chat', authMiddleware, async (req, res) => {
       }
 
       // Retry loop (3 attempts) for transient errors (503, Overloaded, etc.)
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          const model = genAI.getGenerativeModel({
-            model: MODEL_NAME,
-            systemInstruction: { role: "system", parts: [{ text: sysInstruct }] }
-          }, { apiVersion: 'v1beta' });
+      try {
+        const model = genAI.getGenerativeModel({
+          model: MODEL_NAME,
+          systemInstruction: { role: "system", parts: [{ text: sysInstruct }] }
+        }, { apiVersion: 'v1beta' });
 
-          const chat = model.startChat({
-            history: messages.slice(0, -1).map(m => ({
-              role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
-              parts: [{ text: m.content }]
-            })),
-            tools: currentTools
-          });
+        const chat = model.startChat({
+          history: messages.slice(0, -1).map(m => ({
+            role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+          })),
+          tools: currentTools
+        });
 
-          let result = await chat.sendMessage(userText);
-          let response = result.response;
-          let text = "";
-          let actions = [];
-
-          // Boucle pour gérer les appels d'outils successifs (jusqu'à 5 répétitions)
-          let toolCallsCount = 0;
-          while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
-            toolCallsCount++;
-            const calls = response.functionCalls();
-            const toolLogs = [];
-            for (const call of calls) {
-              const fn = functions[call.name];
-              if (fn) {
-                const apiRes = await fn(call.args, req.user.id);
-                toolLogs.push({ name: call.name, res: apiRes });
-                if (!actions.includes(call.name)) actions.push(call.name);
+        // Helper pour envoyer avec retry interne (évite de relancer les outils déjà exécutés)
+        const sendMessageWithRetry = async (payload) => {
+          for (let internalAttempt = 1; internalAttempt <= 3; internalAttempt++) {
+            try {
+              return await chat.sendMessage(payload);
+            } catch (err) {
+              const errorMsg = err.message || "";
+              const isRetryable = errorMsg.includes('503') || 
+                                 errorMsg.toLowerCase().includes('overloaded') || 
+                                 errorMsg.toLowerCase().includes('high demand') ||
+                                 errorMsg.toLowerCase().includes('service unavailable');
+              if (isRetryable && internalAttempt < 3) {
+                console.warn(`[AI Retry Internal] Tentative ${internalAttempt}/3 (${errorMsg.substring(0, 50)}...).`);
+                await sleep(internalAttempt * 1000);
+                continue;
               }
-            }
-            const toolResponses = toolLogs.map(l => ({
-              functionResponse: { name: l.name, response: l.res }
-            }));
-            const secondResult = await chat.sendMessage(toolResponses);
-            response = secondResult.response;
-          }
-
-          // Récupération finale du texte
-          try {
-            text = response.text();
-          } catch (e) {
-            console.warn("⚠️ [AI] Pas de texte trouvé dans la réponse finale, utilisation du fallback.");
-          }
-
-          // Fallback si le texte est vide (évite les bulles vides côté frontend)
-          if (!text || text.trim() === "") {
-            if (actions.length > 0) {
-              text = "C'est fait ! Les modifications ont été appliquées avec succès.";
-            } else {
-              text = "Désolé, j'ai rencontré une difficulté pour formuler ma réponse, mais vos données sont à jour.";
+              throw err;
             }
           }
+        };
 
-          // Persister la réponse de l'IA
-          if (projectId && mode === 'project') {
-            await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
+        const result = await sendMessageWithRetry(userText);
+        let response = result.response;
+        let text = "";
+        let actions = [];
+
+        // Boucle pour gérer les appels d'outils successifs (jusqu'à 5 répétitions)
+        let toolCallsCount = 0;
+        while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
+          toolCallsCount++;
+          const calls = response.functionCalls();
+          const toolLogs = [];
+          for (const call of calls) {
+            const fn = functions[call.name];
+            if (fn) {
+              const apiRes = await fn(call.args, req.user.id);
+              toolLogs.push({ name: call.name, res: apiRes });
+              if (!actions.includes(call.name)) actions.push(call.name);
+            }
           }
-
-          // Si on arrive ici, c'est un succès, on sort de la boucle
-          return res.json({ reply: text, actions });
-
-        } catch (err) {
-          const errorMsg = err.message || "";
-          const isRetryable = errorMsg.includes('503') || 
-                             errorMsg.toLowerCase().includes('overloaded') || 
-                             errorMsg.toLowerCase().includes('high demand') ||
-                             errorMsg.toLowerCase().includes('service unavailable');
-
-          if (isRetryable && attempt < 3) {
-            console.warn(`⚠️ [AI Retry] Tentative ${attempt}/3 échouée pour la clé ${i + 1} (${errorMsg.substring(0, 50)}...). Nouvelle tentative dans ${attempt}s...`);
-            await sleep(attempt * 1000);
-            continue; // On réessaie avec la MÊME clé
-          }
-
-          // Si ce n'est pas retryable (ex: 429) ou qu'on a épuisé les essais, on laisse l'erreur remonter au block catch parent (Fallback)
-          throw err;
+          const toolResponses = toolLogs.map(l => ({
+            functionResponse: { name: l.name, response: l.res }
+          }));
+          const secondResult = await sendMessageWithRetry(toolResponses);
+          response = secondResult.response;
         }
+
+        // Récupération finale du texte
+        try {
+          text = response.text();
+        } catch (e) {
+          console.warn("⚠️ [AI] Pas de texte trouvé dans la réponse finale, utilisation du fallback.");
+        }
+
+        // Fallback si le texte est vide (évite les bulles vides côté frontend)
+        if (!text || text.trim() === "") {
+          if (actions.length > 0) {
+            text = "C'est fait ! Les modifications ont été appliquées avec succès.";
+          } else {
+            text = "Désolé, j'ai rencontré une difficulté pour formuler ma réponse, mais vos données sont à jour.";
+          }
+        }
+
+        // Persister la réponse de l'IA
+        if (projectId && mode === 'project') {
+          await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
+        }
+
+        return res.json({ reply: text, actions });
+
+      } catch (err) {
+        // En cas d'erreur fatale (ou après épuisement des retries internes), on laisse l'erreur remonter
+        // pour passer à la clé suivante dans la boucle des clés.
+        throw err;
       }
 
     } catch (err) {
