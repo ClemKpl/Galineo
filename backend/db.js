@@ -1,5 +1,4 @@
 const { Pool } = require('pg');
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 const isProd = !!process.env.DATABASE_URL;
@@ -87,6 +86,7 @@ if (isProd) {
   };
 } else {
   console.log('Using SQLite (Local) 📁');
+  const sqlite3 = require('sqlite3').verbose();
   const sqliteDb = new sqlite3.Database(path.join(__dirname, '../database/dev.db'), (err) => {
     if (err) console.error('DB connection error:', err.message);
     else console.log('Connected to SQLite database ✅');
