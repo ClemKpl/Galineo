@@ -39,6 +39,8 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const [searchUser, setSearchUser] = useState('');
   const [showUserList, setShowUserList] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(null);
+  const [expandedFeatures, setExpandedFeatures] = useState<Set<number>>(new Set());
   const [draggedTaskId, setDraggedTaskId] = useState<number | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -272,17 +274,38 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
   const features = tasks.filter(t => !t.parent_id);
   const getTasksForFeature = (featureId: number) => tasks.filter(t => t.parent_id === featureId);
-  const kanbanTasks = tasks.filter(t => t.parent_id);
+  
+  const toggleFeature = (featureId: number) => {
+    setExpandedFeatures(prev => {
+      const next = new Set(prev);
+      if (next.has(featureId)) next.delete(featureId);
+      else next.add(featureId);
+      return next;
+    });
+  };
+
+  const kanbanTasks = tasks.filter(t => t.parent_id && (selectedFeatureId === null || t.parent_id === selectedFeatureId));
   const tasksByStatus = KANBAN_COLUMNS.map((column) => ({
     ...column,
     tasks: kanbanTasks.filter((task) => (task.status || 'todo') === column.key),
   }));
 
-  const TaskRow = ({ task, isFeature = false }: { task: any, isFeature?: boolean }) => {
+  const TaskRow = ({ task, isFeature = false, isExpanded = false }: { task: any, isFeature?: boolean, isExpanded?: boolean }) => {
     const isDone = task.status === 'done';
     
     return (
       <div className={`flex items-start gap-3 px-4 py-3 border-b border-stone-100 hover:bg-stone-50 transition-colors group ${isDone ? 'opacity-60' : ''} ${isFeature ? 'bg-stone-50/50' : 'pl-10 sm:pl-12'}`}>
+        {isFeature && (
+          <button 
+            onClick={() => toggleFeature(task.id)}
+            className="mt-1 flex items-center justify-center w-5 h-5 text-stone-400 hover:text-stone-900 transition-transform duration-200"
+            style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        )}
         <button onClick={(e) => { e.stopPropagation(); toggleStatus(task); }} className={`mt-0.5 w-5 h-5 rounded-full border flex flex-shrink-0 items-center justify-center transition-colors ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-stone-300 hover:border-orange-400'}`}>
           {isDone && <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>}
         </button>
@@ -427,12 +450,42 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Tâche
            </button>
-           <button onClick={() => openCreateFeature()} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5">
+           <button onClick={() => openCreateFeature()} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5">
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Fonctionnalité
            </button>
         </div>
       </div>
+
+      {/* FILTER BAR FOR KANBAN */}
+      {viewMode === 'kanban' && (
+        <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mr-2 shrink-0">Filtrer :</span>
+          <button
+            onClick={() => setSelectedFeatureId(null)}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
+              selectedFeatureId === null
+                ? 'bg-stone-900 border-stone-900 text-white shadow-md'
+                : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+            }`}
+          >
+            Toutes
+          </button>
+          {features.map((f: any) => (
+            <button
+              key={f.id}
+              onClick={() => setSelectedFeatureId(f.id)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
+                selectedFeatureId === f.id
+                  ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-100'
+                  : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+              }`}
+            >
+              {f.title}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
          <div className="animate-pulse bg-white border border-stone-200 rounded-2xl h-64"></div>
@@ -489,18 +542,26 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             </section>
           ))}
         </div>
-      ) : (
+       ) : (
         <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm">
-           {features.map(feature => (
-             <div key={feature.id} className="border-b border-stone-200 last:border-0">
-                <TaskRow task={feature} isFeature={true} />
-                <div className="divide-y divide-stone-100">
-                  {getTasksForFeature(feature.id).map(task => (
-                    <TaskRow key={task.id} task={task} />
-                  ))}
-                </div>
-             </div>
-           ))}
+           {features.map(feature => {
+             const isExpanded = expandedFeatures.has(feature.id);
+             return (
+               <div key={feature.id} className="border-b border-stone-200 last:border-0">
+                  <TaskRow task={feature} isFeature={true} isExpanded={isExpanded} />
+                  {isExpanded && (
+                    <div className="divide-y divide-stone-100 animate-[fadeDown_0.2s_ease-out]">
+                      {getTasksForFeature(feature.id).map(task => (
+                        <TaskRow key={task.id} task={task} />
+                      ))}
+                      {getTasksForFeature(feature.id).length === 0 && (
+                        <div className="pl-16 py-3 text-xs text-stone-400 italic">Aucune tâche dans cette fonctionnalité</div>
+                      )}
+                    </div>
+                  )}
+               </div>
+             );
+           })}
         </div>
       )}
 
