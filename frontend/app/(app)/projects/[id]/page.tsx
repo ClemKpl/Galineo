@@ -409,7 +409,7 @@ export default function ProjectDashboardPage() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-stone-900 truncate group-hover:text-orange-500 transition-colors">{member.name}</p>
                         <p className="text-[10px] text-stone-400 font-bold uppercase tracking-[0.1em]">{member.role_name}</p>
-                        <p className="text-[9px] text-stone-400 font-medium mt-0.5 whitespace-nowrap">Dernière co : {formatLastLogin(member.last_login_at)}</p>
+                        <p className="text-[8px] sm:text-[9px] text-stone-400 font-medium mt-0.5 leading-tight">Dernière co : {formatLastLogin(member.last_login_at)}</p>
                       </div>
                     </div>
                     
