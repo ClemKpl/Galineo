@@ -1,0 +1,10 @@
+{
+  "name": "galineo-ai",
+  "version": "1.0.0",
+  "description": "Chatbot Mistral AI pour créer des projets Galineo",
+  "type": "module",
+  "scripts": {
+    "start": "node chat.js"
+  },
+  "dependencies": {}
+}
