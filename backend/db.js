@@ -46,7 +46,7 @@ if (isProd) {
           if (cb) cb.call(result, null);
         })
         .catch(err => {
-          console.error('PG Run Error:', err.message, '| SQL:', finalSql);
+          console.error('❌ [PG RUN ERROR]', { sql: finalSql, params, error: err.message });
           if (cb) cb(err);
         });
       return this;
@@ -59,7 +59,7 @@ if (isProd) {
           if (cb) cb(null, res.rows[0]);
         })
         .catch(err => {
-          console.error('PG Get Error:', err.message);
+          console.error('❌ [PG GET ERROR]', { sql: finalSql, params, error: err.message });
           if (cb) cb(err);
         });
       return this;
@@ -72,7 +72,7 @@ if (isProd) {
           if (cb) cb(null, res.rows);
         })
         .catch(err => {
-          console.error('PG All Error:', err.message);
+          console.error('❌ [PG ALL ERROR]', { sql: finalSql, params, error: err.message });
           if (cb) cb(err);
         });
       return this;
@@ -97,7 +97,7 @@ if (isProd) {
   db = sqliteDb;
 }
 
-// Initialisation des tables (Séquentielle pour éviter les erreurs au démarrage)
+// Initialisation des tables (Séquentielle)
 const initDb = async () => {
   const isPostgres = !!process.env.DATABASE_URL;
   const autoInc = isPostgres ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
@@ -191,14 +191,20 @@ const initDb = async () => {
   ];
 
   if (isPostgres) {
-    for (const q of queries) {
-      await new Promise((resolve) => db.run(q, resolve));
+    try {
+      for (const q of queries) {
+        await new Promise((resolve, reject) => {
+          db.run(q, (err) => err ? reject(err) : resolve());
+        });
+      }
+      console.log('✅ PostgreSQL Tables Initialized');
+    } catch (err) {
+      console.error('❌ Failed to initialize PG tables:', err.message);
     }
-    console.log('PostgreSQL Tables Initialized 🐘');
   } else {
     db.serialize(() => {
       queries.forEach(q => db.run(q));
-      console.log('SQLite Tables Initialized 📁');
+      console.log('✅ SQLite Tables Initialized');
     });
   }
 };
