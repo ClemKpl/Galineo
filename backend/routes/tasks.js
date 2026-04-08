@@ -3,6 +3,63 @@ const router = express.Router({ mergeParams: true }); // Permet d'utiliser /proj
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 
+function csvEscape(value) {
+  if (value === null || value === undefined) return '';
+  const stringValue = String(value);
+  if (/[",\n]/.test(stringValue)) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+  return stringValue;
+}
+
+function parseCsv(csvText) {
+  const rows = [];
+  let current = '';
+  let row = [];
+  let inQuotes = false;
+
+  for (let i = 0; i < csvText.length; i += 1) {
+    const char = csvText[i];
+    const next = csvText[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      row.push(current);
+      current = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && next === '\n') i += 1;
+      row.push(current);
+      if (row.some((cell) => cell !== '')) rows.push(row);
+      row = [];
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  if (current !== '' || row.length > 0) {
+    row.push(current);
+    if (row.some((cell) => cell !== '')) rows.push(row);
+  }
+
+  if (rows.length === 0) return [];
+
+  const headers = rows[0].map((header) => header.trim());
+  return rows.slice(1).map((values) => {
+    const record = {};
+    headers.forEach((header, index) => {
+      record[header] = (values[index] || '').trim();
+    });
+    return record;
+  });
+}
+
 // GET /projects/:projectId/tasks — Liste des tâches
 router.get('/', authMiddleware, (req, res) => {
   const { projectId } = req.params;
@@ -22,6 +79,144 @@ router.get('/', authMiddleware, (req, res) => {
 
 // POST /projects/:projectId/tasks — Créer une tâche
 // GET /projects/:projectId/tasks/:id/comments â€” Historique / commentaires d'avancement
+router.get('/export', authMiddleware, (req, res) => {
+  const { projectId } = req.params;
+
+  db.all(`
+    SELECT
+      t.*,
+      parent.title as parent_title,
+      assignee.email as assignee_email
+    FROM tasks t
+    LEFT JOIN tasks parent ON parent.id = t.parent_id
+    LEFT JOIN users assignee ON assignee.id = t.assigned_to
+    WHERE t.project_id = ?
+    ORDER BY CASE WHEN t.parent_id IS NULL THEN 0 ELSE 1 END, t.parent_id ASC, t.created_at ASC
+  `, [projectId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    const csvRows = [[
+      'type',
+      'title',
+      'description',
+      'status',
+      'priority',
+      'phase',
+      'start_date',
+      'due_date',
+      'assigned_email',
+      'parent_title'
+    ].join(',')];
+
+    rows.forEach((task) => {
+      csvRows.push([
+        task.parent_id ? 'task' : 'feature',
+        csvEscape(task.title),
+        csvEscape(task.description),
+        csvEscape(task.status),
+        csvEscape(task.priority),
+        csvEscape(task.phase),
+        csvEscape(task.start_date),
+        csvEscape(task.due_date),
+        csvEscape(task.assignee_email),
+        csvEscape(task.parent_title),
+      ].join(','));
+    });
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="project-${projectId}-tasks.csv"`);
+    res.send(csvRows.join('\n'));
+  });
+});
+
+router.post('/import', authMiddleware, (req, res) => {
+  const { projectId } = req.params;
+  const { csv } = req.body || {};
+  const createdBy = req.user.id;
+
+  if (!csv || typeof csv !== 'string') {
+    return res.status(400).json({ error: 'CSV requis' });
+  }
+
+  const records = parseCsv(csv);
+  if (records.length === 0) {
+    return res.status(400).json({ error: 'Aucune ligne importable' });
+  }
+
+  const featureRows = records.filter((record) => (record.type || 'task').toLowerCase() === 'feature');
+  const taskRows = records.filter((record) => (record.type || 'task').toLowerCase() !== 'feature');
+  const featureIdByTitle = {};
+  let createdCount = 0;
+
+  db.all('SELECT id, email FROM users', [], (usersErr, users) => {
+    if (usersErr) return res.status(500).json({ error: usersErr.message });
+
+    const userIdByEmail = {};
+    (users || []).forEach((user) => {
+      if (user.email) userIdByEmail[String(user.email).toLowerCase()] = user.id;
+    });
+
+    const createTaskRecord = (record, parentId, done) => {
+      if (!record.title) return done();
+
+      db.run(`
+        INSERT INTO tasks (project_id, parent_id, title, description, status, priority, phase, start_date, due_date, created_by, assigned_to)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        projectId,
+        parentId || null,
+        record.title,
+        record.description || null,
+        record.status || 'todo',
+        record.priority || 'normal',
+        record.phase || null,
+        record.start_date || null,
+        record.due_date || null,
+        createdBy,
+        record.assigned_email ? userIdByEmail[String(record.assigned_email).toLowerCase()] || null : null,
+      ], function (insertErr) {
+        if (!insertErr) createdCount += 1;
+        done(insertErr, this.lastID);
+      });
+    };
+
+    const createFeatures = (index) => {
+      if (index >= featureRows.length) return createTasks(0);
+      const record = featureRows[index];
+
+      createTaskRecord(record, null, (insertErr, featureId) => {
+        if (insertErr) return res.status(500).json({ error: insertErr.message });
+        featureIdByTitle[record.title] = featureId;
+        createFeatures(index + 1);
+      });
+    };
+
+    const createTasks = (index) => {
+      if (index >= taskRows.length) {
+        return res.json({ message: 'Import terminé', created: createdCount });
+      }
+
+      const record = taskRows[index];
+      const parentTitle = record.parent_title;
+
+      if (parentTitle && !featureIdByTitle[parentTitle]) {
+        return createTaskRecord({ type: 'feature', title: parentTitle }, null, (featureErr, featureId) => {
+          if (featureErr) return res.status(500).json({ error: featureErr.message });
+          featureIdByTitle[parentTitle] = featureId;
+          createTasks(index);
+        });
+      }
+
+      createTaskRecord(record, parentTitle ? featureIdByTitle[parentTitle] : null, (insertErr) => {
+        if (insertErr) return res.status(500).json({ error: insertErr.message });
+        createTasks(index + 1);
+      });
+    };
+
+    createFeatures(0);
+  });
+});
+
 router.get('/:id/comments', authMiddleware, (req, res) => {
   const { id, projectId } = req.params;
 
