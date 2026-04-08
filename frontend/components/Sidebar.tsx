@@ -163,10 +163,34 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
     }
   }
 
+  const [projects, setProjects] = useState<any[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [groupByRole, setGroupByRole] = useState(false);
+
+  const fetchProjects = useCallback(async () => {
+    setProjectsLoading(true);
+    try {
+      const data = await api.get('/projects');
+      setProjects(Array.isArray(data) ? data : []);
+    } catch {
+      setProjects([]);
+    } finally {
+      setProjectsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProjects();
+    window.addEventListener('project-created', fetchProjects);
+    return () => window.removeEventListener('project-created', fetchProjects);
+  }, [fetchProjects]);
+
   const navItems = [
     { href: '/dashboard', label: 'Tableau de bord', icon: <IconGrid /> },
     { href: '/settings', label: 'Paramètres', icon: <IconSettings /> },
   ];
+
+  const sortedProjects = [...projects].sort((a, b) => a.title.localeCompare(b.title));
 
   return (
     <aside className="w-64 h-screen bg-stone-900 flex flex-col shrink-0 select-none">
@@ -275,9 +299,9 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
           </div>
         )}
       </div>
-
+      
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-3 flex flex-col gap-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-3 flex flex-col gap-0.5 overflow-y-auto custom-scrollbar">
         {navItems.map((item) => {
           const active = pathname === item.href;
           return (
@@ -290,24 +314,74 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
         })}
 
         {/* Projects section */}
-        <div className="mt-5 mb-2 px-3">
-          <p className="text-stone-600 text-xs font-semibold uppercase tracking-wider">Projets</p>
+        <div className="mt-6 mb-2 px-3 flex items-center justify-between group/title">
+          <p className="text-stone-600 text-[10px] font-bold uppercase tracking-[0.2em]">Mes Projets</p>
+          <button 
+            onClick={() => setGroupByRole(!groupByRole)}
+            title={groupByRole ? "Passer en vue liste" : "Grouper par rôle"}
+            className="opacity-0 group-hover/title:opacity-100 text-stone-500 hover:text-stone-300 transition-all"
+          >
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
         </div>
 
-        <Link href="/dashboard"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${pathname === '/dashboard' ? 'text-stone-200 bg-stone-800' : 'text-stone-400 hover:text-stone-100 hover:bg-stone-800'}`}>
-          <IconFolder />
-          Mes projets
-        </Link>
+        <div className="space-y-0.5 max-h-[350px] overflow-y-auto pr-1">
+          {projectsLoading && projects.length === 0 ? (
+            <div className="px-3 py-2 space-y-2">
+              <div className="h-3 bg-stone-800 rounded animate-pulse w-3/4" />
+              <div className="h-3 bg-stone-800 rounded animate-pulse w-1/2" />
+            </div>
+          ) : (
+            <>
+              {groupByRole ? (
+                <>
+                  {/* Propriétaire */}
+                  {projects.filter(p => p.owner_id === user?.id).length > 0 && (
+                    <div className="mb-2">
+                      <p className="px-3 py-1 text-[9px] font-bold text-stone-500 uppercase tracking-widest">Propriétaire</p>
+                      {projects.filter(p => p.owner_id === user?.id).map(p => (
+                        <Link key={p.id} href={`/projects/${p.id}`}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 shrink-0" />
+                          <span className="truncate">{p.title}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                  {/* Membre */}
+                  {projects.filter(p => p.owner_id !== user?.id).length > 0 && (
+                    <div>
+                      <p className="px-3 py-1 text-[9px] font-bold text-stone-500 uppercase tracking-widest">Invité</p>
+                      {projects.filter(p => p.owner_id !== user?.id).map(p => (
+                        <Link key={p.id} href={`/projects/${p.id}`}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-stone-600 shrink-0" />
+                          <span className="truncate">{p.title}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                sortedProjects.map(p => (
+                  <Link key={p.id} href={`/projects/${p.id}`}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
+                    <IconFolder />
+                    <span className="truncate">{p.title}</span>
+                  </Link>
+                ))
+              )}
+            </>
+          )}
+        </div>
 
         <button onClick={onNewProject}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition-colors text-sm font-medium w-full text-left">
+          className="mt-2 flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-500 hover:text-stone-100 hover:bg-stone-800 transition-colors text-sm font-medium w-full text-left border border-dashed border-stone-800 hover:border-stone-700">
           <IconPlus />
           Nouveau projet
         </button>
-
-        {/* Espace extensible pour futures sections */}
-        <div className="flex-1 min-h-8" />
       </nav>
 
       {/* Logout */}
