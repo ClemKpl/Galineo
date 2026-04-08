@@ -280,7 +280,7 @@ export default function ProjectDashboardPage() {
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           {/* Main Progress Card */}
-          <article className="xl:col-span-2 rounded-[28px] border border-stone-200 bg-white/90 p-8 shadow-sm">
+          <article className="xl:col-span-2 rounded-[28px] border border-stone-200 bg-white/90 p-6 sm:p-8 shadow-sm">
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex-1">
                 <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-500">Progression</p>
@@ -497,8 +497,8 @@ function StatPill({ label, value, tone }: { label: string; value: number; tone: 
 
   return (
     <div className={`rounded-2xl px-4 py-3 ${tones[tone]}`}>
-      <div className="text-xl font-black">{value}</div>
-      <div className="text-[10px] font-bold uppercase tracking-[0.16em] opacity-70">{label}</div>
+      <div className="text-xl font-black leading-none">{value}</div>
+      <div className="text-[9px] font-black uppercase tracking-wider mt-1 opacity-80">{label}</div>
     </div>
   );
 }
