@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const activityLogger = require('../utils/activityLogger');
+const { logActivity } = require('../utils/activityLogger');
 
 const MODEL_NAME = "gemini-flash-latest";
 
@@ -28,7 +28,7 @@ const functions = {
     await dbRun(`INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 1)`, [projectId, userId]);
 
     // Log the action
-    await activityLogger.log(projectId, userId, 'Projet créé via Assistant IA', 'create_project', {
+    await logActivity(projectId, userId, 'project', projectId, 'created', {
       title: titre,
       details: "Configuration initiale du projet par l'IA"
     });
@@ -56,9 +56,9 @@ const functions = {
     }
 
     // Log the batch creation
-    await activityLogger.log(project_id, userId, `${created} éléments créés via Assistant IA`, 'create_task', {
+    await logActivity(project_id, userId, 'task', null, 'created_batch', {
       batch_count: created,
-      details: "Génération automatique d'éléments de projet"
+      details: "Génération automatique d'éléments de projet via Assistant IA"
     });
 
     return { message: `${created} éléments créés dans le projet ${project_id}` };
@@ -82,9 +82,10 @@ const functions = {
     await dbRun(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, params);
 
     // Log modification
-    await activityLogger.log(undefined, userId, `Tâche #${task_id} modifiée via Assistant IA`, 'update_task', {
+    await logActivity(null, userId, 'task', task_id, 'updated', {
       task_id,
-      changes: fields.join(', ')
+      changes: fields.join(', '),
+      details: "Modification via Assistant IA"
     });
 
     return { message: `Tâche ${task_id} mise à jour` };
@@ -97,11 +98,11 @@ const functions = {
 
     if (action === 'add') {
       await dbRun(`INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 3)`, [project_id, u.id]);
-      await activityLogger.log(project_id, userId, `Membre ${u.name} ajouté via Assistant IA`, 'add_member', { email });
+      await logActivity(project_id, userId, 'member', u.id, 'added', { email, via: 'Assistant IA' });
       return { message: `Membre ${u.name} (${email}) ajouté au projet.` };
     } else {
       await dbRun(`DELETE FROM project_members WHERE project_id = ? AND user_id = ?`, [project_id, u.id]);
-      await activityLogger.log(project_id, userId, `Membre ${u.name} retiré via Assistant IA`, 'remove_member', { email });
+      await logActivity(project_id, userId, 'member', u.id, 'removed', { email, via: 'Assistant IA' });
       return { message: `Membre ${u.name} (${email}) retiré du projet.` };
     }
   },
