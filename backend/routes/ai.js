@@ -15,6 +15,8 @@ const dbAll = (sql, params) =>
 const dbRun = (sql, params) =>
   new Promise((res, rej) => db.run(sql, params, function (err) { err ? rej(err) : res({ lastID: this.lastID, changes: this.changes }); }));
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 // ─── Outils (Tools/Functions) ────────────────────────────────────────────────
 const functions = {
   creer_projet: async ({ titre, description, deadline, start_date }, userId) => {
@@ -26,7 +28,7 @@ const functions = {
     await dbRun(`INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 1)`, [projectId, userId]);
 
     // Log the action
-    await activityLogger.log(projectId, userId, 'Projet créé via Assistant IA', 'create_project', { 
+    await activityLogger.log(projectId, userId, 'Projet créé via Assistant IA', 'create_project', {
       title: titre,
       details: "Configuration initiale du projet par l'IA"
     });
@@ -54,9 +56,9 @@ const functions = {
     }
 
     // Log the batch creation
-    await activityLogger.log(project_id, userId, `${created} éléments créés via Assistant IA`, 'create_task', { 
+    await activityLogger.log(project_id, userId, `${created} éléments créés via Assistant IA`, 'create_task', {
       batch_count: created,
-      details: "Génération automatique d'éléments de projet" 
+      details: "Génération automatique d'éléments de projet"
     });
 
     return { message: `${created} éléments créés dans le projet ${project_id}` };
@@ -80,9 +82,9 @@ const functions = {
     await dbRun(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, params);
 
     // Log modification
-    await activityLogger.log(undefined, userId, `Tâche #${task_id} modifiée via Assistant IA`, 'update_task', { 
-      task_id, 
-      changes: fields.join(', ') 
+    await activityLogger.log(undefined, userId, `Tâche #${task_id} modifiée via Assistant IA`, 'update_task', {
+      task_id,
+      changes: fields.join(', ')
     });
 
     return { message: `Tâche ${task_id} mise à jour` };
@@ -220,7 +222,7 @@ router.get('/history/:projectId', authMiddleware, async (req, res) => {
 // ─── Route Chat ───────────────────────────────────────────────────────────────
 router.post('/chat', authMiddleware, async (req, res) => {
   const { messages, projectId, mode = 'project' } = req.body;
-  
+
   // Support either GEMINI_API_KEYS="key1,key2" or GEMINI_API_KEY="key1"
   const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY;
   const apiKeys = rawKeys ? rawKeys.split(',').map(k => k.trim()).filter(k => !!k) : [];
@@ -296,51 +298,72 @@ router.post('/chat', authMiddleware, async (req, res) => {
         currentTools = toolConfig;
       }
 
-      const model = genAI.getGenerativeModel({ 
-        model: MODEL_NAME,
-        systemInstruction: { role: "system", parts: [{ text: sysInstruct }] }
-      }, { apiVersion: 'v1beta' });
+      // Retry loop (3 attempts) for transient errors (503, Overloaded, etc.)
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const model = genAI.getGenerativeModel({
+            model: MODEL_NAME,
+            systemInstruction: { role: "system", parts: [{ text: sysInstruct }] }
+          }, { apiVersion: 'v1beta' });
 
-      const chat = model.startChat({
-        history: messages.slice(0, -1).map(m => ({
-          role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
-          parts: [{ text: m.content }]
-        })),
-        tools: currentTools
-      });
+          const chat = model.startChat({
+            history: messages.slice(0, -1).map(m => ({
+              role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
+              parts: [{ text: m.content }]
+            })),
+            tools: currentTools
+          });
 
-      let result = await chat.sendMessage(userText);
-      let response = result.response;
-      let text = "";
+          let result = await chat.sendMessage(userText);
+          let response = result.response;
+          let text = "";
 
-      let actions = [];
-      const calls = response.functionCalls();
-      if (calls && calls.length > 0) {
-        const toolLogs = [];
-        for (const call of calls) {
-          const fn = functions[call.name];
-          if (fn) {
-            const apiRes = await fn(call.args, req.user.id);
-            toolLogs.push({ name: call.name, res: apiRes });
+          let actions = [];
+          const calls = response.functionCalls();
+          if (calls && calls.length > 0) {
+            const toolLogs = [];
+            for (const call of calls) {
+              const fn = functions[call.name];
+              if (fn) {
+                const apiRes = await fn(call.args, req.user.id);
+                toolLogs.push({ name: call.name, res: apiRes });
+              }
+            }
+            actions = toolLogs.map(l => l.name);
+            const toolResponses = toolLogs.map(l => ({
+              functionResponse: { name: l.name, response: l.res }
+            }));
+            const secondResult = await chat.sendMessage(toolResponses);
+            text = secondResult.response.text();
+          } else {
+            text = response.text();
           }
+
+          // Persister la réponse de l'IA
+          if (projectId && mode === 'project') {
+            await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
+          }
+
+          // Si on arrive ici, c'est un succès, on sort de la boucle
+          return res.json({ reply: text, actions });
+
+        } catch (err) {
+          const errorMsg = err.message || "";
+          const isRetryable = errorMsg.includes('503') || 
+                             errorMsg.toLowerCase().includes('overloaded') || 
+                             errorMsg.toLowerCase().includes('high demand') ||
+                             errorMsg.toLowerCase().includes('service unavailable');
+
+          if (isRetryable && attempt < 3) {
+            console.warn(`⚠️ [AI Retry] Tentative ${attempt}/3 échouée pour la clé ${i + 1} (${errorMsg.substring(0, 50)}...). Nouvelle tentative dans ${attempt}s...`);
+            await sleep(attempt * 1000);
+            continue; // On réessaie avec la MÊME clé
+          }
+
+          // Si ce n'est pas retryable (ex: 429) ou qu'on a épuisé les essais, on laisse l'erreur remonter au block catch parent (Fallback)
+          throw err;
         }
-        actions = toolLogs.map(l => l.name);
-        const toolResponses = toolLogs.map(l => ({
-          functionResponse: { name: l.name, response: l.res }
-        }));
-        const secondResult = await chat.sendMessage(toolResponses);
-        text = secondResult.response.text();
-      } else {
-        text = response.text();
       }
-
-      // Persister la réponse de l'IA
-      if (projectId && mode === 'project') {
-        await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
-      }
-
-      // Si on arrive ici, c'est un succès, on sort de la boucle
-      return res.json({ reply: text, actions });
 
     } catch (err) {
       lastError = err;
@@ -350,7 +373,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
         console.warn(`⚠️ [AI Fallback] La clé ${i + 1} a échoué (quota/invalid). Tentative avec la suivante...`);
         if (i < apiKeys.length - 1) continue; // On passe à la suivante
       }
-      
+
       // Si on est à la dernière clé ou que c'est une autre erreur, on s'arrête
       console.error('[AI Final Error]', err);
       break;
