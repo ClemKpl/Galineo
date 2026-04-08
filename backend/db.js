@@ -25,9 +25,12 @@ if (isProd) {
       converted += ' ON CONFLICT DO NOTHING';
     }
     
-    // Auto-return ID for inserts if needed
+    // Auto-return ID for inserts if needed (except for link tables without 'id' column)
     if (sql.toUpperCase().includes('INSERT') && !sql.toUpperCase().includes('RETURNING')) {
-      converted += ' RETURNING id';
+      const isLinkTable = sql.toLowerCase().includes('project_members') || sql.toLowerCase().includes('role_permissions');
+      if (!isLinkTable) {
+        converted += ' RETURNING id';
+      }
     }
     return converted;
   };
