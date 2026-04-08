@@ -249,4 +249,13 @@ router.delete('/:id', authMiddleware, (req, res) => {
   });
 });
 
+// DELETE /clear — Vider toutes les tâches d'un projet
+router.delete('/clear', authMiddleware, (req, res) => {
+  const { projectId } = req.params;
+  db.run('DELETE FROM tasks WHERE project_id = ?', [projectId], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Toutes les tâches ont été supprimées' });
+  });
+});
+
 module.exports = router;

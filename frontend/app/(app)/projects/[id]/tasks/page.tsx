@@ -214,6 +214,20 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     const m = members.find(x => x.id.toString() === assignedId.toString());
     return m ? m.name : '';
   };
+
+  async function handleClearProject() {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer TOUTES les tâches et fonctionnalités de ce projet ? Cette action est irréversible.')) {
+      return;
+    }
+    
+    try {
+      await api.delete(`/projects/${projectId}/tasks/clear`);
+      fetchData();
+    } catch (err) {
+      alert("Erreur lors de la suppression");
+      console.error(err);
+    }
+  }
   
 
   async function toggleStatus(task: any) {
@@ -455,10 +469,14 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Tâche
            </button>
-           <button onClick={() => openCreateFeature()} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5">
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Fonctionnalité
-           </button>
+           <button onClick={() => openCreateFeature()} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5 line-clamp-1 overflow-hidden max-w-[120px] sm:max-w-none">
+               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+               <span className="hidden xs:inline">Fonctionnalité</span><span className="xs:hidden">Fonc.</span>
+            </button>
+            <button onClick={handleClearProject} className="px-3 py-1.5 sm:py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5" title="Vider le projet">
+               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+               Vider
+            </button>
         </div>
       </div>
 

@@ -11,7 +11,7 @@ const dbGet = (sql, params) =>
 const dbAll = (sql, params) =>
   new Promise((res, rej) => db.all(sql, params, (err, rows) => err ? rej(err) : res(rows)));
 const dbRun = (sql, params) =>
-  new Promise((res, rej) => db.run(sql, params, function(err) { err ? rej(err) : res({ lastID: this.lastID, changes: this.changes }); }));
+  new Promise((res, rej) => db.run(sql, params, function (err) { err ? rej(err) : res({ lastID: this.lastID, changes: this.changes }); }));
 
 // ─── Outils ───────────────────────────────────────────────────────────────────
 async function toolCreerProjet({ titre, description, deadline }, userId) {
@@ -37,7 +37,7 @@ async function toolCreerElements({ project_id, elements }, userId) {
       `INSERT INTO tasks (project_id, title, description, status, priority, phase, start_date, due_date, created_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [project_id, el.title, el.description || null, el.status || 'todo',
-       el.priority || 'normal', el.phase || null, el.start_date || null, el.due_date || null, userId]
+        el.priority || 'normal', el.phase || null, el.start_date || null, el.due_date || null, userId]
     );
     featureMap[el.title] = r.lastID;
     created++;
@@ -55,7 +55,7 @@ async function toolCreerElements({ project_id, elements }, userId) {
       `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, phase, start_date, due_date, created_by, assigned_to)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [project_id, parentId, el.title, el.description || null, el.status || 'todo',
-       el.priority || 'normal', el.phase || null, el.start_date || null, el.due_date || null, userId, assignedTo]
+        el.priority || 'normal', el.phase || null, el.start_date || null, el.due_date || null, userId, assignedTo]
     );
     if (assignedTo) {
       await dbRun(
@@ -118,9 +118,9 @@ const TOOLS = [
       parameters: {
         type: 'object',
         properties: {
-          titre:       { type: 'string', description: 'Titre du projet' },
+          titre: { type: 'string', description: 'Titre du projet' },
           description: { type: 'string', description: 'Description du projet (optionnel)' },
-          deadline:    { type: 'string', description: 'Date limite YYYY-MM-DD (optionnel)' },
+          deadline: { type: 'string', description: 'Date limite YYYY-MM-DD (optionnel)' },
         },
         required: ['titre'],
       },
@@ -142,16 +142,16 @@ Créer les features en premier. Les tasks doivent avoir parent_title = titre exa
             items: {
               type: 'object',
               properties: {
-                type:           { type: 'string', enum: ['feature', 'task'] },
-                title:          { type: 'string' },
-                description:    { type: 'string' },
-                status:         { type: 'string', enum: ['todo', 'in_progress', 'done'] },
-                priority:       { type: 'string', enum: ['normal', 'urgent_important', 'urgent_not_important', 'not_urgent_important'] },
-                phase:          { type: 'string' },
-                start_date:     { type: 'string', description: 'YYYY-MM-DD' },
-                due_date:       { type: 'string', description: 'YYYY-MM-DD' },
+                type: { type: 'string', enum: ['feature', 'task'] },
+                title: { type: 'string' },
+                description: { type: 'string' },
+                status: { type: 'string', enum: ['todo', 'in_progress', 'done'] },
+                priority: { type: 'string', enum: ['normal', 'urgent_important', 'urgent_not_important', 'not_urgent_important'] },
+                phase: { type: 'string' },
+                start_date: { type: 'string', description: 'YYYY-MM-DD' },
+                due_date: { type: 'string', description: 'YYYY-MM-DD' },
                 assigned_email: { type: 'string' },
-                parent_title:   { type: 'string', description: 'Titre exact de la feature parente (obligatoire pour les tasks)' },
+                parent_title: { type: 'string', description: 'Titre exact de la feature parente (obligatoire pour les tasks)' },
               },
               required: ['type', 'title'],
             },
@@ -257,10 +257,10 @@ async function runAgenticLoop(messages, userId) {
       let result;
       try {
         switch (call.function.name) {
-          case 'creer_projet':   result = await toolCreerProjet(args, userId);     break;
-          case 'creer_elements': result = await toolCreerElements(args, userId);   break;
-          case 'lister_projets': result = await toolListerProjets(userId);         break;
-          case 'voir_taches':    result = await toolVoirTaches(args, userId);      break;
+          case 'creer_projet': result = await toolCreerProjet(args, userId); break;
+          case 'creer_elements': result = await toolCreerElements(args, userId); break;
+          case 'lister_projets': result = await toolListerProjets(userId); break;
+          case 'voir_taches': result = await toolVoirTaches(args, userId); break;
           default: result = { erreur: `Outil inconnu : ${call.function.name}` };
         }
       } catch (e) {
