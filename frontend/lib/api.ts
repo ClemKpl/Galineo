@@ -15,7 +15,9 @@ async function request(path: string, options: RequestInit = {}) {
 
   const cleanApiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
   const cleanPath = path.replace(/^\//, '');
-  const res = await fetch(`${cleanApiUrl}/${cleanPath}`, { ...options, headers });
+  const finalUrl = `${cleanApiUrl}/${cleanPath}`;
+  console.log('📡 Appel API vers :', finalUrl);
+  const res = await fetch(finalUrl, { ...options, headers });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Erreur serveur');
   return data;
