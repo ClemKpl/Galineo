@@ -84,15 +84,6 @@ export default function ProjectDashboardPage() {
   const [dashboard, setDashboard] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [showQuickCreate, setShowQuickCreate] = useState(false);
-  const [savingQuickTask, setSavingQuickTask] = useState(false);
-  const [quickTaskTitle, setQuickTaskTitle] = useState('');
-  const [quickTaskDueDate, setQuickTaskDueDate] = useState('');
-  const [quickTaskAssignedTo, setQuickTaskAssignedTo] = useState('');
-  const [quickTaskFeatureId, setQuickTaskFeatureId] = useState('');
-  const [quickTaskPriority, setQuickTaskPriority] = useState('normal');
-
-  const members = Array.isArray(project.members) ? project.members : [];
   const canManageProject = project.my_role_id === 1 || project.my_role_id === 2 || project.owner_id === user?.id;
 
   useEffect(() => {
@@ -126,41 +117,7 @@ export default function ProjectDashboardPage() {
     }
   }
 
-  async function handleQuickCreateTask(e: React.FormEvent) {
-    e.preventDefault();
-    if (!quickTaskTitle.trim()) return;
-    if (!quickTaskFeatureId) {
-      alert('Selectionne d’abord une fonctionnalite.');
-      return;
-    }
-
-    setSavingQuickTask(true);
-    try {
-      await api.post(`/projects/${project.id}/tasks`, {
-        title: quickTaskTitle.trim(),
-        parent_id: Number(quickTaskFeatureId),
-        due_date: quickTaskDueDate || null,
-        assigned_to: quickTaskAssignedTo ? Number(quickTaskAssignedTo) : null,
-        priority: quickTaskPriority,
-        status: 'todo',
-      });
-
-      setQuickTaskTitle('');
-      setQuickTaskDueDate('');
-      setQuickTaskAssignedTo('');
-      setQuickTaskFeatureId('');
-      setQuickTaskPriority('normal');
-      setShowQuickCreate(false);
-      await fetchDashboard(true);
-    } catch (err) {
-      alert((err as Error).message);
-    } finally {
-      setSavingQuickTask(false);
-    }
-  }
-
   const stats = dashboard?.stats || EMPTY_STATS;
-  const features = dashboard?.features || [];
   const urgentTasks = dashboard?.urgent_tasks || [];
   const memberLoad = dashboard?.member_load || [];
 
@@ -251,13 +208,6 @@ export default function ProjectDashboardPage() {
               >
                 {refreshing ? 'Actualisation...' : 'Actualiser'}
               </button>
-              <button
-                type="button"
-                onClick={() => setShowQuickCreate((current) => !current)}
-                className="rounded-2xl bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800"
-              >
-                {showQuickCreate ? 'Fermer' : 'Creer une tache'}
-              </button>
               {canManageProject && project.status !== 'completed' && (
                 <button
                   onClick={handleComplete}
@@ -268,85 +218,6 @@ export default function ProjectDashboardPage() {
               )}
             </div>
           </div>
-
-          {showQuickCreate && (
-            <div className="border-t border-stone-200/80 bg-stone-50/80 px-6 py-5 sm:px-8">
-              {features.length === 0 ? (
-                <div className="flex flex-col gap-3 rounded-[24px] border border-dashed border-stone-300 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-stone-900">Aucune fonctionnalite disponible</p>
-                    <p className="mt-1 text-sm text-stone-500">Cree d’abord une fonctionnalite dans l’onglet Taches avant d’ajouter une sous-tache ici.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/projects/${project.id}/tasks`)}
-                    className="rounded-2xl bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-800"
-                  >
-                    Ouvrir Taches
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleQuickCreateTask} className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1.8fr_1fr_1fr_1fr_auto]">
-                  <select
-                    value={quickTaskFeatureId}
-                    onChange={(e) => setQuickTaskFeatureId(e.target.value)}
-                    required
-                    className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-orange-400"
-                  >
-                    <option value="">Fonctionnalite</option>
-                    {features.map((feature) => (
-                      <option key={feature.id} value={feature.id}>
-                        {feature.title}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    value={quickTaskTitle}
-                    onChange={(e) => setQuickTaskTitle(e.target.value)}
-                    placeholder="Nouvelle tache prioritaire..."
-                    required
-                    className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-orange-400"
-                  />
-                  <input
-                    type="date"
-                    value={quickTaskDueDate}
-                    onChange={(e) => setQuickTaskDueDate(e.target.value)}
-                    className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-orange-400"
-                  />
-                  <select
-                    value={quickTaskAssignedTo}
-                    onChange={(e) => setQuickTaskAssignedTo(e.target.value)}
-                    className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-orange-400"
-                  >
-                    <option value="">Non assignee</option>
-                    {members.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={quickTaskPriority}
-                    onChange={(e) => setQuickTaskPriority(e.target.value)}
-                    className="rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-orange-400"
-                  >
-                    <option value="normal">Normale</option>
-                    <option value="urgent_important">Urg. & Imp.</option>
-                    <option value="not_urgent_important">Importante</option>
-                    <option value="urgent_not_important">Urgente</option>
-                  </select>
-                  <button
-                    type="submit"
-                    disabled={savingQuickTask}
-                    className="rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {savingQuickTask ? 'Creation...' : 'Ajouter'}
-                  </button>
-                </form>
-              )}
-            </div>
-          )}
         </section>
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
