@@ -49,7 +49,7 @@ const functions = {
     }
     for (const el of elements.filter(e => e.type === 'task')) {
       const r = await dbRun(
-        `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, start_date, due_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, start_date, due_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [project_id, featureMap[el.parent_title] || null, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId]
       );
       created++;
@@ -64,7 +64,7 @@ const functions = {
     return { message: `${created} éléments créés dans le projet ${project_id}` };
   },
 
-  modifier_tache: async ({ task_id, title, status, priority, due_date, assigned_email }) => {
+  modifier_tache: async ({ task_id, title, status, priority, start_date, due_date, assigned_email }, userId) => {
     let assignedTo = undefined;
     if (assigned_email) {
       const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [assigned_email]);
