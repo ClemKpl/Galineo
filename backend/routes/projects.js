@@ -209,7 +209,7 @@ router.patch('/:id/complete', authMiddleware, (req, res) => {
     if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
     db.run(
-      'UPDATE projects SET status = "completed" WHERE id = ?',
+      "UPDATE projects SET status = 'completed' WHERE id = ?",
       [projectId],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
