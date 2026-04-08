@@ -95,7 +95,7 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
   const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto h-full flex flex-col">
+    <div className="p-8 max-w-7xl mx-auto">
       {/* HEADER */}
       <div className="relative z-20 flex flex-col md:flex-row items-start md:items-center justify-between mb-6 shrink-0 gap-4">
         <div>
@@ -129,7 +129,7 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
       {loading ? (
          <div className="animate-pulse bg-white border border-stone-200 rounded-3xl h-[600px] w-full"></div>
       ) : (
-        <div className="flex-1 bg-white border border-stone-200 rounded-3xl overflow-hidden flex flex-col shadow-sm">
+        <div className="bg-white border border-stone-200 rounded-3xl overflow-hidden flex flex-col shadow-sm">
            {/* Jours de la semaine */}
            <div className="grid grid-cols-7 border-b border-stone-200 bg-stone-50/50">
              {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day) => (
@@ -140,13 +140,13 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
            </div>
            
            {/* Grille du calendrier */}
-           <div className="flex-1 grid grid-cols-7 bg-stone-100 gap-[1px]">
+           <div className="grid grid-cols-7 bg-stone-100 gap-[1px] rounded-b-3xl overflow-hidden">
              {calendarDays.map((dayInfo, idx) => {
                const dayTasks = getTasksForDate(dayInfo.date);
                const isTodayDate = isToday(dayInfo.date);
                
                return (
-                 <div key={idx} className={`min-h-[120px] bg-white p-2 transition-colors hover:bg-stone-50/50 flex flex-col ${!dayInfo.currentMonth ? 'opacity-50 bg-stone-50/30' : ''}`}>
+                  <div key={idx} className={`min-h-[130px] bg-white p-2 transition-colors hover:bg-stone-50/50 flex flex-col ${!dayInfo.currentMonth ? 'opacity-50 bg-stone-50/30' : ''}`}>
                     <div className="flex justify-between items-start mb-2">
                        <span className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-semibold select-none ${isTodayDate ? 'bg-orange-500 text-white shadow-md' : 'text-stone-600'}`}>
                           {dayInfo.day}
