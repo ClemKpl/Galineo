@@ -8,14 +8,20 @@ router.get('/', authMiddleware, (req, res) => {
   const { projectId } = req.params;
   const { month } = req.query; // e.g. "2026-04"
 
+  // On utilise une approche plus robuste : récupération à plat puis agrégation en JS
   let sql = `
-    SELECT e.*, u.name as creator_name,
-      (SELECT GROUP_CONCAT(ea.user_id) FROM event_attendees ea WHERE ea.event_id = e.id) as attendee_ids,
-      (SELECT GROUP_CONCAT(u2.name) FROM event_attendees ea2 JOIN users u2 ON ea2.user_id = u2.id WHERE ea2.event_id = e.id) as attendee_names
+    SELECT 
+      e.*, 
+      u.name as creator_name,
+      u2.id as attendee_id,
+      u2.name as attendee_name
     FROM calendar_events e
     LEFT JOIN users u ON e.created_by = u.id
+    LEFT JOIN event_attendees ea ON ea.event_id = e.id
+    LEFT JOIN users u2 ON ea.user_id = u2.id
     WHERE e.project_id = ?
   `;
+  
   const id = Number(projectId);
   const params = [id];
 
@@ -28,12 +34,32 @@ router.get('/', authMiddleware, (req, res) => {
 
   db.all(sql, params, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    const events = (rows || []).map((row) => ({
-      ...row,
-      attendee_ids: row.attendee_ids ? row.attendee_ids.split(',').map(Number) : [],
-      attendee_names: row.attendee_names ? row.attendee_names.split(',') : [],
-    }));
-    res.json(events);
+    
+    // Agrégation des participants par évènement
+    const eventsMap = new Map();
+    
+    rows.forEach(row => {
+      if (!eventsMap.has(row.id)) {
+        eventsMap.set(row.id, {
+          ...row,
+          attendee_ids: [],
+          attendee_names: []
+        });
+        // Retirer les colonnes de jointure temporaires pour l'objet final
+        delete eventsMap.get(row.id).attendee_id;
+        delete eventsMap.get(row.id).attendee_name;
+      }
+      
+      const ev = eventsMap.get(row.id);
+      if (row.attendee_id) {
+        if (!ev.attendee_ids.includes(row.attendee_id)) {
+          ev.attendee_ids.push(row.attendee_id);
+          ev.attendee_names.push(row.attendee_name);
+        }
+      }
+    });
+
+    res.json(Array.from(eventsMap.values()));
   });
 });
 
