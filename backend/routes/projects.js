@@ -277,7 +277,6 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
           my_tasks: myTasks,
           member_load: memberLoad
         });
-        });
       });
     });
   });
