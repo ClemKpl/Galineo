@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 
-const MODEL = 'mistral-large-latest';
+const MODEL = 'gemini-1.5-flash';
 
 // ─── Promisify db ─────────────────────────────────────────────────────────────
 const dbGet = (sql, params) =>
@@ -11,9 +11,9 @@ const dbGet = (sql, params) =>
 const dbAll = (sql, params) =>
   new Promise((res, rej) => db.all(sql, params, (err, rows) => err ? rej(err) : res(rows)));
 const dbRun = (sql, params) =>
-  new Promise((res, rej) => db.run(sql, params, function (err) { err ? rej(err) : res({ lastID: this.lastID, changes: this.changes }); }));
+  new Promise((res, rej) => db.run(sql, params, function(err) { err ? rej(err) : res({ lastID: this.lastID, changes: this.changes }); }));
 
-// ─── Outils ───────────────────────────────────────────────────────────────────
+// ─── Outils (Tools) ───────────────────────────────────────────────────────────
 async function toolCreerProjet({ titre, description, deadline }, userId) {
   const result = await dbRun(
     `INSERT INTO projects (title, description, deadline, owner_id, status) VALUES (?, ?, ?, ?, 'active')`,
@@ -30,20 +30,16 @@ async function toolCreerProjet({ titre, description, deadline }, userId) {
 async function toolCreerElements({ project_id, elements }, userId) {
   let created = 0;
   const featureMap = {};
-
-  // 1) Features d'abord
   for (const el of elements.filter(e => e.type === 'feature')) {
     const r = await dbRun(
       `INSERT INTO tasks (project_id, title, description, status, priority, phase, start_date, due_date, created_by)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [project_id, el.title, el.description || null, el.status || 'todo',
-        el.priority || 'normal', el.phase || null, el.start_date || null, el.due_date || null, userId]
+       el.priority || 'normal', el.phase || null, el.start_date || null, el.due_date || null, userId]
     );
     featureMap[el.title] = r.lastID;
     created++;
   }
-
-  // 2) Tasks ensuite
   for (const el of elements.filter(e => e.type === 'task')) {
     const parentId = featureMap[el.parent_title] || null;
     let assignedTo = null;
@@ -55,248 +51,126 @@ async function toolCreerElements({ project_id, elements }, userId) {
       `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, phase, start_date, due_date, created_by, assigned_to)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [project_id, parentId, el.title, el.description || null, el.status || 'todo',
-        el.priority || 'normal', el.phase || null, el.start_date || null, el.due_date || null, userId, assignedTo]
+       el.priority || 'normal', el.phase || null, el.start_date || null, el.due_date || null, userId, assignedTo]
     );
-    if (assignedTo) {
-      await dbRun(
-        `INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id)
-         VALUES (?, 'task_assigned', ?, ?, ?, ?, ?)`,
-        [assignedTo, `Tâche assignée : ${el.title}`, `Vous avez été assigné à la tâche "${el.title}"`, project_id, r.lastID, userId]
-      );
-    }
     created++;
   }
-
   return { succes: true, crees: created, message: `${created} élément(s) créé(s)` };
 }
 
 async function toolListerProjets(userId) {
   const rows = await dbAll(
-    `SELECT p.id, p.title, p.status, COUNT(pm2.user_id) as member_count
-     FROM projects p
-     JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ?
-     LEFT JOIN project_members pm2 ON p.id = pm2.project_id
-     WHERE p.status = 'active'
-     GROUP BY p.id`,
+    `SELECT p.id, p.title, p.status FROM projects p JOIN project_members pm ON p.id = pm.project_id AND pm.user_id = ? WHERE p.status = 'active'`,
     [userId]
   );
   return { projets: rows };
 }
 
-async function toolVoirTaches({ project_id }, userId) {
-  // Vérifier l'accès
-  const member = await dbGet('SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?', [project_id, userId]);
-  if (!member) throw new Error('Accès refusé à ce projet');
-  const rows = await dbAll(
-    `SELECT t.id, t.title, t.status, t.priority, t.due_date, t.parent_id,
-            u.name as assignee_name
-     FROM tasks t
-     LEFT JOIN users u ON u.id = t.assigned_to
-     WHERE t.project_id = ?
-     ORDER BY t.parent_id NULLS FIRST, t.id`,
-    [project_id]
-  );
-  const elements = rows.map(r => ({
-    id: r.id,
-    titre: r.title,
-    type: r.parent_id ? 'task' : 'feature',
-    statut: r.status,
-    priorite: r.priority,
-    echeance: r.due_date || '—',
-    assigne: r.assignee_name || '—',
-  }));
-  return { elements };
-}
-
-// ─── Définition des outils pour Mistral ──────────────────────────────────────
-const TOOLS = [
+// ─── Définition des outils pour Gemini ───────────────────────────────────────
+const GOOGLE_TOOLS = [
   {
-    type: 'function',
-    function: {
-      name: 'creer_projet',
-      description: "Créer un nouveau projet Galineo. À appeler avant d'ajouter des éléments.",
-      parameters: {
-        type: 'object',
-        properties: {
-          titre: { type: 'string', description: 'Titre du projet' },
-          description: { type: 'string', description: 'Description du projet (optionnel)' },
-          deadline: { type: 'string', description: 'Date limite YYYY-MM-DD (optionnel)' },
-        },
-        required: ['titre'],
-      },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'creer_elements',
-      description: `Créer des fonctionnalités (features) et des tâches (tasks) dans un projet.
-Types autorisés UNIQUEMENT : "feature" (module/catégorie) et "task" (action concrète).
-Créer les features en premier. Les tasks doivent avoir parent_title = titre exact de leur feature parente.`,
-      parameters: {
-        type: 'object',
-        properties: {
-          project_id: { type: 'number', description: 'ID du projet cible' },
-          elements: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                type: { type: 'string', enum: ['feature', 'task'] },
-                title: { type: 'string' },
-                description: { type: 'string' },
-                status: { type: 'string', enum: ['todo', 'in_progress', 'done'] },
-                priority: { type: 'string', enum: ['normal', 'urgent_important', 'urgent_not_important', 'not_urgent_important'] },
-                phase: { type: 'string' },
-                start_date: { type: 'string', description: 'YYYY-MM-DD' },
-                due_date: { type: 'string', description: 'YYYY-MM-DD' },
-                assigned_email: { type: 'string' },
-                parent_title: { type: 'string', description: 'Titre exact de la feature parente (obligatoire pour les tasks)' },
-              },
-              required: ['type', 'title'],
-            },
+    function_declarations: [
+      {
+        name: 'creer_projet',
+        description: 'Créer un nouveau projet Galineo.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            titre: { type: 'STRING', description: 'Titre du projet' },
+            description: { type: 'STRING', description: 'Description du projet' },
+            deadline: { type: 'STRING', description: 'Date limite YYYY-MM-DD' }
           },
-        },
-        required: ['project_id', 'elements'],
+          required: ['titre']
+        }
       },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'lister_projets',
-      description: "Lister les projets actifs de l'utilisateur.",
-      parameters: { type: 'object', properties: {} },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'voir_taches',
-      description: "Voir les fonctionnalités et tâches d'un projet.",
-      parameters: {
-        type: 'object',
-        properties: {
-          project_id: { type: 'number', description: 'ID du projet' },
-        },
-        required: ['project_id'],
+      {
+        name: 'creer_elements',
+        description: 'Créer des fonctionnalités et tâches dans un projet.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            project_id: { type: 'NUMBER', description: 'ID du projet cible' },
+            elements: {
+              type: 'ARRAY',
+              items: {
+                type: 'OBJECT',
+                properties: {
+                  type: { type: 'STRING', enum: ['feature', 'task'] },
+                  title: { type: 'STRING' },
+                  description: { type: 'STRING' },
+                  parent_title: { type: 'STRING', description: 'Titre de la feature parente (obligatoire pour tasks)' }
+                },
+                required: ['type', 'title']
+              }
+            }
+          },
+          required: ['project_id', 'elements']
+        }
       },
-    },
-  },
+      {
+        name: 'lister_projets',
+        description: 'Lister les projets de l\'utilisateur.',
+        parameters: { type: 'OBJECT', properties: {} }
+      }
+    ]
+  }
 ];
 
-// ─── Prompt système ───────────────────────────────────────────────────────────
-function getSystemPrompt() {
-  const today = new Date().toISOString().split('T')[0];
-  return `Tu es Galineo AI, un assistant de gestion de projet intégré à la plateforme Galineo.
-Tu aides l'utilisateur à créer et structurer des projets directement dans Galineo.
-
-== CE QUE TU PEUX CRÉER ==
-- Des PROJETS avec titre, description et deadline optionnelle
-- Des FONCTIONNALITÉS (type "feature") : les grands modules du projet
-- Des TÂCHES (type "task") : les actions concrètes sous une feature
-
-== RÈGLES ==
-1. Seuls les types "feature" et "task" sont autorisés
-2. Chaque task DOIT avoir parent_title = titre exact d'une feature du projet
-3. Toujours créer les features avant les tasks (dans le même appel ou en premier)
-4. Si le projet est vague, pose 1-2 questions ciblées
-
-== STYLE ==
-- Réponds en français, de façon concise et professionnelle
-- Après création, fais un résumé : X features, Y tâches créées
-- Tu peux lister les projets existants si l'utilisateur veut enrichir un projet existant
-
-Date du jour : ${today}`;
-}
-
-// ─── Boucle agentique ─────────────────────────────────────────────────────────
-async function runAgenticLoop(messages, userId) {
-  const MISTRAL_KEY = process.env.MISTRAL_API_KEY;
-  if (!MISTRAL_KEY) throw new Error('MISTRAL_API_KEY non configurée sur le serveur');
-
-  const history = [{ role: 'system', content: getSystemPrompt() }, ...messages];
-  const MAX_STEPS = 8;
-
-  for (let step = 0; step < MAX_STEPS; step++) {
-    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${MISTRAL_KEY}`,
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: history,
-        tools: TOOLS,
-        tool_choice: 'auto',
-        max_tokens: 4096,
-        temperature: 0.3,
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Mistral API ${res.status}: ${err}`);
-    }
-
-    const data = await res.json();
-    const msg = data.choices[0].message;
-    history.push(msg);
-
-    // Pas d'outil → réponse finale
-    if (!msg.tool_calls || msg.tool_calls.length === 0) {
-      return msg.content;
-    }
-
-    // Exécution des outils
-    for (const call of msg.tool_calls) {
-      let args;
-      try { args = JSON.parse(call.function.arguments); } catch { args = {}; }
-
-      let result;
-      try {
-        switch (call.function.name) {
-          case 'creer_projet': result = await toolCreerProjet(args, userId); break;
-          case 'creer_elements': result = await toolCreerElements(args, userId); break;
-          case 'lister_projets': result = await toolListerProjets(userId); break;
-          case 'voir_taches': result = await toolVoirTaches(args, userId); break;
-          default: result = { erreur: `Outil inconnu : ${call.function.name}` };
-        }
-      } catch (e) {
-        result = { erreur: e.message };
-      }
-
-      history.push({
-        role: 'tool',
-        tool_call_id: call.id,
-        name: call.function.name,
-        content: JSON.stringify(result),
-      });
-    }
-  }
-
-  return "J'ai atteint la limite de traitement. Peux-tu reformuler ta demande ?";
-}
-
-// ─── Route ────────────────────────────────────────────────────────────────────
+// ─── Route Chat ───────────────────────────────────────────────────────────────
 router.post('/chat', authMiddleware, async (req, res) => {
   const { messages } = req.body;
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'messages requis' });
-  }
+  const API_KEY = process.env.GEMINI_API_KEY;
+
+  if (!API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY non configurée dans le fichier .env du backend.' });
 
   try {
-    const reply = await runAgenticLoop(messages, req.user.id);
-    res.json({ reply });
+    const contents = messages.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents,
+        tools: GOOGLE_TOOLS,
+        system_instruction: { parts: [{ text: "Tu es Galineo AI. Tu aides à structurer des projets. Réponds en français. Utilise les outils pour créer projets et tâches." }] }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || 'Erreur Gemini');
+
+    let candidate = data.candidates?.[0]?.content;
+    if (!candidate) return res.json({ reply: "Désolé, je n'ai pas pu générer de réponse." });
+
+    let finalMessage = "";
+    const textPart = candidate.parts.find(p => p.text);
+    if (textPart) finalMessage = textPart.text;
+
+    // Gestion des appels d'outils
+    const toolPart = candidate.parts.find(p => p.functionCall);
+    if (toolPart) {
+      const name = toolPart.functionCall.name;
+      const args = toolPart.functionCall.args;
+      let toolResult;
+      
+      try {
+        if (name === 'creer_projet') toolResult = await toolCreerProjet(args, req.user.id);
+        else if (name === 'creer_elements') toolResult = await toolCreerElements(args, req.user.id);
+        else if (name === 'lister_projets') toolResult = await toolListerProjets(req.user.id);
+        
+        finalMessage = `Action effectuée : ${toolResult?.message || 'Succès'}. ${finalMessage}`;
+      } catch (toolErr) {
+        finalMessage = `Erreur lors de l'action : ${toolErr.message}. ${finalMessage}`;
+      }
+    }
+
+    res.json({ reply: finalMessage || "J'ai bien pris en compte votre demande." });
   } catch (err) {
     console.error('[AI] Erreur:', err.message);
-    const isApiKey = err.message.includes('401') || err.message.includes('Unauthorized');
-    res.status(500).json({
-      error: isApiKey
-        ? 'Clé API Mistral invalide. Vérifie MISTRAL_API_KEY dans le fichier .env du backend.'
-        : err.message,
-    });
+    res.status(500).json({ error: err.message });
   }
 });
 
