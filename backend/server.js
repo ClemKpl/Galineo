@@ -11,6 +11,8 @@ const taskRoutes    = require('./routes/tasks');
 const globalTaskRoutes = require('./routes/tasks_global');
 const messageRoutes = require('./routes/messages');
 const notificationRoutes = require('./routes/notifications');
+const eventRoutes = require('./routes/events');
+const globalEventRoutes = require('./routes/events_global');
 
 const app = express();
 app.use(cors());
@@ -26,6 +28,8 @@ app.use('/projects', projectRoutes);
 app.use('/users',    userRoutes);
 app.use('/roles',    roleRoutes);
 app.use('/notifications', notificationRoutes);
+app.use('/projects/:projectId/events', eventRoutes);
+app.use('/events', globalEventRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {

@@ -222,7 +222,32 @@ const initDb = async () => {
     `INSERT ${ignore} INTO role_permissions VALUES (2,4) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (3,3) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (3,4) ${conflict}`,
-    `INSERT ${ignore} INTO role_permissions VALUES (4,4) ${conflict}`
+    `INSERT ${ignore} INTO role_permissions VALUES (4,4) ${conflict}`,
+    `CREATE TABLE IF NOT EXISTS calendar_events (
+      id ${autoInc},
+      project_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      start_datetime TEXT NOT NULL,
+      end_datetime TEXT NOT NULL,
+      location TEXT,
+      created_by INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS event_attendees (
+      event_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      notified INTEGER DEFAULT 0,
+      PRIMARY KEY (event_id, user_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS calendar_date_notes (
+      id ${autoInc},
+      project_id INTEGER NOT NULL,
+      date TEXT NOT NULL,
+      content TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`
   ];
 
   if (isPostgres) {

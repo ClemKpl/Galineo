@@ -28,6 +28,20 @@ interface AssignedTask {
   project_title: string;
 }
 
+interface UpcomingEvent {
+  id: number;
+  project_id: number;
+  project_title: string;
+  title: string;
+  description?: string | null;
+  start_datetime: string;
+  end_datetime: string;
+  location?: string | null;
+  creator_name?: string;
+  attendee_names: string;
+  attendee_count: number;
+}
+
 function ProjectCard({ project, currentUserId, onClick, onManageMembers }: { project: Project; currentUserId: number; onClick: () => void; onManageMembers?: () => void }) {
   const isOwner = project.owner_id === currentUserId;
   const canManageMembers = isOwner || project.my_role_id === 2 || project.my_role_id === 1;
@@ -128,6 +142,8 @@ export default function DashboardPage() {
   const [manageProjectId, setManageProjectId] = useState<number | null>(null);
   const [assignedTasks, setAssignedTasks] = useState<AssignedTask[]>([]);
   const [assignedLoading, setAssignedLoading] = useState(true);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
   const router = useRouter();
 
   const fetchProjects = useCallback(async () => {
@@ -153,13 +169,26 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchUpcomingEvents = useCallback(async () => {
+    try {
+      const data = await api.get('/events/upcoming');
+      setUpcomingEvents(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setUpcomingEvents([]);
+    } finally {
+      setEventsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProjects();
     fetchAssignedTasks();
+    fetchUpcomingEvents();
     const handler = () => fetchProjects();
     window.addEventListener('project-created', handler);
     return () => window.removeEventListener('project-created', handler);
-  }, [fetchProjects, fetchAssignedTasks]);
+  }, [fetchProjects, fetchAssignedTasks, fetchUpcomingEvents]);
 
   const ownedProjects  = projects.filter((p) => p.owner_id === user?.id);
   const memberProjects = projects.filter((p) => p.owner_id !== user?.id);
@@ -235,6 +264,71 @@ export default function DashboardPage() {
                   <div className="mt-3 flex items-center justify-between text-xs text-stone-400">
                     <span>#{t.id}</span>
                     <span>{dueText ? `Échéance: ${dueText}` : 'Aucune échéance'}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Upcoming events */}
+      <section className="mb-10">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Mes prochains événements</h2>
+          <button
+            onClick={() => { setEventsLoading(true); fetchUpcomingEvents(); }}
+            className="text-xs font-semibold text-stone-500 hover:text-stone-800"
+          >
+            Rafraîchir
+          </button>
+        </div>
+
+        {eventsLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-stone-200 p-5 animate-pulse h-24" />
+            ))}
+          </div>
+        ) : upcomingEvents.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-5 py-6 text-sm text-stone-400">
+            Aucun événement à venir.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {upcomingEvents.slice(0, 6).map((ev) => {
+              const start = new Date(ev.start_datetime);
+              const isToday = start.toDateString() === new Date().toDateString();
+              const isTomorrow = start.toDateString() === new Date(Date.now() + 86400000).toDateString();
+              const dateLabel = isToday ? "Aujourd'hui" : isTomorrow ? 'Demain' : start.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+              const timeLabel = start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+              return (
+                <button
+                  key={ev.id}
+                  onClick={() => router.push(`/projects/${ev.project_id}/calendar`)}
+                  className="text-left bg-white rounded-2xl border border-violet-100 p-5 hover:shadow-md hover:border-violet-200 hover:-translate-y-0.5 transition-all duration-200"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <p className="text-sm font-semibold text-stone-900 line-clamp-1">{ev.title}</p>
+                    <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${isToday ? 'bg-orange-100 text-orange-600' : isTomorrow ? 'bg-amber-50 text-amber-600' : 'bg-violet-50 text-violet-600'}`}>
+                      {dateLabel}
+                    </span>
+                  </div>
+                  <p className="text-xs text-stone-400 truncate mb-1">{ev.project_title}</p>
+                  <div className="flex items-center justify-between text-xs text-stone-400 mt-2">
+                    <span className="flex items-center gap-1">
+                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      {timeLabel}
+                    </span>
+                    {ev.location && (
+                      <span className="flex items-center gap-1 truncate max-w-[120px]">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {ev.location}
+                      </span>
+                    )}
+                    {!ev.location && ev.attendee_count > 0 && (
+                      <span>{ev.attendee_count} participant{ev.attendee_count > 1 ? 's' : ''}</span>
+                    )}
                   </div>
                 </button>
               );
