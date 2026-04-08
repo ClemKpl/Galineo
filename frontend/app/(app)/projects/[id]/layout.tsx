@@ -36,7 +36,7 @@ export default function ProjectLayout({ children, params }: { children: React.Re
   const tabs = [
     { name: 'Dashboard', path: `/projects/${projectId}` },
     { name: 'Tâches', path: `/projects/${projectId}/tasks` },
-    { name: 'Calendrier', path: `/projects/${projectId}/calendar` },
+    { name: 'GANTT', path: `/projects/${projectId}/calendar` },
     { name: 'Chat', path: `/projects/${projectId}/chat` },
   ];
 
