@@ -320,7 +320,7 @@ export default function ProjectDashboardPage() {
           {/* Events Card */}
           <article className="rounded-[28px] border border-stone-200 bg-white/90 p-8 shadow-sm flex flex-col">
             <div className="flex items-center justify-between mb-6">
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-500">Événements (Hors GANTT)</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-500">Événements</p>
               <button onClick={() => setShowEventModal(true)} className="text-orange-500 hover:text-orange-600 transition-colors">
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M12 4v16m8-8H4"/></svg>
               </button>

@@ -323,6 +323,26 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     document.body.removeChild(a);
   }
 
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const csv = event.target?.result;
+      if (typeof csv !== 'string') return;
+      try {
+        await api.post(`/projects/${projectId}/tasks/import`, { csv });
+        fetchData(true);
+      } catch (err) {
+        alert((err as Error).message);
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    e.target.value = '';
+  }
+
   async function handleUpdateTask(e: React.FormEvent) {
     e.preventDefault();
     if (!editingTask) return;
@@ -429,9 +449,15 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
             </div>
           </div>
 
-          <button type="button" onClick={handleExport} className="rounded-2xl bg-stone-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-stone-800 shadow-sm">
-            Export CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <label className="cursor-pointer rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-50">
+              Import CSV
+              <input type="file" accept=".csv" onChange={handleImport} className="hidden" />
+            </label>
+            <button type="button" onClick={handleExport} className="rounded-2xl bg-stone-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-stone-800 shadow-sm">
+              Export CSV
+            </button>
+          </div>
         </div>
       </div>
 
