@@ -240,20 +240,43 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
             overdue_count: overdueTasks.length
           };
         }).sort((a, b) => {
-          if (b.open_count !== a.open_count) return b.open_count - a.open_count;
-          if (b.overdue_count !== a.overdue_count) return b.overdue_count - a.overdue_count;
           return (a.name || '').localeCompare(b.name || '');
         });
+
+        const myTasks = actionableTasks
+          .filter((task) => task.assigned_to === userId && (task.status || 'todo') !== 'done')
+          .slice(0, 5)
+          .map((task) => {
+            const due = new Date(task.due_date);
+            const isOverdue = !Number.isNaN(due.getTime()) && due < now;
+            return {
+              id: task.id,
+              parent_id: task.parent_id,
+              title: task.title,
+              status: task.status || 'todo',
+              priority: task.priority || 'normal',
+              due_date: task.due_date,
+              assigned_to: task.assigned_to,
+              assignee_name: task.assignee_name,
+              is_overdue: isOverdue
+            };
+          });
 
         res.json({
           project,
           stats: {
-            ...taskCounts,
+            total: taskCounts.total,
+            done: taskCounts.done,
+            in_progress: taskCounts.in_progress,
+            todo: taskCounts.todo,
+            overdue: taskCounts.overdue,
             completion_rate: completionRate
           },
           features,
           urgent_tasks: urgentTasks,
+          my_tasks: myTasks,
           member_load: memberLoad
+        });
         });
       });
     });

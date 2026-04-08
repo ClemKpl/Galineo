@@ -23,6 +23,7 @@ export default function ProjectActivityLog({ projectId }: Props) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     fetchActivities();
@@ -115,7 +116,7 @@ export default function ProjectActivityLog({ projectId }: Props) {
       </div>
 
       <div className="relative group/scroll flex flex-col gap-3">
-        {activities.map((a, idx) => (
+        {activities.slice(0, isExpanded ? undefined : 5).map((a, idx) => (
           <div key={a.id} className="relative flex items-start gap-4 p-4 bg-white border border-stone-100 rounded-2xl hover:border-orange-200 hover:shadow-sm transition-all animate-in slide-in-from-bottom-2" style={{ animationDelay: `${idx * 0.05}s` }}>
             <div className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center text-lg shrink-0 border border-stone-50">
               {getIcon(a.entity_type)}
@@ -131,6 +132,27 @@ export default function ProjectActivityLog({ projectId }: Props) {
           </div>
         ))}
       </div>
+
+      {activities.length > 5 && (
+        <div className="flex justify-center pt-2">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="group flex items-center gap-2 px-6 py-2 rounded-full bg-stone-50 border border-stone-100 text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 hover:text-orange-500 hover:border-orange-200 transition-all shadow-sm"
+          >
+            {isExpanded ? (
+              <>
+                Voir moins
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" className="transition-transform group-hover:-translate-y-0.5"><path d="M18 15l-6-6-6 6"/></svg>
+              </>
+            ) : (
+              <>
+                Voir plus ({activities.length - 5} restants)
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" className="transition-transform group-hover:translate-y-0.5"><path d="M6 9l6 6 6-6"/></svg>
+              </>
+            )}
+          </button>
+        </div>
+      )}
       
       <p className="text-center text-[10px] text-stone-300 font-medium uppercase tracking-widest pt-4">Fin du journal récent</p>
     </div>

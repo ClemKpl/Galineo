@@ -65,6 +65,7 @@ type DashboardPayload = {
     title: string;
   }>;
   urgent_tasks: UrgentTask[];
+  my_tasks: UrgentTask[];
   member_load: MemberLoad[];
 };
 
@@ -173,6 +174,7 @@ export default function ProjectDashboardPage() {
 
   const stats = dashboard?.stats || EMPTY_STATS;
   const urgentTasks = dashboard?.urgent_tasks || [];
+  const myTasks = dashboard?.my_tasks || [];
   const memberLoad = dashboard?.member_load || [];
 
   const donutStyle = useMemo(() => {
@@ -365,7 +367,7 @@ export default function ProjectDashboardPage() {
           </article>
         </div>
 
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1.8fr]">
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           {/* Urgent Tasks */}
           <article className="rounded-[28px] border border-stone-200 bg-white/90 p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
@@ -389,10 +391,48 @@ export default function ProjectDashboardPage() {
             </div>
           </article>
 
+          {/* My Tasks */}
+          <article className="rounded-[28px] border border-stone-200 bg-white/90 p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-orange-500">Mes Tâches</p>
+              <button onClick={() => router.push(`/projects/${project.id}/tasks`)} className="text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-orange-500 transition-colors">Gérer</button>
+            </div>
+
+            <div className="space-y-3 overflow-y-auto max-h-[400px] pr-1 custom-scrollbar">
+              {myTasks.length === 0 ? (
+                <div className="py-12 text-center rounded-2xl bg-stone-50/50 border border-dashed border-stone-200">
+                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Aucune tâche assignée</p>
+                  <p className="text-[11px] text-stone-400 mt-1">Vous êtes libre pour l'instant !</p>
+                </div>
+              ) : (
+                myTasks.map((task) => (
+                  <div key={task.id} className="flex items-center justify-between p-4 rounded-2xl border border-stone-100 bg-white hover:border-orange-200 hover:shadow-sm transition-all group">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-stone-900 truncate group-hover:text-orange-600 transition-colors">{task.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.normal}`}>
+                          {task.priority === 'urgent_important' ? 'Urgent & Imp.' : task.priority === 'urgent_not_important' ? 'Urgent' : task.priority === 'not_urgent_important' ? 'Important' : 'Normal'}
+                        </span>
+                        {task.due_date && (
+                          <span className={`text-[10px] font-bold ${task.is_overdue ? 'text-red-500' : 'text-stone-400'}`}>
+                            {formatDueDate(task.due_date)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button onClick={() => router.push(`/projects/${project.id}/tasks`)} className="opacity-0 group-hover:opacity-100 p-2 text-stone-400 hover:text-orange-500 transition-all">
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </article>
+
           {/* Team Load */}
           <article className="rounded-[28px] border border-stone-200 bg-white/90 p-8 shadow-sm">
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-500 mb-8">Charge de l&apos;équipe</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-500 mb-8">Équipe</p>
+            <div className="space-y-4 overflow-y-auto max-h-[400px] pr-1 custom-scrollbar">
               {memberLoad.map((member) => {
                 const total = Math.max(1, member.done_count + member.todo_count);
                 const progress = Math.round((member.done_count / total) * 100);
