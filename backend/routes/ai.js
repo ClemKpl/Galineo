@@ -495,6 +495,11 @@ router.post('/chat', authMiddleware, async (req, res) => {
         currentTools = toolConfig;
       } else { // mode === 'project'
         sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet "${projectTitle}".
+        
+        CONTEXTE CRITIQUE :
+        - L'ID de ce projet est : ${projectId}.
+        - TU DOIS utiliser cet ID [${projectId}] pour tous les paramètres 'project_id' des outils que tu appelles.
+        
         TON RÔLE :
         - Expert technique du logiciel Galineo ET du projet "${projectTitle}".
         - Tu as accès aux outils pour gérer les tâches, les membres ET les paramètres de ce projet.
@@ -514,7 +519,18 @@ router.post('/chat', authMiddleware, async (req, res) => {
         parts: [{ text: m.content }]
       }));
 
-      const history = rawHistory.length > 0 && rawHistory[0].role === 'model' ? rawHistory.slice(1) : rawHistory;
+      // Nettoyage robuste de l'historique (alternance + commence par 'user')
+      const history = [];
+      let lastRole = null;
+      for (const msg of rawHistory) {
+        if (msg.role !== lastRole) {
+          history.push(msg);
+          lastRole = msg.role;
+        }
+      }
+      while (history.length > 0 && history[0].role !== 'user') {
+        history.shift();
+      }
 
       const chat = model.startChat({ history, tools: currentTools });
 
