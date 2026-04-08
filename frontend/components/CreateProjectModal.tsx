@@ -20,6 +20,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
   const [title, setTitle]       = useState('');
   const [desc, setDesc]         = useState('');
   const [deadline, setDeadline] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [avatar, setAvatar]     = useState('');
   const [members, setMembers]   = useState<Member[]>([]);
   const [roles, setRoles]       = useState<Role[]>([]);
@@ -97,6 +98,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
         title: title.trim(),
         description: desc.trim() || null,
         deadline: deadline || null,
+        start_date: startDate || null,
         avatar: avatar || null,
         members: members.map((m) => ({ userId: m.user.id, roleId: m.roleId })),
       });
@@ -150,13 +152,22 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
               placeholder="Décrivez brièvement votre projet..." />
           </div>
 
-          {/* Deadline */}
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">
-              Deadline <span className="text-stone-400 font-normal">(optionnelle)</span>
-            </label>
-            <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all" />
+          {/* Dates (Start & Deadline) */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                Début <span className="text-stone-400 font-normal">(optionnel)</span>
+              </label>
+              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1.5">
+                Fin <span className="text-stone-400 font-normal">(optionnelle)</span>
+              </label>
+              <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all" />
+            </div>
           </div>
 
           {/* Avatar */}

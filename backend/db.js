@@ -159,6 +159,7 @@ const initDb = async () => {
     )`,
     `ALTER TABLE projects ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`,
     `ALTER TABLE projects ADD COLUMN IF NOT EXISTS avatar TEXT`,
+    `ALTER TABLE projects ADD COLUMN IF NOT EXISTS start_date TEXT`,
     `CREATE TABLE IF NOT EXISTS project_members (
       project_id INTEGER,
       user_id INTEGER,

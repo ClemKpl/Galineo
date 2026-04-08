@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 
 type Role = 'user' | 'assistant';
 type Message = { role: Role; content: string };
@@ -52,6 +53,8 @@ function formatInline(text: string): React.ReactNode {
 }
 
 export default function AiChat() {
+  const params = useParams();
+  const currentProjectId = params?.id;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -93,7 +96,10 @@ export default function AiChat() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getToken()}`,
         },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ 
+          messages: history,
+          projectId: currentProjectId 
+        }),
       });
 
       const data = await res.json();

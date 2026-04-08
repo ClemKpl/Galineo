@@ -26,13 +26,13 @@ router.get('/', authMiddleware, (req, res) => {
 
 // POST /projects — créer un projet
 router.post('/', authMiddleware, (req, res) => {
-  const { title, description, deadline, members, avatar } = req.body;
+  const { title, description, deadline, members, avatar, start_date } = req.body;
   const ownerId = req.user.id;
   if (!title) return res.status(400).json({ error: 'Titre requis' });
 
   db.run(
-    'INSERT INTO projects (title, description, deadline, owner_id, avatar) VALUES (?, ?, ?, ?, ?)',
-    [title, description || null, deadline || null, ownerId, avatar || null],
+    'INSERT INTO projects (title, description, deadline, owner_id, avatar, start_date) VALUES (?, ?, ?, ?, ?, ?)',
+    [title, description || null, deadline || null, ownerId, avatar || null, start_date || null],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       const projectId = this.lastID;
@@ -55,7 +55,7 @@ router.post('/', authMiddleware, (req, res) => {
             stmt.finalize();
           }
 
-          res.status(201).json({ id: projectId, title, description, deadline, owner_id: ownerId, avatar });
+          res.status(201).json({ id: projectId, title, description, deadline, start_date, owner_id: ownerId, avatar });
         }
       );
     }
