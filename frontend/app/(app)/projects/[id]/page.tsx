@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useProject } from './ProjectContext';
 import { useAuth } from '@/contexts/AuthContext';
+import ProjectActivityLog from '@/components/ProjectActivityLog';
 
 type DashboardStats = {
   total: number;
@@ -443,6 +444,31 @@ export default function ProjectDashboardPage() {
             </div>
           </article>
         </section>
+
+        {/* Activity Log Section (Managers Only) */}
+        {canManageProject && (
+          <section className="animate-fadeUp" style={{ animationDelay: '0.2s' }}>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+              <div className="xl:col-span-2">
+                 <div className="rounded-[28px] border border-stone-200 bg-white/90 p-8 shadow-sm h-full">
+                    <ProjectActivityLog projectId={project.id} />
+                 </div>
+              </div>
+              <div className="hidden xl:block">
+                 <div className="rounded-[28px] bg-stone-900 p-8 text-white h-full flex flex-col justify-center">
+                    <h3 className="text-xl font-black mb-4">Audit et Sécurité</h3>
+                    <p className="text-stone-400 text-sm leading-relaxed">
+                      Ce journal d&apos;activités est réservé aux administrateurs du projet. Il suit chaque modification critique pour garantir la transparence et l&apos;intégrité des données.
+                    </p>
+                    <div className="mt-8 flex items-center gap-2 text-orange-500 font-bold text-xs uppercase tracking-widest">
+                       <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                       Mode Audit Actif
+                    </div>
+                 </div>
+              </div>
+            </div>
+          </section>
+        )}
       </div>
 
       {/* New Event Modal */}

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { logActivity } = require('../utils/activityLogger');
 
 // GET /projects — mes projets (propriétaire ou membre)
 router.get('/', authMiddleware, (req, res) => {
@@ -41,17 +42,22 @@ router.post('/', authMiddleware, (req, res) => {
       db.run(
         'INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
         [projectId, ownerId, 1],
-        (errLink) => {
+        async (errLink) => {
           if (errLink) console.error('❌ Erreur lien propriétaire:', errLink.message);
+
+          // Logger l'activité de création
+          await logActivity(projectId, ownerId, 'project', projectId, 'created', { title });
 
           // Ajouter les autres membres
           if (members && Array.isArray(members) && members.length > 0) {
             const stmt = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)');
-            members.forEach(({ userId: memberId, roleId }) => {
+            for (const { userId: memberId, roleId } of members) {
               if (memberId !== ownerId) { // éviter doublon propriétaire
                 stmt.run(projectId, memberId, roleId || 3);
+                // Logger l'ajout de membre
+                await logActivity(projectId, ownerId, 'member', memberId, 'added', { roleId: roleId || 3 });
               }
-            });
+            }
             stmt.finalize();
           }
 
@@ -335,9 +341,10 @@ router.post('/:id/members', authMiddleware, (req, res) => {
     db.run(
       'INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
       [projectId, userId, roleId || 3],
-      function (err) {
+      async function (err) {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'Membre ajoutÃ©' });
+        await logActivity(projectId, currentUserId, 'member', userId, 'added_or_updated', { roleId: roleId || 3 });
+        res.json({ message: 'Membre ajouté' });
       }
     );
   });
@@ -359,9 +366,10 @@ router.patch('/:id/members/:userId', authMiddleware, (req, res) => {
     db.run(
       'UPDATE project_members SET role_id = ? WHERE project_id = ? AND user_id = ?',
       [roleId, projectId, targetUserId],
-      function (err) {
+      async function (err) {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: 'RÃ´le mis Ã  jour' });
+        await logActivity(projectId, currentUserId, 'member', targetUserId, 'role_updated', { roleId });
+        res.json({ message: 'Rôle mis à jour' });
       }
     );
   });
@@ -385,9 +393,10 @@ router.delete('/:id/members/:userId', authMiddleware, (req, res) => {
       db.run(
         'DELETE FROM project_members WHERE project_id = ? AND user_id = ?',
         [projectId, targetUserId],
-        function (err) {
+        async function (err) {
           if (err) return res.status(500).json({ error: err.message });
-          res.json({ message: 'Membre retirÃ©' });
+          await logActivity(projectId, currentUserId, 'member', targetUserId, 'removed');
+          res.json({ message: 'Membre retiré' });
         }
       );
     });
@@ -408,8 +417,9 @@ router.patch('/:id/complete', authMiddleware, (req, res) => {
     db.run(
       "UPDATE projects SET status = 'completed' WHERE id = ?",
       [projectId],
-      function (err) {
+      async function (err) {
         if (err) return res.status(500).json({ error: err.message });
+        await logActivity(projectId, userId, 'project', projectId, 'completed');
         res.json({ message: 'Projet terminé et archivé' });
       }
     );
@@ -436,8 +446,9 @@ router.patch('/:id', authMiddleware, (req, res) => {
     if (updates.length === 0) return res.status(400).json({ error: 'Aucune donnée à modifier' });
     values.push(projectId);
 
-    db.run(`UPDATE projects SET ${updates.join(', ')} WHERE id = ?`, values, function (err) {
+    db.run(`UPDATE projects SET ${updates.join(', ')} WHERE id = ?`, values, async function (err) {
       if (err) return res.status(500).json({ error: err.message });
+      await logActivity(projectId, userId, 'project', projectId, 'updated', req.body);
       res.json({ message: 'Projet mis à jour' });
     });
   });
@@ -481,6 +492,48 @@ router.delete('/:id/hard', authMiddleware, (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       db.run('DELETE FROM project_members WHERE project_id = ?', [projectId]);
       res.json({ message: 'Projet supprimé définitivement' });
+    });
+  });
+});
+
+// GET /projects/:id/activities — Journal d'activités (Accès restreint aux hauts privilèges)
+router.get('/:id/activities', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const userId = req.user.id;
+
+  // Vérifier si l'utilisateur a la permission 'view_activities' (id 6)
+  db.get(`
+    SELECT pm.role_id, rp.permission_id
+    FROM project_members pm
+    LEFT JOIN role_permissions rp ON pm.role_id = rp.role_id AND rp.permission_id = 6
+    WHERE pm.project_id = ? AND pm.user_id = ?
+  `, [projectId, userId], (err, perm) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    // Si l'utilisateur est le propriétaire (déduit par la table projects) ou a le rôle Admin avec la permission 6
+    db.get('SELECT owner_id FROM projects WHERE id = ?', [projectId], (err2, project) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+      if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
+
+      const isOwner = project.owner_id === userId;
+      const hasPermission = perm && perm.permission_id === 6;
+
+      if (!isOwner && !hasPermission) {
+        return res.status(403).json({ error: 'Accès au journal d\'activités refusé (Hauts droits requis)' });
+      }
+
+      // Fetch logs
+      db.all(`
+        SELECT al.*, u.name as user_name
+        FROM activity_logs al
+        LEFT JOIN users u ON al.user_id = u.id
+        WHERE al.project_id = ?
+        ORDER BY al.created_at DESC
+        LIMIT 100
+      `, [projectId], (err3, activities) => {
+        if (err3) return res.status(500).json({ error: err3.message });
+        res.json(activities);
+      });
     });
   });
 });

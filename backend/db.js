@@ -224,14 +224,17 @@ const initDb = async () => {
     `INSERT ${ignore} INTO permissions (id, name, description) VALUES (3, 'edit_project', 'Modifier les informations du projet') ${conflict}`,
     `INSERT ${ignore} INTO permissions (id, name, description) VALUES (4, 'view_project', 'Voir le projet') ${conflict}`,
     `INSERT ${ignore} INTO permissions (id, name, description) VALUES (5, 'delete_project', 'Supprimer le projet') ${conflict}`,
+    `INSERT ${ignore} INTO permissions (id, name, description) VALUES (6, 'view_activities', 'Voir le journal d''activités') ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (1,1) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (1,2) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (1,3) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (1,4) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (1,5) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (1,6) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (2,1) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (2,3) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (2,4) ${conflict}`,
+    `INSERT ${ignore} INTO role_permissions VALUES (2,6) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (3,3) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (3,4) ${conflict}`,
     `INSERT ${ignore} INTO role_permissions VALUES (4,4) ${conflict}`,
@@ -266,6 +269,16 @@ const initDb = async () => {
       date TEXT NOT NULL,
       content TEXT NOT NULL,
       user_id INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS activity_logs (
+      id ${autoInc},
+      project_id INTEGER NOT NULL,
+      user_id INTEGER,
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER,
+      action_type TEXT NOT NULL,
+      details TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`
   ];

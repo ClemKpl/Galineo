@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router({ mergeParams: true });
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { logActivity } = require('../utils/activityLogger');
 
 function csvEscape(str) {
   if (!str) return '""';
@@ -170,9 +171,14 @@ router.post('/:id/comments', authMiddleware, (req, res) => {
   const userId = req.user.id;
   if (!content) return res.status(400).json({ error: 'Contenu requis' });
 
-  db.run('INSERT INTO task_comments (task_id, user_id, content) VALUES (?, ?, ?)', [id, userId, content], function(err) {
+  db.run('INSERT INTO task_comments (task_id, user_id, content) VALUES (?, ?, ?)', [id, userId, content], async function(err) {
     if (err) return res.status(500).json({ error: err.message });
-    db.get('SELECT tc.*, u.name as author_name FROM task_comments tc LEFT JOIN users u ON u.id = tc.user_id WHERE tc.id = ?', [this.lastID], (err2, row) => {
+    const lastID = this.lastID;
+    
+    // Log Activity
+    await logActivity(req.params.projectId, userId, 'comment', id, 'added', { commentId: lastID });
+
+    db.get('SELECT tc.*, u.name as author_name FROM task_comments tc LEFT JOIN users u ON u.id = tc.user_id WHERE tc.id = ?', [lastID], (err2, row) => {
       if (err2) return res.status(500).json({ error: err2.message });
       res.json(row);
     });
@@ -194,6 +200,10 @@ router.post('/', authMiddleware, (req, res) => {
   function(err) {
     if (err) return res.status(500).json({ error: err.message });
     const taskId = this.lastID;
+    
+    // Log Activity
+    logActivity(projectId, createdBy, 'task', taskId, 'created', { title });
+
     if (assigned_to && assigned_to !== createdBy) {
       db.run('INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [assigned_to, 'task_assigned', 'Nouvelle tâche', `"${title}" vous a été assignée.`, projectId, taskId, createdBy]);
@@ -221,8 +231,12 @@ router.patch('/:id', authMiddleware, (req, res) => {
 
   const doUpdate = () => {
     values.push(id, projectId);
-    db.run(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND project_id = ?`, values, function(err) {
+    db.run(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND project_id = ?`, values, async function(err) {
       if (err) return res.status(500).json({ error: err.message });
+      
+      // Log critical updates
+      await logActivity(projectId, userId, 'task', id, 'updated', req.body);
+      
       res.json({ message: 'Tâche modifiée' });
     });
   };
@@ -243,8 +257,9 @@ router.patch('/:id', authMiddleware, (req, res) => {
 // DELETE /:id — Supprimer une tâche
 router.delete('/:id', authMiddleware, (req, res) => {
   const { id, projectId } = req.params;
-  db.run('DELETE FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], (err) => {
+  db.run('DELETE FROM tasks WHERE id = ? AND project_id = ?', [id, projectId], async (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    await logActivity(projectId, req.user.id, 'task', id, 'deleted');
     res.json({ message: 'Supprimé' });
   });
 });
@@ -252,8 +267,9 @@ router.delete('/:id', authMiddleware, (req, res) => {
 // DELETE /clear — Vider toutes les tâches d'un projet
 router.delete('/clear', authMiddleware, (req, res) => {
   const { projectId } = req.params;
-  db.run('DELETE FROM tasks WHERE project_id = ?', [projectId], (err) => {
+  db.run('DELETE FROM tasks WHERE project_id = ?', [projectId], async (err) => {
     if (err) return res.status(500).json({ error: err.message });
+    await logActivity(projectId, req.user.id, 'project', projectId, 'cleared_all_tasks');
     res.json({ message: 'Toutes les tâches ont été supprimées' });
   });
 });
