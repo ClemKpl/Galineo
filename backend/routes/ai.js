@@ -159,7 +159,7 @@ router.get('/history/:projectId', authMiddleware, async (req, res) => {
 
 // ─── Route Chat ───────────────────────────────────────────────────────────────
 router.post('/chat', authMiddleware, async (req, res) => {
-  const { messages, projectId } = req.body;
+  const { messages, projectId, mode = 'project' } = req.body;
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) return res.status(500).json({ error: "Clé API Gemini manquante. Configurez GEMINI_API_KEY sur Render." });
@@ -167,8 +167,8 @@ router.post('/chat', authMiddleware, async (req, res) => {
   try {
     const userText = messages[messages.length - 1].content;
 
-    // Persister le message utilisateur si on est dans un projet
-    if (projectId) {
+    // Persister le message utilisateur si on est dans un projet persistant
+    if (projectId && mode === 'project') {
       await dbRun(
         `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'user', ?)`,
         [projectId, req.user.id, userText]
@@ -176,11 +176,37 @@ router.post('/chat', authMiddleware, async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
+    let sysInstruct = '';
+    let currentTools = undefined;
+
+    if (mode === 'global') {
+      sysInstruct = `Tu es Galineo AI, un conseiller stratégique en gestion de projet. 
+      Ton rôle :
+      - Donner des conseils méthodologiques (Agile, Kanban, etc.).
+      - Aider l'utilisateur à s'organiser de façon générale.
+      - IMPORTANT : Tu NE PEUX PAS faire d'actions directes (créer des tâches, changer des dates).
+      - RE-DIRECTION : Si l'utilisateur veut agir sur un projet, encourage-le à utiliser l'Agent de Projet (Galineo Room) ou l'assistant de création (Assistant Wizard).
+      Réponds en français, avec bienveillance et expertise.`;
+      currentTools = undefined;
+    } else if (mode === 'wizard') {
+      sysInstruct = `Tu es l'Assistant Wizard de Galineo. Ton but est d'aider l'utilisateur à créer un nouveau projet.
+      - Pose des questions (nom, description, types de tâches, membres).
+      - Une fois les infos réunies, appelle l'outil 'creer_projet' ou 'creer_elements'.
+      - Sois enthousiaste et structuré.`;
+      currentTools = toolConfig;
+    } else { // mode === 'project'
+      sysInstruct = `Tu es l'Assistant de Projet de Galineo Room pour le projet ID ${projectId}.
+      - Tu as accès complet aux outils pour modifier le projet.
+      - Aide l'équipe à exécuter ses tâches (dates, assignations, création).
+      - Historique partagé. Réponds de façon concise et efficace.`;
+      currentTools = toolConfig;
+    }
+
     const model = genAI.getGenerativeModel({ 
       model: MODEL_NAME,
       systemInstruction: {
         role: "system",
-        parts: [{ text: `Tu es Galineo AI. Date: ${new Date().toISOString().split('T')[0]}. ${projectId ? `ID Projet: ${projectId}.` : "Dashboard."} Assistant de gestion de projet. Réponds en français.` }]
+        parts: [{ text: sysInstruct }]
       }
     }, { apiVersion: 'v1beta' });
 
@@ -189,7 +215,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
         role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
         parts: [{ text: m.content }]
       })),
-      tools: toolConfig
+      tools: currentTools
     });
 
     let result = await chat.sendMessage(userText);
@@ -217,8 +243,8 @@ router.post('/chat', authMiddleware, async (req, res) => {
       text = response.text();
     }
 
-    // Persister la réponse de l'IA si on est dans un projet
-    if (projectId) {
+    // Persister la réponse de l'IA si on est dans un projet persistant
+    if (projectId && mode === 'project') {
       await dbRun(
         `INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`,
         [projectId, text]

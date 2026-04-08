@@ -59,12 +59,11 @@ export default function AiChat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Bonjour ! Je suis **Galineo AI**.\nJe suis là pour t'aider à gérer ton projet : réajuster les dates, assigner des membres, ou encore créer de nouvelles tâches.\n\nDemande-moi par exemple : *\"Assigne la tâche X à l'utilisateur Y\"* ou *\"Décale les échéances d'une semaine\"*.",
+      content: "Bonjour ! Je suis **Galineo AI**, ton conseiller stratégique.\n\nJe suis là pour t'apporter des conseils en gestion de projet, t'aider à t'organiser ou répondre à tes questions méthodologiques.\n\n*Note : Pour agir directement sur un projet (créer des tâches, changer des dates), utilise l'Assistant dans la 'Galineo Room' de ton projet !*",
     },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [fetchingHistory, setFetchingHistory] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 

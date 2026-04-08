@@ -1,0 +1,245 @@
+'use client';
+import { useState, useRef, useEffect, use } from 'react';
+import { useParams } from 'next/navigation';
+
+type Role = 'user' | 'assistant' | 'model';
+type Message = { role: Role; content: string; user_name?: string };
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+
+function getToken() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('galineo_token');
+}
+
+// Markdown très léger : **gras**, *italique*, listes -
+function renderMarkdown(text: string) {
+  const lines = text.split('\n');
+  const result: React.ReactNode[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.startsWith('- ') || line.startsWith('• ')) {
+      const items: string[] = [];
+      while (i < lines.length && (lines[i].startsWith('- ') || lines[i].startsWith('• '))) {
+        items.push(lines[i].slice(2));
+        i++;
+      }
+      result.push(
+        <ul key={i} className="list-disc list-inside space-y-1 my-2 text-stone-700">
+          {items.map((it, k) => <li key={k}>{formatInline(it)}</li>)}
+        </ul>
+      );
+    } else if (line.trim() === '') {
+      result.push(<div key={i} className="h-2" />);
+      i++;
+    } else {
+      result.push(<p key={i} className="leading-relaxed mb-2 text-stone-700">{formatInline(line)}</p>);
+      i++;
+    }
+  }
+  return result;
+}
+
+function formatInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**'))
+      return <strong key={i} className="font-bold text-stone-900">{part.slice(2, -2)}</strong>;
+    if (part.startsWith('*') && part.endsWith('*'))
+      return <em key={i} className="italic text-stone-600">{part.slice(1, -1)}</em>;
+    return part;
+  });
+}
+
+export default function ProjectAiRoom({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const projectId = resolvedParams.id;
+  
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: 'assistant',
+      content: "Bienvenue dans la **Galineo Room**. Je suis l'assistant dédié à ce projet.\n\nIci, je peux effectuer des actions directes pour vous : créer des tâches, modifier des échéances, assigner des membres, etc.\n\nL'historique est **partagé** avec tous les membres du projet.",
+    },
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [fetchingHistory, setFetchingHistory] = useState(true);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    loadHistory();
+  }, [projectId]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  async function loadHistory() {
+    setFetchingHistory(true);
+    try {
+      const res = await fetch(`${API_URL}/ai/history/${projectId}`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.history && data.history.length > 0) {
+        setMessages(data.history.map((h: any) => ({
+          role: h.role === 'model' ? 'assistant' : 'user',
+          content: h.role === 'user' && h.user_name ? `**${h.user_name}** : ${h.content}` : h.content,
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to load history', err);
+    } finally {
+      setFetchingHistory(false);
+    }
+  }
+
+  async function send() {
+    const text = input.trim();
+    if (!text || loading) return;
+
+    const userMsg: Message = { role: 'user', content: text };
+    const next = [...messages, userMsg];
+    setMessages(next);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const history = next.map(m => ({ 
+        role: m.role === 'assistant' ? 'assistant' : 'user', 
+        content: m.content 
+      }));
+
+      const res = await fetch(`${API_URL}/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ 
+          messages: history,
+          projectId: projectId,
+          mode: 'project'
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${msg}` }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-stone-50 overflow-hidden">
+      {/* Header Interne (Optionnel car déjà dans Layout) */}
+      <div className="px-8 py-4 bg-white border-b border-stone-200 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-sm">
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.96 9.96 0 0 1-5.06-1.37L2 22l1.37-4.94A9.96 9.96 0 0 1 2 12C2 6.48 6.48 2 12 2z"/>
+              <path d="M8 10h.01M12 10h.01M16 10h.01" strokeLinecap="round" strokeWidth="2.5"/>
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-stone-900">Galineo Room</h2>
+            <p className="text-[11px] text-stone-500 uppercase tracking-wider font-semibold">Assistant IA du Projet</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+           <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+           <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">En ligne</span>
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 relative">
+        {fetchingHistory && (
+          <div className="absolute inset-0 bg-stone-50/80 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center">
+            <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mb-3" />
+            <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Synchronisation de l'historique...</p>
+          </div>
+        )}
+
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`flex max-w-[800px] gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+              <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold shadow-sm ${
+                m.role === 'user' ? 'bg-stone-200 text-stone-600' : 'bg-orange-500 text-white'
+              }`}>
+                {m.role === 'user' ? 'MOI' : 'AI'}
+              </div>
+              <div className={`px-5 py-3.5 rounded-2xl shadow-sm text-sm leading-relaxed ${
+                m.role === 'user' 
+                  ? 'bg-orange-500 text-white rounded-tr-none' 
+                  : 'bg-white text-stone-800 border border-stone-100 rounded-tl-none'
+              }`}>
+                {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {loading && (
+          <div className="flex justify-start">
+            <div className="flex max-w-[800px] gap-4">
+              <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center bg-orange-500 text-white text-[10px] font-bold shadow-sm">
+                AI
+              </div>
+              <div className="px-5 py-3.5 rounded-2xl bg-white border border-stone-100 text-stone-400 text-xs flex items-center gap-2 italic">
+                <span className="w-1 h-1 bg-stone-300 rounded-full animate-bounce" />
+                <span className="w-1 h-1 bg-stone-300 rounded-full animate-bounce [animation-delay:0.2s]" />
+                <span className="w-1 h-1 bg-stone-300 rounded-full animate-bounce [animation-delay:0.4s]" />
+                Galineo réfléchit...
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} className="h-4" />
+      </div>
+
+      {/* Input */}
+      <div className="p-8 bg-white border-t border-stone-200 shrink-0">
+        <div className="max-w-[1000px] mx-auto relative">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                send();
+              }
+            }}
+            placeholder="Échange avec l'IA pour gérer ton projet..."
+            className="w-full pl-5 pr-14 py-4 bg-stone-50 border border-stone-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all resize-none min-h-[60px] max-h-[200px]"
+            rows={1}
+            style={{ height: 'auto' }}
+            onInput={(e) => {
+              const target = e.target as HTMLTextAreaElement;
+              target.style.height = 'auto';
+              target.style.height = `${target.scrollHeight}px`;
+            }}
+          />
+          <button
+            onClick={send}
+            disabled={!input.trim() || loading}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-orange-500 text-white rounded-xl shadow-lg shadow-orange-500/20 flex items-center justify-center hover:bg-orange-600 disabled:bg-stone-200 disabled:shadow-none transition-all cursor-pointer"
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+            </svg>
+          </button>
+        </div>
+        <p className="text-center text-[10px] text-stone-400 mt-4 uppercase tracking-[0.2em] font-bold">
+          Entrée pour envoyer · Shift+Entrée pour passer à la ligne
+        </p>
+      </div>
+    </div>
+  );
+}
