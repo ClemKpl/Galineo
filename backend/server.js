@@ -24,11 +24,11 @@ app.use('/auth',     authRoutes);
 app.use('/projects/:projectId/tasks', taskRoutes);
 app.use('/tasks', globalTaskRoutes);
 app.use('/projects/:projectId/messages', messageRoutes);
+app.use('/projects/:projectId/events', eventRoutes);
 app.use('/projects', projectRoutes);
 app.use('/users',    userRoutes);
 app.use('/roles',    roleRoutes);
 app.use('/notifications', notificationRoutes);
-app.use('/projects/:projectId/events', eventRoutes);
 app.use('/events', globalEventRoutes);
 
 const PORT = process.env.PORT || 3001;
