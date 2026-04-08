@@ -421,11 +421,18 @@ router.post('/chat', authMiddleware, async (req, res) => {
         systemInstruction: { role: "system", parts: [{ text: sysInstruct }] }
       }, { apiVersion: 'v1beta' });
 
+      const rawHistory = messages.slice(0, -1).map(m => ({
+        role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      }));
+
+      // Google AI require que l'historique commence par un message 'user'
+      const history = rawHistory.length > 0 && rawHistory[0].role === 'model' 
+        ? rawHistory.slice(1) 
+        : rawHistory;
+
       const chat = model.startChat({
-        history: messages.slice(0, -1).map(m => ({
-          role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
-          parts: [{ text: m.content }]
-        })),
+        history: history,
         tools: currentTools
       });
 
