@@ -53,7 +53,7 @@ const functions = {
       featureMap[el.title] = taskId;
       created++;
 
-      // Notifier si assignation (même si c'est soi-même, car via IA)
+      // Notifier si assignation
       if (assignedTo) {
         await dbRun(
           'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -75,7 +75,7 @@ const functions = {
       const taskId = r.lastID;
       created++;
 
-      // Notifier si assignation (même si c'est soi-même, car via IA)
+      // Notifier si assignation
       if (assignedTo) {
         await dbRun(
           'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -84,7 +84,7 @@ const functions = {
       }
     }
 
-    // Log the batch creation (Attribuer à l'IA via null)
+    // Log the batch creation
     await logActivity(project_id, null, 'task', null, 'created_batch', {
       batch_count: created,
       details: "Génération automatique d'éléments de projet via Assistant IA"
@@ -114,7 +114,7 @@ const functions = {
     params.push(task_id);
     await dbRun(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, params);
 
-    // Notifier si nouvelle assignation (même si c'est soi-même, car via IA)
+    // Notifier si nouvelle assignation
     if (assignedTo) {
       await dbRun(
         'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -122,7 +122,7 @@ const functions = {
       );
     }
 
-    // Log modification (Attribuer à l'IA via null)
+    // Log modification
     await logActivity(projectId, null, 'task', task_id, 'updated', {
       task_id,
       changes: fields.join(', '),
@@ -133,7 +133,6 @@ const functions = {
   },
 
   gerer_membres: async ({ project_id, email, action }, userId) => {
-    // action: "add" ou "remove"
     const u = await dbGet('SELECT id, name FROM users WHERE LOWER(email) = LOWER(?)', [email]);
     if (!u) return { error: `Utilisateur avec l'email ${email} introuvable.` };
 
@@ -324,7 +323,6 @@ router.get('/history/:projectId', authMiddleware, async (req, res) => {
 });
 
 // ─── Route Chat ───────────────────────────────────────────────────────────────
-// ─── Route Chat ───────────────────────────────────────────────────────────────
 router.post('/chat', authMiddleware, async (req, res) => {
   const { messages, projectId, mode = 'project' } = req.body;
 
@@ -336,28 +334,31 @@ router.post('/chat', authMiddleware, async (req, res) => {
     return res.status(500).json({ error: "Clé API Gemini manquante. Configurez GEMINI_API_KEYS (séparées par des virgules) sur Render/Vercel ou dans le .env." });
   }
 
+  const userText = messages[messages.length - 1].content;
+  let projectTitle = 'ce projet';
   let lastError = null;
+
+  try {
+    if (projectId) {
+      const p = await dbGet(`SELECT title FROM projects WHERE id = ?`, [projectId]);
+      if (p) projectTitle = p.title;
+    }
+
+    // Persister le message utilisateur
+    if (projectId && mode === 'project') {
+      await dbRun(
+        `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'user', ?)`,
+        [projectId, req.user.id, userText]
+      );
+    }
+  } catch (err) {
+    console.error('[AI Pre-Chat Error]', err);
+  }
 
   // Boucle de repli (Fallback) : on essaie chaque clé si la précédente échoue par quota
   for (let i = 0; i < apiKeys.length; i++) {
     const apiKey = apiKeys[i];
     try {
-      const userText = messages[messages.length - 1].content;
-      let projectTitle = 'ce projet';
-
-      if (projectId) {
-        const p = await dbGet(`SELECT title FROM projects WHERE id = ?`, [projectId]);
-        if (p) projectTitle = p.title;
-      }
-
-      // Persister le message utilisateur (seulement au premier essai pour éviter doublons)
-      if (i === 0 && projectId && mode === 'project') {
-        await dbRun(
-          `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'user', ?)`,
-          [projectId, req.user.id, userText]
-        );
-      }
-
       const genAI = new GoogleGenerativeAI(apiKey);
       let sysInstruct = '';
       let currentTools = undefined;
@@ -372,19 +373,24 @@ router.post('/chat', authMiddleware, async (req, res) => {
         - RÈGLE D'OR : N'appelle JAMAIS d'outil (s'ils étaient disponibles) sans décrire l'action et demander "Souhaitez-vous que je réalise cette action ?".`;
         currentTools = undefined;
       } else if (mode === 'wizard') {
-        sysInstruct = `Tu es l'Assistant Wizard de Galineo. Ton but est d'aider l'utilisateur à créer un nouveau projet par le dialogue.
+        sysInstruct = `Tu es l'Assistant Wizard de Galineo. Ton but est d'aider l'utilisateur à créer un nouveau projet par une **vraie conversation** fluide et intelligente.
+        
+        TON PERSONNAGE :
+        - Tu es un expert en gestion de projet, enthousiaste et efficace.
+        - Tu ne te contentes pas de poser des questions, tu accompagnes. 
+        
         VÉRIFICATION : Pour créer un projet, tu dois impérativement avoir :
         1. Un Titre clair.
-        2. Une Description concise des objectifs.
-        3. Une idée des membres ou rôles nécessaires.
-        4. Une échéance ou une durée estimée.
+        2. Une Description concise.
+        3. Une idée des membres (tu peux suggérer des rôles types si besoin).
+        4. Une échéance (tu peux proposer une durée standard si l'utilisateur hésite).
         
         PROCÉDURE :
-        - Si des informations manquent, demande-les une par une.
-        - Une fois TOUTES les informations réunies, fais un récapitulatif complet.
-        - DEMANDE DE VALIDATION : Demande "Tout me semble prêt. Voulez-vous que je lance la création du projet ?".
-        - ACTION : Exécute 'creer_projet' IMMÉDIATEMENT si l'utilisateur valide (ex: "Oui", "OK", "Vas-y"). Ne redemande JAMAIS une deuxième confirmation.
-        - APRÈS CRÉATION : Confirme toujours chaleureusement que le projet est prêt et souhaite une bonne gestion.`;
+        - **Dialogue Proactif** : Demande les informations de manière naturelle. Ne sois pas robotique.
+        - **Conseil** : Si l'utilisateur est vague, propose des suggestions (ex: "Pour un projet de ce type, 3 mois semblent être une bonne échéance, qu'en pensez-vous ?").
+        - **Validation Finale** : Une fois toutes les pièces du puzzle réunies, fais un récapitulatif chaleureux et demande : "Tout me semble parfait ! Voulez-vous que je génère le projet maintenant ?".
+        - **ACTION** : Dès que l'utilisateur dit oui (ex: "Oui", "OK", "Top"), appelle 'creer_projet' IMMÉDIATEMENT sans reposer de question.
+        - **SUCCÈS** : Une fois créé, félicite l'utilisateur et invite-le à découvrir son nouveau dashboard.`;
         currentTools = toolConfig;
       } else { // mode === 'project'
         sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet "${projectTitle}".
@@ -410,118 +416,87 @@ router.post('/chat', authMiddleware, async (req, res) => {
         currentTools = toolConfig;
       }
 
-      // Retry loop (3 attempts) for transient errors (503, Overloaded, etc.)
-      try {
-        const model = genAI.getGenerativeModel({
-          model: MODEL_NAME,
-          systemInstruction: { role: "system", parts: [{ text: sysInstruct }] }
-        }, { apiVersion: 'v1beta' });
+      const model = genAI.getGenerativeModel({
+        model: MODEL_NAME,
+        systemInstruction: { role: "system", parts: [{ text: sysInstruct }] }
+      }, { apiVersion: 'v1beta' });
 
-        const chat = model.startChat({
-          history: messages.slice(0, -1).map(m => ({
-            role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
-            parts: [{ text: m.content }]
-          })),
-          tools: currentTools
-        });
+      const chat = model.startChat({
+        history: messages.slice(0, -1).map(m => ({
+          role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
+          parts: [{ text: m.content }]
+        })),
+        tools: currentTools
+      });
 
-        // Helper pour envoyer avec retry interne (évite de relancer les outils déjà exécutés)
-        const sendMessageWithRetry = async (payload) => {
-          for (let internalAttempt = 1; internalAttempt <= 3; internalAttempt++) {
-            try {
-              return await chat.sendMessage(payload);
-            } catch (err) {
-              const errorMsg = err.message || "";
-              const isRetryable = errorMsg.includes('503') || 
-                                 errorMsg.toLowerCase().includes('overloaded') || 
-                                 errorMsg.toLowerCase().includes('high demand') ||
-                                 errorMsg.toLowerCase().includes('service unavailable');
-              if (isRetryable && internalAttempt < 3) {
-                console.warn(`[AI Retry Internal] Tentative ${internalAttempt}/3 (${errorMsg.substring(0, 50)}...).`);
-                await sleep(internalAttempt * 1000);
-                continue;
-              }
-              throw err;
+      const sendMessageWithRetry = async (payload) => {
+        for (let internalAttempt = 1; internalAttempt <= 3; internalAttempt++) {
+          try {
+            return await chat.sendMessage(payload);
+          } catch (err) {
+            const errorMsg = err.message || "";
+            if ((errorMsg.includes('503') || errorMsg.includes('overloaded')) && internalAttempt < 3) {
+              await sleep(internalAttempt * 1000);
+              continue;
             }
-          }
-        };
-
-        const result = await sendMessageWithRetry(userText);
-        let response = result.response;
-        let text = "";
-        let actions = [];
-
-        // Boucle pour gérer les appels d'outils successifs (jusqu'à 5 répétitions)
-        let toolCallsCount = 0;
-        while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
-          toolCallsCount++;
-          const calls = response.functionCalls();
-          const toolLogs = [];
-          for (const call of calls) {
-            const fn = functions[call.name];
-            if (fn) {
-              const apiRes = await fn(call.args, req.user.id);
-              toolLogs.push({ name: call.name, res: apiRes });
-              if (!actions.includes(call.name)) actions.push(call.name);
-            }
-          }
-          const toolResponses = toolLogs.map(l => ({
-            functionResponse: { name: l.name, response: l.res }
-          }));
-          const secondResult = await sendMessageWithRetry(toolResponses);
-          response = secondResult.response;
-        }
-
-        // Récupération finale du texte
-        try {
-          text = response.text();
-        } catch (e) {
-          console.warn("⚠️ [AI] Pas de texte trouvé dans la réponse finale, utilisation du fallback.");
-        }
-
-        // Nettoyage final : supprimer les résidus techniques si jamais ils apparaissent
-        text = text.replace(/\[Actions:.*?\]/g, '').trim();
-        text = text.replace(/voir_parametres_projet|voir_liste_membres|modifier_parametres_projet/g, '').trim();
-
-        // Fallback si le texte est vide (évite les bulles vides côté frontend)
-        if (!text || text.trim() === "") {
-          if (actions.length > 0) {
-            text = "C'est fait ! Les modifications ont été appliquées avec succès.";
-          } else {
-            text = "Désolé, j'ai rencontré une difficulté pour formuler ma réponse, mais vos données sont à jour.";
+            throw err;
           }
         }
+      };
 
-        // Persister la réponse de l'IA
-        if (projectId && mode === 'project') {
-          await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
+      const result = await sendMessageWithRetry(userText);
+      let response = result.response;
+      let text = "";
+      let actions = [];
+
+      let toolCallsCount = 0;
+      while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
+        toolCallsCount++;
+        const calls = response.functionCalls();
+        const toolLogs = [];
+        for (const call of calls) {
+          const fn = functions[call.name];
+          if (fn) {
+            const apiRes = await fn(call.args, req.user.id);
+            toolLogs.push({ name: call.name, res: apiRes });
+            if (!actions.includes(call.name)) actions.push(call.name);
+          }
         }
-
-        return res.json({ reply: text, actions });
-
-      } catch (err) {
-        // En cas d'erreur fatale (ou après épuisement des retries internes), on laisse l'erreur remonter
-        // pour passer à la clé suivante dans la boucle des clés.
-        throw err;
+        const toolResponses = toolLogs.map(l => ({
+          functionResponse: { name: l.name, response: l.res }
+        }));
+        const secondResult = await sendMessageWithRetry(toolResponses);
+        response = secondResult.response;
       }
+
+      try { text = response.text(); } catch (e) {}
+
+      // Sanitization
+      text = text.replace(/\[Actions:.*?\]/g, '').trim();
+      text = text.replace(/voir_parametres_projet|voir_liste_membres|modifier_parametres_projet/g, '').trim();
+
+      if (!text || text.trim() === "") {
+        text = actions.length > 0 ? "C'est fait ! Les modifications ont été appliquées." : "Désolé, je rencontre une difficulté technique.";
+      }
+
+      if (projectId && mode === 'project') {
+        await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
+      }
+
+      return res.json({ reply: text, actions });
 
     } catch (err) {
       lastError = err;
       const errorMsg = err.message || "";
-      // Si c'est une erreur de quota (429) ou de clé invalide au démarrage
-      if (errorMsg.includes('429') || errorMsg.toLowerCase().includes('quota') || errorMsg.toLowerCase().includes('api_key_invalid')) {
-        console.warn(`⚠️ [AI Fallback] La clé ${i + 1} a échoué (quota/invalid). Tentative avec la suivante...`);
-        if (i < apiKeys.length - 1) continue; // On passe à la suivante
+      if (errorMsg.includes('429') || errorMsg.toLowerCase().includes('quota')) {
+        if (i < apiKeys.length - 1) continue;
       }
-
-      // Si on est à la dernière clé ou que c'est une autre erreur, on s'arrête
-      console.error('[AI Final Error]', err);
+      console.error('[AI Loop Error]', err);
       break;
     }
   }
 
-  // Si on est sorti de la boucle sans succès
-  res.status(500).json({ error: lastError?.message || "Échec de l'IA après épuisement de toutes les clés disponibles." });
+  res.status(500).json({ error: lastError?.message || "Échec de l'IA." });
 });
 
 module.exports = router;

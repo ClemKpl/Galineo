@@ -159,6 +159,35 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
     } finally { setLoading(false); }
   };
 
+  const handleWizardSend = async () => {
+    const text = wizardInput.trim();
+    if (!text || wizardLoading) return;
+
+    setWizardInput('');
+    const userMsg = { role: 'user', content: text };
+    const next = [...wizardMessages, userMsg];
+    setWizardMessages(next);
+    setWizardLoading(true);
+
+    try {
+      const res = await api.post('/ai/chat', { messages: next, mode: 'wizard' });
+      setWizardMessages(prev => [...prev, { role: 'assistant', content: res.reply }]);
+      
+      // Détection via le nouveau champ d'actions
+      if (res.actions && res.actions.includes('creer_projet')) {
+         setTimeout(() => onCreated(), 1500);
+      }
+    } catch (err) {
+      console.error(err);
+      setWizardMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: "⚠️ **Oups !** J'ai eu un petit problème technique pour traiter votre demande. Pourriez-vous réessayer dans un instant ?" 
+      }]);
+    } finally {
+      setWizardLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end">
       <div className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
@@ -267,31 +296,17 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                      autoFocus
                      value={wizardInput}
                      onChange={(e) => setWizardInput(e.target.value)}
-                     onKeyDown={async (e) => {
-                       if (e.key === 'Enter' && wizardInput.trim() && !wizardLoading) {
-                         const text = wizardInput.trim();
-                         setWizardInput('');
-                         const userMsg = { role: 'user', content: text };
-                         const next = [...wizardMessages, userMsg];
-                         setWizardMessages(next);
-                         setWizardLoading(true);
-                         try {
-                           const res = await api.post('/ai/chat', { messages: next, mode: 'wizard' });
-                           setWizardMessages(prev => [...prev, { role: 'assistant', content: res.reply }]);
-                           
-                           // Détection via le nouveau champ d'actions
-                           if (res.actions && res.actions.includes('creer_projet')) {
-                              setTimeout(() => onCreated(), 1500);
-                           }
-                         } catch (err) {
-                           console.error(err);
-                         } finally { setWizardLoading(false); }
+                     onKeyDown={(e) => {
+                       if (e.key === 'Enter') {
+                         e.preventDefault();
+                         handleWizardSend();
                        }
                      }}
                      placeholder="Répondez à l'assistant..."
                      className="w-full pl-4 pr-12 py-3.5 rounded-2xl bg-stone-100 border-none text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all"
                    />
                    <button 
+                    onClick={handleWizardSend}
                     disabled={!wizardInput.trim() || wizardLoading}
                     className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center disabled:opacity-30 disabled:grayscale transition-all shadow-md shadow-orange-500/20"
                    >
