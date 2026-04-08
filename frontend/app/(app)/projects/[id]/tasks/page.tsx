@@ -346,7 +346,6 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         <div className="flex items-start justify-between gap-3 relative z-10">
           <div className="min-w-0 flex-1">
             <div className="mb-2 flex items-center gap-2">
-              {renderStatusBadge(task.status || 'todo')}
               {task.description && <span className="px-2 py-0.5 bg-stone-100 text-stone-500 rounded-md text-[10px] font-semibold uppercase tracking-wider">Description</span>}
             </div>
             <p className={`text-sm font-semibold leading-5 ${isDone ? 'line-through text-stone-400' : 'text-stone-900'}`}>{task.title}</p>

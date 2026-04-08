@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateProjectModal from '@/components/CreateProjectModal';
+import ManageMembersModal from '@/components/ManageMembersModal';
 import { useRouter } from 'next/navigation';
 
 interface Project {
@@ -13,14 +14,27 @@ interface Project {
   owner_id: number;
   owner_name: string;
   member_count: number;
+  my_role_id?: number | null;
+  my_role_name?: string | null;
   created_at: string;
 }
 
-function ProjectCard({ project, currentUserId, onClick }: { project: Project; currentUserId: number; onClick: () => void }) {
+interface AssignedTask {
+  id: number;
+  title: string;
+  status: 'todo' | 'in_progress' | 'done' | string;
+  due_date: string | null;
+  project_id: number;
+  project_title: string;
+}
+
+function ProjectCard({ project, currentUserId, onClick, onManageMembers }: { project: Project; currentUserId: number; onClick: () => void; onManageMembers?: () => void }) {
   const isOwner = project.owner_id === currentUserId;
+  const canManageMembers = isOwner || project.my_role_id === 2 || project.my_role_id === 1;
+  const now = new Date();
   const deadline = project.deadline ? new Date(project.deadline) : null;
-  const isOverdue = deadline ? deadline < new Date() : false;
-  const daysLeft = deadline ? Math.ceil((deadline.getTime() - Date.now()) / 86400000) : null;
+  const isOverdue = deadline ? deadline < now : false;
+  const daysLeft = deadline ? Math.ceil((deadline.getTime() - now.getTime()) / 86400000) : null;
 
   return (
     <div onClick={onClick}
@@ -40,6 +54,20 @@ function ProjectCard({ project, currentUserId, onClick }: { project: Project; cu
 
       {project.description && (
         <p className="text-stone-500 text-sm line-clamp-2 mb-4">{project.description}</p>
+      )}
+
+      {canManageMembers && onManageMembers && (
+        <div className="mb-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onManageMembers();
+            }}
+            className="text-xs font-semibold px-3 py-1.5 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50"
+          >
+            GÃ©rer les membres
+          </button>
+        </div>
       )}
 
       <div className="flex items-center justify-between pt-4 border-t border-stone-100 mt-4">
@@ -97,6 +125,9 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading]   = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [manageProjectId, setManageProjectId] = useState<number | null>(null);
+  const [assignedTasks, setAssignedTasks] = useState<AssignedTask[]>([]);
+  const [assignedLoading, setAssignedLoading] = useState(true);
   const router = useRouter();
 
   const fetchProjects = useCallback(async () => {
@@ -110,15 +141,35 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchAssignedTasks = useCallback(async () => {
+    try {
+      const data = await api.get('/tasks/assigned');
+      setAssignedTasks(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      setAssignedTasks([]);
+    } finally {
+      setAssignedLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProjects();
+    fetchAssignedTasks();
     const handler = () => fetchProjects();
     window.addEventListener('project-created', handler);
     return () => window.removeEventListener('project-created', handler);
-  }, [fetchProjects]);
+  }, [fetchProjects, fetchAssignedTasks]);
 
   const ownedProjects  = projects.filter((p) => p.owner_id === user?.id);
   const memberProjects = projects.filter((p) => p.owner_id !== user?.id);
+
+  const statusLabel = (s: string) => {
+    if (s === 'todo') return 'Ã€ faire';
+    if (s === 'in_progress') return 'En cours';
+    if (s === 'done') return 'TerminÃ©';
+    return s;
+  };
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -138,6 +189,59 @@ export default function DashboardPage() {
           Nouveau projet
         </button>
       </div>
+
+      {/* Assigned tasks */}
+      <section className="mb-10">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Mes tÃ¢ches assignÃ©es</h2>
+          <button
+            onClick={() => { setAssignedLoading(true); fetchAssignedTasks(); }}
+            className="text-xs font-semibold text-stone-500 hover:text-stone-800"
+          >
+            RafraÃ®chir
+          </button>
+        </div>
+
+        {assignedLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1,2,3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-stone-200 p-5 animate-pulse h-28" />
+            ))}
+          </div>
+        ) : assignedTasks.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-5 py-6 text-sm text-stone-400">
+            Aucune tÃ¢che assignÃ©e pour le moment.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {assignedTasks.slice(0, 9).map((t) => {
+              const due = t.due_date ? new Date(t.due_date) : null;
+              const dueText = due && !Number.isNaN(due.getTime()) ? due.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: '2-digit' }) : null;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => router.push(`/projects/${t.project_id}/tasks`)}
+                  className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-md hover:border-stone-300 hover:-translate-y-0.5 transition-all duration-200"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-stone-900 line-clamp-2">{t.title}</p>
+                      <p className="text-xs text-stone-400 mt-1 truncate">{t.project_title}</p>
+                    </div>
+                    <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] px-2.5 py-1 rounded-full bg-stone-100 text-stone-700">
+                      {statusLabel(t.status || 'todo')}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-xs text-stone-400">
+                    <span>#{t.id}</span>
+                    <span>{dueText ? `Ã‰chÃ©ance: ${dueText}` : 'Aucune Ã©chÃ©ance'}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -160,7 +264,13 @@ export default function DashboardPage() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {ownedProjects.map((p) => (
-                  <ProjectCard key={p.id} project={p} currentUserId={user!.id} onClick={() => router.push(`/projects/${p.id}`)} />
+                  <ProjectCard
+                    key={p.id}
+                    project={p}
+                    currentUserId={user!.id}
+                    onClick={() => router.push(`/projects/${p.id}`)}
+                    onManageMembers={() => setManageProjectId(p.id)}
+                  />
                 ))}
               </div>
             </section>
@@ -172,7 +282,13 @@ export default function DashboardPage() {
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {memberProjects.map((p) => (
-                  <ProjectCard key={p.id} project={p} currentUserId={user!.id} onClick={() => router.push(`/projects/${p.id}`)} />
+                  <ProjectCard
+                    key={p.id}
+                    project={p}
+                    currentUserId={user!.id}
+                    onClick={() => router.push(`/projects/${p.id}`)}
+                    onManageMembers={() => setManageProjectId(p.id)}
+                  />
                 ))}
               </div>
             </section>
@@ -184,6 +300,14 @@ export default function DashboardPage() {
         <CreateProjectModal
           onClose={() => setShowModal(false)}
           onCreated={() => { setShowModal(false); fetchProjects(); }}
+        />
+      )}
+
+      {manageProjectId !== null && (
+        <ManageMembersModal
+          projectId={manageProjectId}
+          onClose={() => setManageProjectId(null)}
+          onChanged={() => fetchProjects()}
         />
       )}
     </div>

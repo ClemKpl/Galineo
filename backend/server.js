@@ -8,6 +8,7 @@ const projectRoutes = require('./routes/projects');
 const userRoutes    = require('./routes/users');
 const roleRoutes    = require('./routes/roles');
 const taskRoutes    = require('./routes/tasks');
+const globalTaskRoutes = require('./routes/tasks_global');
 const messageRoutes = require('./routes/messages');
 const notificationRoutes = require('./routes/notifications');
 
@@ -19,6 +20,7 @@ app.get('/health', (req, res) => res.json({ status: 'OK', version: 'v1' }));
 
 app.use('/auth',     authRoutes);
 app.use('/projects/:projectId/tasks', taskRoutes);
+app.use('/tasks', globalTaskRoutes);
 app.use('/projects/:projectId/messages', messageRoutes);
 app.use('/projects', projectRoutes);
 app.use('/users',    userRoutes);
@@ -27,5 +29,5 @@ app.use('/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Galineo API running on port ${PORT}`);
+  console.log(`🚀 Galineo API running on port ${PORT} (accessible on network)`);
 });
