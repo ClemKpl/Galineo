@@ -151,6 +151,7 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
           u.name,
           u.email,
           u.last_login_at,
+          u.avatar,
           r.name AS role_name
         FROM project_members pm
         JOIN users u ON u.id = pm.user_id
@@ -215,14 +216,21 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
             return due && !Number.isNaN(due.getTime()) && due < now;
           });
 
+          const doneTasks = assignedTasks.filter((task) => (task.status || 'todo') === 'done');
+          const todoTasks = assignedTasks.filter((task) => (task.status || 'todo') !== 'done');
+          const urgentTasksMember = todoTasks.filter((task) => (task.priority || 'normal').includes('urgent'));
+
           return {
             id: member.id,
             name: member.name,
             email: member.email,
             role_name: member.role_name,
             last_login_at: member.last_login_at,
+            avatar: member.avatar,
             assigned_count: assignedTasks.length,
-            open_count: openTasks.length,
+            done_count: doneTasks.length,
+            todo_count: todoTasks.length,
+            urgent_count: urgentTasksMember.length,
             overdue_count: overdueTasks.length
           };
         }).sort((a, b) => {

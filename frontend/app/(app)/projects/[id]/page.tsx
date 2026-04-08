@@ -33,8 +33,11 @@ type MemberLoad = {
   email: string;
   role_name: string;
   last_login_at: string | null;
+  avatar: string | null;
   assigned_count: number;
-  open_count: number;
+  done_count: number;
+  todo_count: number;
+  urgent_count: number;
   overdue_count: number;
 };
 
@@ -389,26 +392,53 @@ export default function ProjectDashboardPage() {
           <article className="rounded-[28px] border border-stone-200 bg-white/90 p-8 shadow-sm">
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-500 mb-8">Charge de l&apos;équipe</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {memberLoad.map((member) => (
-                <div key={member.id} className="p-5 rounded-2xl border border-stone-100 bg-white">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-black text-sm">{member.name.slice(0, 2).toUpperCase()}</div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-stone-900 truncate">{member.name}</p>
-                      <p className="text-[10px] text-stone-400 font-bold uppercase tracking-widest">{member.role_name}</p>
+              {memberLoad.map((member) => {
+                const total = Math.max(1, member.done_count + member.todo_count);
+                const progress = Math.round((member.done_count / total) * 100);
+
+                return (
+                  <div key={member.id} className="p-6 rounded-[2rem] border border-stone-100 bg-white hover:shadow-md transition-all group">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center font-black text-sm overflow-hidden border border-stone-100 shadow-sm shrink-0">
+                        {member.avatar ? (
+                          <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-stone-400">{member.name.slice(0, 2).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-stone-900 truncate group-hover:text-orange-500 transition-colors">{member.name}</p>
+                        <p className="text-[10px] text-stone-400 font-bold uppercase tracking-[0.1em]">{member.role_name}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-3 mb-6">
+                      <div className="text-center">
+                        <p className="text-lg font-black text-stone-900">{member.done_count}</p>
+                        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-tighter">Réalisés</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-black text-stone-900">{member.todo_count}</p>
+                        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-tighter">À faire</p>
+                      </div>
+                      <div className="text-center">
+                        <p className={`text-lg font-black ${member.urgent_count > 0 ? 'text-red-500' : 'text-stone-900'}`}>{member.urgent_count}</p>
+                        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-tighter">Urgentes</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                       <div className="flex justify-between items-end text-[10px] font-black uppercase tracking-widest text-stone-500">
+                          <span>Complétion</span>
+                          <span className="text-xs text-stone-900">{progress}%</span>
+                       </div>
+                       <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(16,185,129,0.3)]" style={{ width: `${progress}%` }} />
+                       </div>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                      <span>Taches ouvertes</span>
-                      <span className={member.open_count > 4 ? 'text-orange-500' : 'text-stone-900'}>{member.open_count}</span>
-                    </div>
-                    <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full transition-all duration-1000 ${member.open_count > 4 ? 'bg-orange-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, member.open_count * 20)}%` }} />
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </article>
         </section>
