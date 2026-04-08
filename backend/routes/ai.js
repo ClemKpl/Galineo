@@ -279,7 +279,8 @@ router.post('/chat', authMiddleware, async (req, res) => {
         - Si des informations manquent, demande-les une par une.
         - Une fois TOUTES les informations réunies, fais un récapitulatif complet.
         - DEMANDE DE VALIDATION : Demande "Tout me semble prêt. Voulez-vous que je lance la création du projet ?".
-        - ACTION : Exécute 'creer_projet' IMMÉDIATEMENT si l'utilisateur valide (ex: "Oui", "OK", "Vas-y"). Ne redemande JAMAIS une deuxième confirmation.`;
+        - ACTION : Exécute 'creer_projet' IMMÉDIATEMENT si l'utilisateur valide (ex: "Oui", "OK", "Vas-y"). Ne redemande JAMAIS une deuxième confirmation.
+        - APRÈS CRÉATION : Confirme toujours chaleureusement que le projet est prêt et souhaite une bonne gestion.`;
         currentTools = toolConfig;
       } else { // mode === 'project'
         sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet "${projectTitle}".
@@ -291,8 +292,8 @@ router.post('/chat', authMiddleware, async (req, res) => {
         
         RÈGLE DE CONFIRMATION :
         - AVANT toute modification (créer/modifier/supprimer une tâche ou un membre), décris précisément ce que tu vas faire ET demande "Confirmez-vous cette action ?".
-        - DÉCLENCHEMENT : Si le message précédent de l'utilisateur est une confirmation (ex: "Oui", "OK", "Fais-le"), appelle l'outil DIRECTEMENT sans aucun blabla et sans reposer de question.
-        - Ne redemande JAMAIS deux fois.
+        - DÉCLENCHEMENT : Si l'utilisateur confirme (ex: "Oui", "OK", "Fais-le"), appelle l'outil IMMEDIATEMENT sans blabla inutile avant l'appel.
+        - APRÈS l'exécution de l'outil, confirme TOUJOURS le succès à l'utilisateur de manière concise mais claire.
         
         RÈGLE DE PLANNING :
         - Pour CHAQUE tâche ou fonctionnalité créée, tu DOIS impérativement fournir une 'start_date' et une 'due_date' (format YYYY-MM-DD). C'est une obligation absolue.`;
@@ -318,26 +319,43 @@ router.post('/chat', authMiddleware, async (req, res) => {
           let result = await chat.sendMessage(userText);
           let response = result.response;
           let text = "";
-
           let actions = [];
-          const calls = response.functionCalls();
-          if (calls && calls.length > 0) {
+
+          // Boucle pour gérer les appels d'outils successifs (jusqu'à 5 répétitions)
+          let toolCallsCount = 0;
+          while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
+            toolCallsCount++;
+            const calls = response.functionCalls();
             const toolLogs = [];
             for (const call of calls) {
               const fn = functions[call.name];
               if (fn) {
                 const apiRes = await fn(call.args, req.user.id);
                 toolLogs.push({ name: call.name, res: apiRes });
+                if (!actions.includes(call.name)) actions.push(call.name);
               }
             }
-            actions = toolLogs.map(l => l.name);
             const toolResponses = toolLogs.map(l => ({
               functionResponse: { name: l.name, response: l.res }
             }));
             const secondResult = await chat.sendMessage(toolResponses);
-            text = secondResult.response.text();
-          } else {
+            response = secondResult.response;
+          }
+
+          // Récupération finale du texte
+          try {
             text = response.text();
+          } catch (e) {
+            console.warn("⚠️ [AI] Pas de texte trouvé dans la réponse finale, utilisation du fallback.");
+          }
+
+          // Fallback si le texte est vide (évite les bulles vides côté frontend)
+          if (!text || text.trim() === "") {
+            if (actions.length > 0) {
+              text = "C'est fait ! Les modifications ont été appliquées avec succès.";
+            } else {
+              text = "Désolé, j'ai rencontré une difficulté pour formuler ma réponse, mais vos données sont à jour.";
+            }
           }
 
           // Persister la réponse de l'IA
