@@ -8,7 +8,7 @@ router.get('/', authMiddleware, (req, res) => {
   const { projectId } = req.params;
   
   db.all(`
-    SELECT m.*, u.name as author_name, u.avatar
+    SELECT m.*, u.name as author_name, u.avatar as author_avatar
     FROM messages m
     JOIN users u ON m.user_id = u.id
     WHERE m.project_id = ?
@@ -62,7 +62,15 @@ router.post('/', authMiddleware, (req, res) => {
       });
     }
 
-    res.json({ id: messageId, project_id: projectId, user_id: userId, content, author_name: req.user.name });
+    res.json({ 
+      id: messageId, 
+      project_id: projectId, 
+      user_id: userId, 
+      content, 
+      author_name: req.user.name,
+      author_avatar: req.user.avatar,
+      created_at: new Date().toISOString()
+    });
   });
 });
 
