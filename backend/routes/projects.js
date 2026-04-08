@@ -111,6 +111,132 @@ router.get('/trash', authMiddleware, (req, res) => {
   });
 });
 
+// GET /projects/:id/dashboard — synthèse du dashboard projet
+router.get('/:id/dashboard', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const userId = req.user.id;
+
+  db.get(`
+    SELECT DISTINCT p.id, p.title, p.deadline, p.status
+    FROM projects p
+    LEFT JOIN project_members pm ON pm.project_id = p.id
+    WHERE p.id = ? AND (p.owner_id = ? OR pm.user_id = ?)
+  `, [projectId, userId, userId], (projectErr, project) => {
+    if (projectErr) return res.status(500).json({ error: projectErr.message });
+    if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
+
+    db.all(`
+      SELECT
+        t.id,
+        t.parent_id,
+        t.title,
+        t.status,
+        t.priority,
+        t.due_date,
+        t.assigned_to,
+        u.name AS assignee_name
+      FROM tasks t
+      LEFT JOIN users u ON u.id = t.assigned_to
+      WHERE t.project_id = ?
+      ORDER BY
+        CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END,
+        t.due_date ASC,
+        t.created_at ASC
+    `, [projectId], (tasksErr, tasks) => {
+      if (tasksErr) return res.status(500).json({ error: tasksErr.message });
+
+      db.all(`
+        SELECT
+          u.id,
+          u.name,
+          u.email,
+          u.last_login_at,
+          r.name AS role_name
+        FROM project_members pm
+        JOIN users u ON u.id = pm.user_id
+        JOIN roles r ON r.id = pm.role_id
+        WHERE pm.project_id = ?
+        ORDER BY pm.role_id ASC, u.name ASC
+      `, [projectId], (membersErr, members) => {
+        if (membersErr) return res.status(500).json({ error: membersErr.message });
+
+        const now = new Date();
+        const normalizedTasks = Array.isArray(tasks) ? tasks : [];
+        const taskCounts = normalizedTasks.reduce((acc, task) => {
+          const status = task.status || 'todo';
+          acc.total += 1;
+          if (status === 'done') acc.done += 1;
+          else if (status === 'in_progress') acc.in_progress += 1;
+          else acc.todo += 1;
+
+          const due = task.due_date ? new Date(task.due_date) : null;
+          if (due && !Number.isNaN(due.getTime()) && due < now && status !== 'done') {
+            acc.overdue += 1;
+          }
+          return acc;
+        }, { total: 0, done: 0, in_progress: 0, todo: 0, overdue: 0 });
+
+        const completionRate = taskCounts.total > 0
+          ? Math.round((taskCounts.done / taskCounts.total) * 100)
+          : 0;
+
+        const urgentTasks = normalizedTasks
+          .filter((task) => task.due_date && (task.status || 'todo') !== 'done')
+          .slice(0, 5)
+          .map((task) => {
+            const due = new Date(task.due_date);
+            const isOverdue = !Number.isNaN(due.getTime()) && due < now;
+            return {
+              id: task.id,
+              parent_id: task.parent_id,
+              title: task.title,
+              status: task.status || 'todo',
+              priority: task.priority || 'normal',
+              due_date: task.due_date,
+              assigned_to: task.assigned_to,
+              assignee_name: task.assignee_name,
+              is_overdue: isOverdue
+            };
+          });
+
+        const memberLoad = (Array.isArray(members) ? members : []).map((member) => {
+          const assignedTasks = normalizedTasks.filter((task) => task.assigned_to === member.id);
+          const openTasks = assignedTasks.filter((task) => (task.status || 'todo') !== 'done');
+          const overdueTasks = openTasks.filter((task) => {
+            const due = task.due_date ? new Date(task.due_date) : null;
+            return due && !Number.isNaN(due.getTime()) && due < now;
+          });
+
+          return {
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            role_name: member.role_name,
+            last_login_at: member.last_login_at,
+            assigned_count: assignedTasks.length,
+            open_count: openTasks.length,
+            overdue_count: overdueTasks.length
+          };
+        }).sort((a, b) => {
+          if (b.open_count !== a.open_count) return b.open_count - a.open_count;
+          if (b.overdue_count !== a.overdue_count) return b.overdue_count - a.overdue_count;
+          return (a.name || '').localeCompare(b.name || '');
+        });
+
+        res.json({
+          project,
+          stats: {
+            ...taskCounts,
+            completion_rate: completionRate
+          },
+          urgent_tasks: urgentTasks,
+          member_load: memberLoad
+        });
+      });
+    });
+  });
+});
+
 // PATCH /projects/:id/restore — restaurer un projet
 router.patch('/:id/restore', authMiddleware, (req, res) => {
   const projectId = Number(req.params.id);
