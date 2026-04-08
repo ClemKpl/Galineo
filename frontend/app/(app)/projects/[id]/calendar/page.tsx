@@ -82,6 +82,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   const [editingTask, setEditingTask] = useState<CalendarTask | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<number | null>(null);
   const [dragOverDateKey, setDragOverDateKey] = useState<string | null>(null);
+  const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(null);
 
   // Day panel (notes)
   const [dayPanelDate, setDayPanelDate] = useState<string | null>(null);
@@ -222,8 +223,11 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
 
   const calendarDays = useMemo(() => getDaysInMonth(currentDate), [currentDate]);
 
+  const features = useMemo(() => tasks.filter(t => !t.parent_id), [tasks]);
+
   const weeks = useMemo(() => {
     const normalizedTasks = tasks
+      .filter(t => t.parent_id && (selectedFeatureId === null || t.parent_id === selectedFeatureId))
       .map((task) => {
         const start = task.start_date ? startOfDay(new Date(task.start_date)) : null;
         const due = task.due_date ? startOfDay(new Date(task.due_date)) : null;
@@ -295,7 +299,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     }
 
     return result;
-  }, [calendarDays, tasks]);
+  }, [calendarDays, tasks, selectedFeatureId]);
 
   const isToday = (date: Date) => {
     if (!date) return false;
@@ -463,6 +467,34 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mr-2 shrink-0">Filtrer par fonctionnalité :</span>
+        <button
+          onClick={() => setSelectedFeatureId(null)}
+          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
+            selectedFeatureId === null
+              ? 'bg-stone-900 border-stone-900 text-white shadow-md'
+              : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+          }`}
+        >
+          Toutes
+        </button>
+        {features.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setSelectedFeatureId(f.id)}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
+              selectedFeatureId === f.id
+                ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-100'
+                : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+            }`}
+          >
+            {f.title}
+          </button>
+        ))}
       </div>
 
       <div className="bg-white border border-stone-200 rounded-[2.5rem] overflow-hidden shadow-sm shadow-stone-200/50 flex flex-col">
