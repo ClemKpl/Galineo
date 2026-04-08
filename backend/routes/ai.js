@@ -4,7 +4,7 @@ const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const MODEL_NAME = "gemini-pro";
+const MODEL_NAME = "gemini-2.0-flash";
 
 // ─── Promisify db ─────────────────────────────────────────────────────────────
 const dbGet = (sql, params) =>
