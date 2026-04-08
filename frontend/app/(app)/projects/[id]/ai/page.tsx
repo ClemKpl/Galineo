@@ -1,9 +1,17 @@
 'use client';
 import { useState, useRef, useEffect, use } from 'react';
-import { useParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 type Role = 'user' | 'assistant' | 'model';
-type Message = { role: Role; content: string; user_name?: string };
+type Message = { 
+  role: Role; 
+  content: string; 
+  user_name?: string; 
+  user_avatar?: string | null; 
+  created_at?: string;
+};
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 
@@ -55,6 +63,7 @@ function formatInline(text: string): React.ReactNode {
 export default function ProjectAiRoom({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
+  const { user } = useAuth();
   
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -85,7 +94,10 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       if (res.ok && data.history && data.history.length > 0) {
         setMessages(data.history.map((h: any) => ({
           role: h.role === 'model' ? 'assistant' : 'user',
-          content: h.role === 'user' && h.user_name ? `**${h.user_name}** : ${h.content}` : h.content,
+          content: h.content,
+          user_name: h.user_name,
+          user_avatar: h.user_avatar,
+          created_at: h.created_at
         })));
       }
     } catch (err) {
@@ -99,7 +111,13 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
     const text = input.trim();
     if (!text || loading) return;
 
-    const userMsg: Message = { role: 'user', content: text };
+    const userMsg: Message = { 
+      role: 'user', 
+      content: text,
+      user_name: user?.name,
+      user_avatar: user?.avatar,
+      created_at: new Date().toISOString()
+    };
     const next = [...messages, userMsg];
     setMessages(next);
     setInput('');
@@ -127,10 +145,20 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur serveur');
 
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: data.reply,
+        user_name: 'Galineo Room',
+        created_at: new Date().toISOString()
+      }]);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erreur inconnue';
-      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${msg}` }]);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: `⚠️ ${msg}`,
+        user_name: 'Système',
+        created_at: new Date().toISOString()
+      }]);
     } finally {
       setLoading(false);
     }
@@ -167,24 +195,48 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
           </div>
         )}
 
-        {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`flex max-w-[800px] gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-              <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-[10px] font-bold shadow-sm ${
-                m.role === 'user' ? 'bg-stone-200 text-stone-600' : 'bg-orange-500 text-white'
-              }`}>
-                {m.role === 'user' ? 'MOI' : 'AI'}
-              </div>
-              <div className={`px-5 py-3.5 rounded-2xl shadow-sm text-sm leading-relaxed ${
-                m.role === 'user' 
-                  ? 'bg-orange-500 text-white rounded-tr-none' 
-                  : 'bg-white text-stone-800 border border-stone-100 rounded-tl-none'
-              }`}>
-                {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
+        {messages.map((m, i) => {
+          const isUser = m.role === 'user';
+          const senderName = isUser ? (m.user_name || 'Moi') : (m.user_name || 'Galineo Room');
+          const avatar = isUser ? m.user_avatar : null;
+
+          return (
+            <div key={i} className={`flex w-full group ${isUser ? 'justify-end' : 'justify-start'}`}>
+              <div className={`flex max-w-[85%] sm:max-w-[70%] gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                {/* Avatar */}
+                <div className="shrink-0 pt-1">
+                  <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden border ${
+                    isUser ? 'bg-stone-100 border-stone-200' : 'bg-orange-500 border-orange-400 text-white'
+                  }`}>
+                    {isUser ? (
+                      avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" /> : <span className="text-stone-400">👤</span>
+                    ) : (
+                      <svg width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1-10 10A10 10 0 0 1 12 2zm0 2a8 8 0 1 0 8 8 8 8 0 0 0-8-8zm-1 3h2v2h-2zm0 4h2v6h-2z"/></svg>
+                    )}
+                  </div>
+                </div>
+
+                {/* Message Content */}
+                <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
+                  <div className="flex items-center gap-2 px-1 mb-1.5">
+                    <span className="text-[11px] font-black text-stone-900 uppercase tracking-tight">{senderName}</span>
+                    <span className="text-[9px] font-bold text-stone-300 uppercase tracking-tighter">
+                      {m.created_at ? formatDistanceToNow(new Date(m.created_at), { addSuffix: true, locale: fr }) : 'À l\'instant'}
+                    </span>
+                  </div>
+                  
+                  <div className={`px-5 py-3.5 rounded-[22px] shadow-sm text-sm leading-relaxed ${
+                    isUser 
+                      ? 'bg-orange-500 text-white rounded-tr-none shadow-orange-200/50' 
+                      : 'bg-white text-stone-800 border border-stone-100 rounded-tl-none'
+                  }`}>
+                    {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {loading && (
           <div className="flex justify-start">
