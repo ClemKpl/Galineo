@@ -143,10 +143,12 @@ const initDb = async () => {
       id ${autoInc},
       title TEXT NOT NULL,
       description TEXT,
-      deadline TEXT,
-      owner_id INTEGER NOT NULL,
+      deadline TIMESTAMP,
+      status TEXT DEFAULT 'active',
+      owner_id INTEGER REFERENCES users(id),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
+    `ALTER TABLE projects ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active'`,
     `CREATE TABLE IF NOT EXISTS project_members (
       project_id INTEGER,
       user_id INTEGER,

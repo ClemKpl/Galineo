@@ -20,6 +20,7 @@ export type Project = {
   owner_name?: string;
   members?: ProjectMember[];
   my_role_id?: number;
+  status: 'active' | 'completed';
 };
 
 const ProjectContext = createContext<Project | null>(null);

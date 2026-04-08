@@ -187,6 +187,7 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
 
   const navItems = [
     { href: '/dashboard', label: 'Tableau de bord', icon: <IconGrid /> },
+    { href: '/history', label: 'Historique', icon: <IconFolder /> },
     { href: '/settings', label: 'Paramètres', icon: <IconSettings /> },
   ];
 

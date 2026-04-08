@@ -16,7 +16,7 @@ router.get('/', authMiddleware, (req, res) => {
     LEFT JOIN project_members pm ON pm.project_id = p.id
     LEFT JOIN project_members pm_me ON pm_me.project_id = p.id AND pm_me.user_id = ?
     LEFT JOIN roles r_me ON r_me.id = pm_me.role_id
-    WHERE p.owner_id = ? OR pm.user_id = ?
+    WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'active'
     ORDER BY p.created_at DESC
   `, [userId, userId, userId], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -179,6 +179,43 @@ router.delete('/:id/members/:userId', authMiddleware, (req, res) => {
         }
       );
     });
+  });
+});
+
+// GET /projects/history — mes projets terminés
+router.get('/history', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  db.all(`
+    SELECT DISTINCT p.*, u.name as owner_name,
+      (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
+    FROM projects p
+    LEFT JOIN users u ON p.owner_id = u.id
+    LEFT JOIN project_members pm ON pm.project_id = p.id
+    WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'completed'
+    ORDER BY p.updated_at DESC
+  `, [userId, userId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// PATCH /projects/:id/complete — terminer un projet
+router.patch('/:id/complete', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const userId = req.user.id;
+
+  canManageMembers(userId, projectId, (permErr, perm) => {
+    if (permErr) return res.status(500).json({ error: permErr.message });
+    if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
+
+    db.run(
+      'UPDATE projects SET status = "completed" WHERE id = ?',
+      [projectId],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Projet terminé et archivé' });
+      }
+    );
   });
 });
 

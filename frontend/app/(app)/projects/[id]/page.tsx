@@ -1,10 +1,25 @@
 'use client';
 import { useMemo } from 'react';
 import { useProject } from './ProjectContext';
+import { api } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProjectDashboardPage() {
   const project = useProject();
+  const { user } = useAuth();
+  const router = useRouter();
   const members = Array.isArray(project.members) ? project.members : [];
+
+  const handleComplete = async () => {
+    if (!confirm('Voulez-vous marquer ce projet comme TERMINÉ ? Il sera déplacé dans l\'historique.')) return;
+    try {
+      await api.patch(`/projects/${project.id}/complete`, {});
+      router.push('/history');
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  };
 
   const sortedMembers = useMemo(() => {
     return [...members].sort((a, b) => {
@@ -20,9 +35,22 @@ export default function ProjectDashboardPage() {
     return d.toLocaleString('fr-FR', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
   };
 
+  const canComplete = project.my_role_id === 1 || project.my_role_id === 2 || project.owner_id === user?.id;
+
   return (
     <div className="p-8">
-      <h2 className="text-xl font-semibold text-stone-800 mb-6">Vue d&apos;ensemble du projet</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-stone-800">Vue d&apos;ensemble du projet</h2>
+        {canComplete && project.status !== 'completed' && (
+          <button 
+            onClick={handleComplete}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-bold shadow-sm transition-all"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+            Terminer le projet
+          </button>
+        )}
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
