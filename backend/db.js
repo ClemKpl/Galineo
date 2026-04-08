@@ -17,9 +17,17 @@ if (isProd) {
       .replace(/\?/g, (_, i, s) => `$${s.substring(0, i).split('?').length}`) // ? -> $1, $2...
       .replace(/INTEGER PRIMARY KEY AUTOINCREMENT/gi, 'SERIAL PRIMARY KEY')
       .replace(/INSERT OR IGNORE/gi, 'INSERT')
+      .replace(/INSERT OR REPLACE/gi, 'INSERT')
       .replace(/DATETIME DEFAULT CURRENT_TIMESTAMP/gi, 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
       .replace(/DATETIME/gi, 'TIMESTAMP')
-      .replace(/GROUP_CONCAT\((.*?)\)/gi, (match, p1) => `STRING_AGG(${p1}::text, ',')`);
+      // Advanced GROUP_CONCAT to STRING_AGG conversion
+      .replace(/GROUP_CONCAT\s*\(\s*(.*?)\s*\)/gi, (match, p1) => {
+        // If it's already using STRING_AGG or has complex args, leave it mostly alone but ensure cast
+        if (p1.toLowerCase().includes('distinct')) {
+           return `STRING_AGG(DISTINCT ${p1.replace(/distinct/gi, '').trim()}::text, ',')`;
+        }
+        return `STRING_AGG(${p1.trim()}::text, ',')`;
+      });
     
     // Add ON CONFLICT DO NOTHING for pseudo-IGNORE or DO UPDATE for REPLACE
     if (sql.toUpperCase().includes('INSERT OR IGNORE')) {

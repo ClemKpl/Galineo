@@ -345,7 +345,8 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
       const lanesEnd: number[] = [];
       const placedSegments: CalendarSegment[] = segments.map((segment) => {
         let lane = 0;
-        while (lanesEnd[lane] !== undefined && lanesEnd[lane] >= segment.startCol) {
+        // Safety bound for the lane loop
+        while (lanesEnd && lanesEnd[lane] !== undefined && lanesEnd[lane] >= segment.startCol && lane < 50) {
           lane += 1;
         }
         lanesEnd[lane] = segment.endCol;
@@ -360,7 +361,7 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
         };
       });
 
-      result.push({ days, segments: placedSegments, laneCount: lanesEnd.length });
+      result.push({ days, segments: placedSegments, laneCount: Math.min(lanesEnd.length, 50) });
     }
 
     return result;
@@ -493,6 +494,7 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
   }
 
   const isToday = (date: Date) => {
+    if (!date) return false;
     const t = new Date();
     return date.getDate() === t.getDate() && date.getMonth() === t.getMonth() && date.getFullYear() === t.getFullYear();
   };
@@ -563,10 +565,10 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
           </div>
 
           <div className="bg-stone-100">
-            {weeks.map((week, weekIndex) => (
+            {weeks && weeks.map((week, weekIndex) => (
               <div key={weekIndex} className="border-b border-stone-200 last:border-b-0">
                 <div className="grid grid-cols-7 gap-[1px] bg-stone-100">
-                  {week.days.map((dayInfo, dayIndex) => {
+                  {week.days && week.days.map((dayInfo, dayIndex) => {
                     const isTodayDate = isToday(dayInfo.date);
                     const dateKey = formatDateInput(dayInfo.date);
                     const isDragOver = dragOverDateKey === dateKey;
@@ -919,8 +921,8 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
 
       {/* Task preview modal */}
       {previewTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-[fadeUp_0.3s_ease-out]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-fadeUp">
             <div className="px-6 py-5 border-b border-stone-100 flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -979,8 +981,8 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
 
       {/* Task edit modal */}
       {editingTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-[fadeUp_0.3s_ease-out]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fadeUp">
             <div className="px-6 py-5 border-b border-stone-100 flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -1076,11 +1078,7 @@ export default function CalendarPage({ params }: { params: Promise<{ id: string 
         </div>
       )}
 
-      <style jsx>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-      `}</style>
-    </div>
+      </div>
   );
 }
 

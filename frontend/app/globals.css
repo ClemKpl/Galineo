@@ -135,3 +135,8 @@ html, body {
 [data-accent="rose"] .bg-orange-500\/20 { background-color: rgb(244 63 94 / 0.2) !important; }
 [data-accent="rose"] .accent-orange-500 { accent-color: #f43f5e !important; }
 
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+.animate-fadeUp { animation: fadeUp 0.3s ease-out; }
