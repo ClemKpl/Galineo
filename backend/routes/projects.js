@@ -175,7 +175,18 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
             id: task.id,
             title: task.title
           }));
-        const actionableTasks = normalizedTasks;
+        
+        // Stats and actual task lists should only include sub-tasks
+        const actionableTasks = normalizedTasks.filter((task) => task.parent_id != null);
+        
+        // Find features that are pending (have no sub-tasks)
+        const pendingFeatures = normalizedTasks
+          .filter((task) => task.parent_id == null && task.status === 'pending')
+          .map((task) => ({
+            id: task.id,
+            title: task.title,
+            priority: task.priority || 'normal'
+          }));
 
         const taskCounts = actionableTasks.reduce((acc, task) => {
           const status = task.status || 'todo';
@@ -273,6 +284,7 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
             completion_rate: completionRate
           },
           features,
+          pending_features: pendingFeatures,
           urgent_tasks: urgentTasks,
           my_tasks: myTasks,
           member_load: memberLoad

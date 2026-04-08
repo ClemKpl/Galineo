@@ -64,6 +64,11 @@ type DashboardPayload = {
     id: number;
     title: string;
   }>;
+  pending_features: Array<{
+    id: number;
+    title: string;
+    priority: string;
+  }>;
   urgent_tasks: UrgentTask[];
   my_tasks: UrgentTask[];
   member_load: MemberLoad[];
@@ -391,38 +396,40 @@ export default function ProjectDashboardPage() {
             </div>
           </article>
 
-          {/* My Tasks */}
+          {/* Pending Features */}
           <article className="rounded-[28px] border border-stone-200 bg-white/90 p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-orange-500">Mes Tâches</p>
+              <div className="flex flex-col">
+                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-orange-500">Fonctionnalités vides</p>
+                <p className="text-[10px] text-stone-400 mt-1">À détailler en tâches</p>
+              </div>
               <button onClick={() => router.push(`/projects/${project.id}/tasks`)} className="text-[10px] font-bold uppercase tracking-widest text-stone-400 hover:text-orange-500 transition-colors">Gérer</button>
             </div>
 
             <div className="space-y-3 overflow-y-auto max-h-[400px] pr-1 custom-scrollbar">
-              {myTasks.length === 0 ? (
+              {(dashboard?.pending_features || []).length === 0 ? (
                 <div className="py-12 text-center rounded-2xl bg-stone-50/50 border border-dashed border-stone-200">
-                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Aucune tâche assignée</p>
-                  <p className="text-[11px] text-stone-400 mt-1">Vous êtes libre pour l'instant !</p>
+                  <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Tout est prêt</p>
+                  <p className="text-[11px] text-stone-400 mt-1">Toutes les fonctionnalités ont des tâches.</p>
                 </div>
               ) : (
-                myTasks.map((task) => (
-                  <div key={task.id} className="flex items-center justify-between p-4 rounded-2xl border border-stone-100 bg-white hover:border-orange-200 hover:shadow-sm transition-all group">
+                (dashboard?.pending_features || []).map((feature) => (
+                  <div key={feature.id} className="flex items-center justify-between p-4 rounded-2xl border border-stone-100 bg-white hover:border-orange-200 hover:shadow-sm transition-all group cursor-pointer" onClick={() => router.push(`/projects/${project.id}/tasks`)}>
                     <div className="min-w-0">
-                      <p className="text-sm font-bold text-stone-900 truncate group-hover:text-orange-600 transition-colors">{task.title}</p>
+                      <p className="text-sm font-bold text-stone-900 truncate group-hover:text-orange-600 transition-colors">{feature.title}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.normal}`}>
-                          {task.priority === 'urgent_important' ? 'Urgent & Imp.' : task.priority === 'urgent_not_important' ? 'Urgent' : task.priority === 'not_urgent_important' ? 'Important' : 'Normal'}
+                        <span className="text-[9px] font-black uppercase tracking-widest text-stone-400">En attente de tâches</span>
+                        <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${PRIORITY_STYLES[feature.priority] || PRIORITY_STYLES.normal}`}>
+                          {feature.priority === 'urgent_important' ? 'Urgent & Imp.' : feature.priority === 'urgent_not_important' ? 'Urgent' : feature.priority === 'not_urgent_important' ? 'Important' : 'Normal'}
                         </span>
-                        {task.due_date && (
-                          <span className={`text-[10px] font-bold ${task.is_overdue ? 'text-red-500' : 'text-stone-400'}`}>
-                            {formatDueDate(task.due_date)}
-                          </span>
-                        )}
                       </div>
                     </div>
-                    <button onClick={() => router.push(`/projects/${project.id}/tasks`)} className="opacity-0 group-hover:opacity-100 p-2 text-stone-400 hover:text-orange-500 transition-all">
-                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9 5l7 7-7 7"/></svg>
-                    </button>
+                    <div className="w-8 h-8 rounded-xl bg-stone-50 flex items-center justify-center text-stone-400 group-hover:bg-orange-50 group-hover:text-orange-500 transition-all">
+                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"/></svg>
+                    </div>
                   </div>
                 ))
               )}
