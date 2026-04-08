@@ -317,8 +317,6 @@ router.post('/chat', authMiddleware, async (req, res) => {
         }));
         const secondResult = await chat.sendMessage(toolResponses);
         text = secondResult.response.text();
-        const actionNames = toolLogs.map(l => l.name).join(', ');
-        text = `[Actions: ${actionNames}] ${text}`;
       } else {
         text = response.text();
       }
