@@ -78,7 +78,38 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
 
   useEffect(() => {
     loadHistory();
+    checkActiveTask();
   }, [projectId]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (loading) {
+      interval = setInterval(() => {
+        checkActiveTask();
+      }, 3000);
+    }
+    return () => { if (interval) clearInterval(interval); };
+  }, [loading, projectId]);
+
+  async function checkActiveTask() {
+    try {
+      const res = await fetch(`${API_URL}/ai/active-task/${projectId}`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.active) {
+          setLoading(true);
+        } else if (loading) {
+          // Si on était en loading et que la tâche n'est plus active, on recharge l'historique
+          setLoading(false);
+          loadHistory();
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check active task', err);
+    }
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -169,8 +200,15 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+      if (!res.ok && res.status !== 202) throw new Error(data.error || 'Erreur serveur');
 
+      if (res.status === 202) {
+        // En arrière-plan sur le serveur. On laisse loading = true
+        // Le polling de l'active-task prendra le relais
+        return;
+      }
+
+      // Cas synchrone (legacy ou fallback)
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: data.reply,

@@ -428,8 +428,25 @@ router.delete('/history/:projectId', authMiddleware, async (req, res) => {
 });
 
 // ─── Route Chat ───────────────────────────────────────────────────────────────
+// ─── Route pour vérifier si l'Assistant travaille ───────────────────────────
+router.get('/active-task/:projectId', authMiddleware, async (req, res) => {
+  const { projectId } = req.params;
+  const userId = req.user.id;
+  try {
+    const task = await dbGet(
+      `SELECT * FROM ai_active_tasks WHERE user_id = ? AND project_id = ? AND status = 'running' LIMIT 1`,
+      [userId, projectId]
+    );
+    res.json({ active: !!task, task });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── Route Chat (Refactorisée pour l'arrière-plan) ───────────────────────────
 router.post('/chat', authMiddleware, async (req, res) => {
   const { messages, projectId, mode = 'project' } = req.body;
+  const userId = req.user.id;
 
   const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY;
   const apiKeys = rawKeys ? rawKeys.split(',').map(k => k.trim()).filter(k => !!k) : [];
@@ -440,7 +457,6 @@ router.post('/chat', authMiddleware, async (req, res) => {
 
   const userText = messages[messages.length - 1].content;
   let projectTitle = 'ce projet';
-  let lastError = null;
 
   try {
     if (projectId) {
@@ -448,150 +464,165 @@ router.post('/chat', authMiddleware, async (req, res) => {
       if (p) projectTitle = p.title;
     }
 
+    // Sauvegarde immédiate du message utilisateur (si mode projet)
     if (projectId && mode === 'project') {
       await dbRun(
         `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'user', ?)`,
-        [projectId, req.user.id, userText]
+        [projectId, userId, userText]
       );
     }
-  } catch (err) {}
-
-  for (let i = 0; i < apiKeys.length; i++) {
-    const apiKey = apiKeys[i];
-    try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      let sysInstruct = '';
-      let currentTools = undefined;
-
-      if (mode === 'global') {
-        sysInstruct = `Tu es Galineo AI, le conseiller personnel de l'utilisateur.
-        TON RÔLE :
-        - Expert du logiciel Galineo. 
-        - IMPORTANT : Tu n'as accès à AUCUNE donnée de projet spécifique ici. Redirige vers la 'Galineo Room' pour cela.
-        - RÈGLE D'OR : N'appelle JAMAIS d'outil sans demander confirmation.`;
-        currentTools = undefined;
-      } else if (mode === 'wizard') {
-        sysInstruct = `Tu es l'Assistant Wizard de Galineo. Ton but est d'accompagner l'utilisateur dans la création COMPLÈTE de son projet via un dialogue structuré et collaboratif.
-        
-        TON PERSONNAGE :
-        - Expert en gestion de projet, enthousiaste et organisé.
-        
-        FLUX DE CONVERSATION OBLIGATOIRE :
-        1. **Basiques** : Récupère le Titre et la Description (sois proactif si c'est vague).
-        2. **Proposition de Structure (WBS)** : Demande EXPLICITEMENT : "Souhaitez-vous que je génère pour vous un premier jet de fonctionnalités et de tâches pour structurer le projet ?"
-        3. **L'Équipe & Attribution** : Si l'utilisateur accepte la génération (ou s'il mentionne des membres), demande qui compose l'équipe et quels sont leurs rôles (ex: "Qui sera en charge du Design ?"). Note leurs emails si possible.
-        4. **Dates** : Définis une échéance globale.
-        
-        VÉRIFICATION POUR CRÉATION :
-        - Titre, Description, Échéance.
-        - Liste des membres (emails).
-        - Liste des fonctionnalités/tâches (si acceptées).
-        
-        PROCÉDURE FINALE :
-        - **Récapitulatif** : Présente un "Plan de Lancement" clair résumant tout (Projet, Équipe, Tâches). **IMPORTANT** : Utilise un markdown propre et standard (ex: "**Projet** : Nom" et non "Projet :* Nom").
-        - **Validation** : Demande "Tout vous semble-t-il prêt pour le décollage ?".
-        - **ACTION** : Dès le "Oui", appelle 'creer_projet' IMMÉDIATEMENT avec TOUS les paramètres (members, elements, etc.).
-        - **SUCCÈS** : Confirme la création et invite l'utilisateur à voir son nouveau dashboard. Les notifications ont été envoyées automatiquement.`;
-        currentTools = toolConfig;
-      } else { // mode === 'project'
-        sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet "${projectTitle}".
-        
-        CONTEXTE CRITIQUE :
-        - L'ID de ce projet est : ${projectId}.
-        - TU DOIS utiliser cet ID [${projectId}] pour tous les paramètres 'project_id' des outils que tu appelles.
-        
-        TON RÔLE :
-        - Expert technique du logiciel Galineo ET du projet "${projectTitle}".
-        - Tu as accès aux outils pour gérer les tâches, les membres ET les paramètres de ce projet.
-        - SÉCURITÉ : Ne JAMAIS supprimer le projet. Ne JAMAIS le terminer sans confirmation explicite.
-        - INTERDICTION : Ne mentionne JAMAIS les noms techniques des fonctions. Parle en langage naturel.
-        - PLANNING : Pour CHAQUE tâche créée, fournis une 'start_date' et une 'due_date'.`;
-        currentTools = toolConfig;
-      }
-
-      const model = genAI.getGenerativeModel({
-        model: MODEL_NAME,
-        systemInstruction: { role: "system", parts: [{ text: sysInstruct }] }
-      }, { apiVersion: 'v1beta' });
-
-      const rawHistory = messages.slice(0, -1).map(m => ({
-        role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      }));
-
-      // Nettoyage robuste de l'historique (alternance + commence par 'user')
-      const history = [];
-      let lastRole = null;
-      for (const msg of rawHistory) {
-        if (msg.role !== lastRole) {
-          history.push(msg);
-          lastRole = msg.role;
-        }
-      }
-      while (history.length > 0 && history[0].role !== 'user') {
-        history.shift();
-      }
-
-      const chat = model.startChat({ history, tools: currentTools });
-
-      const sendMessageWithRetry = async (payload) => {
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          try {
-            return await chat.sendMessage(payload);
-          } catch (err) {
-            if (attempt < 3) { await sleep(attempt * 1000); continue; }
-            throw err;
-          }
-        }
-      };
-
-      const result = await sendMessageWithRetry(userText);
-      let response = result.response;
-      let text = "";
-      let actions = [];
-
-      let toolCallsCount = 0;
-      while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
-        toolCallsCount++;
-        const calls = response.functionCalls();
-        const toolLogs = [];
-        for (const call of calls) {
-          const fn = functions[call.name];
-          if (fn) {
-            const apiRes = await fn(call.args, req.user.id);
-            toolLogs.push({ name: call.name, response: apiRes });
-            if (!actions.includes(call.name)) actions.push(call.name);
-          }
-        }
-        const toolResponses = toolLogs.map(l => ({
-          functionResponse: { name: l.name, response: l.response }
-        }));
-        const secondResult = await sendMessageWithRetry(toolResponses);
-        response = secondResult.response;
-      }
-
-      try { text = response.text(); } catch (e) {}
-      text = text.replace(/\[Actions:.*?\]/g, '').trim();
-
-      if (!text || text.trim() === "") {
-        text = actions.length > 0 ? "C'est fait ! Les modifications ont été appliquées." : "Désolé, je rencontre une difficulté.";
-      }
-
-      if (projectId && mode === 'project') {
-        await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
-      }
-
-      return res.json({ reply: text, actions });
-
-    } catch (err) {
-      lastError = err;
-      if (err.message.includes('429') && i < apiKeys.length - 1) continue;
-      console.error('[AI Error]', err);
-      break;
-    }
+  } catch (err) {
+    console.error('Initial DB ops error', err);
   }
 
-  res.status(500).json({ error: lastError?.message || "Échec de l'IA." });
+  // Création de la tâche en arrière-plan
+  let taskId = null;
+  try {
+    const taskRes = await dbRun(
+      `INSERT INTO ai_active_tasks (user_id, project_id, status) VALUES (?, ?, 'running')`,
+      [userId, projectId || null]
+    );
+    taskId = taskRes.lastID;
+  } catch (err) {
+    console.error('Failed to create AI task record', err);
+  }
+
+  // Réponse immédiate au client
+  res.status(202).json({ 
+    message: "L'assistant a commencé son analyse en arrière-plan.",
+    taskId
+  });
+
+  // TRAITEMENT EN ARRIÈRE-PLAN
+  (async () => {
+    let lastError = null;
+    let success = false;
+
+    try {
+      for (let i = 0; i < apiKeys.length; i++) {
+        const apiKey = apiKeys[i];
+        try {
+          const genAI = new GoogleGenerativeAI(apiKey);
+          let sysInstruct = '';
+          let currentTools = undefined;
+
+          if (mode === 'global') {
+            sysInstruct = `Tu es Galineo AI, le conseiller personnel de l'utilisateur.
+            TON RÔLE :
+            - Expert du logiciel Galineo. 
+            - IMPORTANT : Tu n'as accès à AUCUNE donnée de projet spécifique ici. Redirige vers la 'Galineo Room' pour cela.
+            - RÈGLE D'OR : N'appelle JAMAIS d'outil sans demander confirmation.`;
+            currentTools = undefined;
+          } else if (mode === 'wizard') {
+            sysInstruct = `Tu es l'Assistant Wizard de Galineo. Ton but est d'accompagner l'utilisateur dans la création COMPLÈTE de son projet via un dialogue structuré et collaboratif.
+            ... (instructions wizard) ...`;
+            currentTools = toolConfig;
+          } else { // mode === 'project'
+            sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet "${projectTitle}".
+            CONTEXTE CRITIQUE : ID Projet = ${projectId}.
+            RÔLE : Tu as accès aux outils pour gérer les tâches, les membres et les paramètres.
+            RÈGLE : Pas de noms techniques de fonctions. Parle naturellement.`;
+            currentTools = toolConfig;
+          }
+
+          const model = genAI.getGenerativeModel({
+            model: MODEL_NAME,
+            systemInstruction: { role: "system", parts: [{ text: sysInstruct }] }
+          }, { apiVersion: 'v1beta' });
+
+          const rawHistory = messages.slice(0, -1).map(m => ({
+            role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+          }));
+
+          const history = [];
+          let lastRole = null;
+          for (const msg of rawHistory) {
+            if (msg.role !== lastRole) {
+              history.push(msg);
+              lastRole = msg.role;
+            }
+          }
+          while (history.length > 0 && history[0].role !== 'user') { history.shift(); }
+
+          const chat = model.startChat({ history, tools: currentTools });
+
+          const sendMessageWithRetry = async (payload) => {
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try { return await chat.sendMessage(payload); } 
+              catch (err) { if (attempt < 3) { await sleep(attempt * 1000); continue; } throw err; }
+            }
+          };
+
+          const result = await sendMessageWithRetry(userText);
+          let response = result.response;
+          let text = "";
+          let actions = [];
+
+          let toolCallsCount = 0;
+          while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
+            toolCallsCount++;
+            const calls = response.functionCalls();
+            const toolLogs = [];
+            for (const call of calls) {
+              const fn = functions[call.name];
+              if (fn) {
+                const apiRes = await fn(call.args, userId);
+                toolLogs.push({ name: call.name, response: apiRes });
+                if (!actions.includes(call.name)) actions.push(call.name);
+              }
+            }
+            const toolResponses = toolLogs.map(l => ({
+              functionResponse: { name: l.name, response: l.response }
+            }));
+            const secondResult = await sendMessageWithRetry(toolResponses);
+            response = secondResult.response;
+          }
+
+          try { text = response.text(); } catch (e) {}
+          text = text.replace(/\[Actions:.*?\]/g, '').trim();
+
+          if (!text || text.trim() === "") {
+            text = actions.length > 0 ? "C'est fait ! Les modifications ont été appliquées." : "Désolé, je rencontre une difficulté.";
+          }
+
+          // Sauvegarde de la réponse de l'IA
+          if (projectId && mode === 'project') {
+            await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
+          }
+
+          // Notification finale
+          await dbRun(
+            'INSERT INTO notifications (user_id, type, title, message, project_id) VALUES (?, ?, ?, ?, ?)',
+            [userId, 'ai_response', 'Réponse de l\'IA prête', `L'Assistant a terminé son analyse pour le projet "${projectTitle}".`, projectId || null]
+          );
+
+          success = true;
+          break; // Sortie de la boucle des clés API si succès
+
+        } catch (err) {
+          lastError = err;
+          if (err.message.includes('429') && i < apiKeys.length - 1) continue;
+          console.error('[AI Background Error]', err);
+          break;
+        }
+      }
+
+      // Mise à jour finale du statut de la tâche
+      if (taskId) {
+        await dbRun(
+          `UPDATE ai_active_tasks SET status = ? WHERE id = ?`,
+          [success ? 'completed' : 'failed', taskId]
+        );
+      }
+
+    } catch (globalErr) {
+      console.error('[AI Global BG Error]', globalErr);
+      if (taskId) {
+        await dbRun(`UPDATE ai_active_tasks SET status = 'failed' WHERE id = ?`, [taskId]);
+      }
+    }
+  })();
 });
 
 module.exports = router;

@@ -328,6 +328,13 @@ const initDb = async () => {
       token TEXT UNIQUE NOT NULL,
       expires_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS ai_active_tasks (
+      id ${autoInc},
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      project_id INTEGER,
+      status TEXT DEFAULT 'running',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`
   ];
 
