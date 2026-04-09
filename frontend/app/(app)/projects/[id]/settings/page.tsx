@@ -53,7 +53,7 @@ export default function ProjectSettingsPage() {
     const confirmation = confirm('Voulez-vous marquer ce projet comme TERMINÉ ? Il sera déplacé dans l\'historique et ne sera plus modifiable.');
     if (confirmation) {
       try {
-        await api.patch(`/projects/${project.id}/complete`);
+        await api.patch(`/projects/${project.id}/complete`, {});
         router.push('/dashboard');
       } catch (err) {
         alert((err as Error).message);
