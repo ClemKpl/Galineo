@@ -92,6 +92,16 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const handleDeleteGroup = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement ce groupe et tous ses messages ? Cette action est irréversible.')) return;
+    try {
+      await api.delete(`/chat-groups/${groupId}`);
+      router.push('/messages');
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  };
+
   if (loading) return <div className="p-8"><div className="animate-pulse h-10 bg-stone-100 rounded-xl w-64"></div></div>;
   if (!group) return null;
 
@@ -265,6 +275,16 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
               <div className="flex gap-4">
                 <button type="button" onClick={() => setIsEditing(false)} className="flex-1 px-6 py-4 bg-stone-100 text-stone-600 rounded-2xl text-sm font-black">Annuler</button>
                 <button type="submit" className="flex-1 px-6 py-4 bg-orange-500 text-white rounded-2xl text-sm font-black shadow-lg shadow-orange-500/20">Enregistrer</button>
+              </div>
+
+              <div className="pt-4 border-t border-stone-100">
+                <button 
+                  type="button" 
+                  onClick={handleDeleteGroup}
+                  className="w-full px-6 py-4 bg-red-50 text-red-600 hover:bg-red-100 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+                >
+                  Supprimer définitivement le groupe
+                </button>
               </div>
             </form>
           </div>

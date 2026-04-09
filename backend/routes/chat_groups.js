@@ -235,4 +235,42 @@ router.post('/:id/messages', authMiddleware, memberMiddleware, (req, res) => {
   });
 });
 
+// POST /chat-groups/:id/leave — Quitter le groupe
+router.post('/:id/leave', authMiddleware, memberMiddleware, (req, res) => {
+  const groupId = req.params.id;
+  const userId = req.user.id;
+
+  // Verifier si c'est le dernier admin
+  db.all('SELECT user_id, role FROM chat_group_members WHERE group_id = ?', [groupId], (err, members) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    const admins = members.filter(m => m.role === 'admin');
+    const isMeAdmin = admins.some(a => a.user_id === userId);
+
+    if (isMeAdmin && admins.length === 1 && members.length > 1) {
+      return res.status(400).json({ error: 'Vous êtes le dernier administrateur. Nommez un autre admin avant de partir.' });
+    }
+
+    db.run('DELETE FROM chat_group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], function(errDel) {
+      if (errDel) return res.status(500).json({ error: errDel.message });
+      res.json({ message: 'Vous avez quitte le groupe' });
+    });
+  });
+});
+
+// DELETE /chat-groups/:id — Supprimer le groupe (admin)
+router.delete('/:id', authMiddleware, memberMiddleware, adminMiddleware, (req, res) => {
+  const groupId = req.params.id;
+
+  // Supprimer dans l'ordre pour respecter (potentiellement) les contraintes
+  db.serialize(() => {
+    db.run('DELETE FROM chat_group_messages WHERE group_id = ?', [groupId]);
+    db.run('DELETE FROM chat_group_members WHERE group_id = ?', [groupId]);
+    db.run('DELETE FROM chat_groups WHERE id = ?', [groupId], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Groupe supprime definitivement' });
+    });
+  });
+});
+
 module.exports = router;

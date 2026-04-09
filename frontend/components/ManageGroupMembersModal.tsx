@@ -90,6 +90,20 @@ export default function ManageGroupMembersModal({
     }
   };
 
+  const handleLeave = async () => {
+    if (!confirm('Voulez-vous vraiment quitter ce groupe ?')) return;
+    setLoading(true);
+    try {
+      await api.post(`/chat-groups/${groupId}/leave`);
+      onClose();
+      window.location.href = '/messages';
+    } catch (err) {
+      alert((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-md animate-fadeIn">
       <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden animate-fadeUp">
@@ -176,12 +190,22 @@ export default function ManageGroupMembersModal({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-full px-6 py-4 bg-stone-900 text-white rounded-2xl text-sm font-black transition-all hover:bg-stone-800 shadow-xl shadow-stone-900/10"
-          >
-            Fermer
-          </button>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={onClose}
+              className="w-full px-6 py-4 bg-stone-900 text-white rounded-2xl text-sm font-black transition-all hover:bg-stone-800 shadow-xl shadow-stone-900/10"
+            >
+              Fermer
+            </button>
+            
+            <button
+              onClick={handleLeave}
+              disabled={loading}
+              className="w-full px-6 py-3 text-red-500 text-xs font-black uppercase tracking-widest hover:bg-red-50 rounded-2xl transition-all"
+            >
+              Quitter le groupe
+            </button>
+          </div>
         </div>
       </div>
     </div>
