@@ -50,17 +50,36 @@ router.post('/', authMiddleware, (req, res) => {
           // Logger l'activité de création
           await logActivity(projectId, ownerId, 'project', projectId, 'created', { title });
 
-          // Ajouter les autres membres
+          // Ajouter les autres membres et les notifier
           if (members && Array.isArray(members) && members.length > 0) {
-            const stmt = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)');
             for (const { userId: memberId, roleId } of members) {
-              if (memberId !== ownerId) { // éviter doublon propriétaire
-                stmt.run(projectId, memberId, roleId || 3);
-                // Logger l'ajout de membre
-                await logActivity(projectId, ownerId, 'member', memberId, 'added', { roleId: roleId || 3 });
+              if (memberId !== ownerId) {
+                db.run(
+                  'INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
+                  [projectId, memberId, roleId || 3],
+                  async (err) => {
+                    if (err) return;
+                    await logActivity(projectId, ownerId, 'member', memberId, 'added', { roleId: roleId || 3 });
+
+                    // Envoyer notification par email
+                    db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [memberId], async (uErr, member) => {
+                      if (member && member.notif_added_to_project !== 0) {
+                        try {
+                          await sendMemberAdded({
+                            email: member.email,
+                            projectName: title,
+                            inviterName: req.user.name,
+                            projectId: projectId
+                          });
+                        } catch (mErr) {
+                          console.error('❌ Erreur mail création projet:', mErr.message);
+                        }
+                      }
+                    });
+                  }
+                );
               }
             }
-            stmt.finalize();
           }
 
           res.status(201).json({ id: projectId, title, description, deadline, start_date, owner_id: ownerId, avatar });
