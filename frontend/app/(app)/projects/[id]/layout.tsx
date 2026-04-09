@@ -50,10 +50,15 @@ export default function ProjectLayout({ children, params }: { children: React.Re
     <ProjectProvider value={project}>
       <div className="flex flex-col h-full bg-stone-50 animate-fadeIn">
         {/* Project Header */}
-        <header className="bg-white border-b border-stone-200 px-4 md:px-8 py-4 md:py-6 shrink-0 relative z-20 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-orange-500/20 overflow-hidden shrink-0">
+        <header className="bg-white border-b border-stone-200 px-4 md:px-8 py-3 lg:py-6 shrink-0 relative z-20 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <Link href="/dashboard" className="lg:hidden flex h-10 w-10 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 text-stone-700 active:scale-95 transition-transform shrink-0">
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path d="M15 19l-7-7 7-7" />
+                </svg>
+              </Link>
+              <div className="w-10 h-10 lg:w-14 lg:h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl lg:rounded-2xl flex items-center justify-center text-white font-black text-sm lg:text-xl shadow-lg shadow-orange-500/20 overflow-hidden shrink-0">
                 {project.avatar ? (
                   <img src={project.avatar} alt={project.title} className="w-full h-full object-cover" />
                 ) : (
@@ -61,16 +66,14 @@ export default function ProjectLayout({ children, params }: { children: React.Re
                 )}
               </div>
               <div className="min-w-0">
-                <h1 className="text-xl md:text-2xl font-black text-stone-900 leading-tight tracking-tight truncate">{project.title}</h1>
-                <p className="text-[10px] md:text-xs text-stone-400 font-bold uppercase tracking-widest mt-1 truncate max-w-xl">{project.description || 'Projet sans description'}</p>
+                <h1 className="text-lg lg:text-2xl font-black text-stone-900 leading-tight tracking-tight truncate">{project.title}</h1>
+                <p className="hidden lg:block text-[10px] lg:text-xs text-stone-400 font-bold uppercase tracking-widest mt-1 truncate max-w-xl">{project.description || 'Projet sans description'}</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Link href="/dashboard" className="flex items-center justify-center p-2.5 sm:px-4 sm:py-2 border border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm shadow-stone-100">
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="sm:mr-2">
-                  <path d="M15 19l-7-7 7-7" />
-                </svg>
-                <span className="hidden sm:inline">Retour</span>
+            
+            <div className="hidden lg:flex gap-2">
+              <Link href="/dashboard" className="flex items-center justify-center px-4 py-2 border border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95">
+                Retour
               </Link>
             </div>
           </div>

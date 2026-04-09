@@ -267,36 +267,36 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-120px)] lg:h-full bg-stone-50 overflow-hidden">
-      {/* Header Interne */}
-      <div className="px-4 lg:px-8 py-3 lg:py-4 bg-white border-b border-stone-200 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2 lg:gap-3">
-          <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-sm">
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <div className="flex flex-col h-[calc(100dvh-110px)] lg:h-full bg-stone-50 overflow-hidden relative">
+      {/* Header Interne - Ultra Compact sur Mobile */}
+      <div className="px-3 lg:px-8 py-2.5 lg:py-4 bg-white border-b border-stone-200 flex items-center justify-between shrink-0 shadow-sm z-30">
+        <div className="flex items-center gap-2 lg:gap-3 min-w-0">
+          <div className="hidden lg:flex w-10 h-10 rounded-xl bg-orange-500 items-center justify-center text-white shadow-sm">
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.96 9.96 0 0 1-5.06-1.37L2 22l1.37-4.94A9.96 9.96 0 0 1 2 12C2 6.48 6.48 2 12 2z"/>
               <path d="M8 10h.01M12 10h.01M16 10h.01" strokeLinecap="round" strokeWidth="2.5"/>
             </svg>
           </div>
-          <div>
-            <h2 className="text-sm font-bold text-stone-900">Galineo Room</h2>
-            <p className="text-[11px] text-stone-500 uppercase tracking-wider font-semibold">Assistant IA du Projet</p>
+          <div className="min-w-0">
+            <h2 className="text-xs lg:text-sm font-black text-stone-900 truncate">Galineo Assistant</h2>
+            <div className="flex items-center gap-1.5 mt-0.5">
+               <span className="flex h-1.5 w-1.5 rounded-full bg-green-500"></span>
+               <p className="text-[9px] text-stone-400 uppercase tracking-widest font-bold">Actif</p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-           <button 
-             onClick={handleResetHistory}
-             className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-stone-200 hover:bg-stone-50 text-stone-500 hover:text-red-500 hover:border-red-100 transition-all cursor-pointer group"
-             title="Réinitialiser la conversation"
-           >
-             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-               <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-             </svg>
-             <span className="text-[10px] font-bold uppercase tracking-wider">Réinitialiser</span>
-           </button>
-           <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-              <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">En ligne</span>
-           </div>
+        
+        <div className="flex items-center gap-2">
+            <button 
+              onClick={handleResetHistory}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-500 hover:text-red-500 transition-all cursor-pointer shadow-sm active:scale-95"
+              title="Réinitialiser"
+            >
+              <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <span className="text-[9px] font-black uppercase tracking-wider">Reset</span>
+            </button>
         </div>
       </div>
 
@@ -372,8 +372,8 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
         <div ref={bottomRef} className="h-4" />
       </div>
 
-      {/* Input */}
-      <div className="p-4 lg:p-8 bg-white border-t border-stone-200 shrink-0">
+      {/* Input - Fixé au dessus du menu mobile */}
+      <div className="p-3 lg:p-8 bg-white border-t border-stone-200 shrink-0 pb-[80px] lg:pb-8 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
         <div className="max-w-[1000px] mx-auto relative">
           <textarea
             value={input}
@@ -385,7 +385,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
               }
             }}
             placeholder="Échange avec l'IA..."
-            className="w-full pl-5 pr-14 py-4 bg-stone-50 border border-stone-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all resize-none min-h-[60px] max-h-[200px]"
+            className="w-full pl-5 pr-14 py-3.5 bg-stone-50 border border-stone-200 rounded-[20px] text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all resize-none min-h-[50px] max-h-[150px] text-stone-800"
             rows={1}
             style={{ height: 'auto' }}
             onInput={(e) => {
@@ -397,9 +397,9 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
           <button
             onClick={send}
             disabled={!input.trim() || loading}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-orange-500 text-white rounded-xl shadow-lg shadow-orange-500/20 flex items-center justify-center hover:bg-orange-600 disabled:bg-stone-200 disabled:shadow-none transition-all cursor-pointer"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-orange-500 text-white rounded-xl shadow-lg shadow-orange-500/20 flex items-center justify-center hover:bg-orange-600 disabled:bg-stone-200 disabled:shadow-none transition-all cursor-pointer active:scale-90"
           >
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
               <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
             </svg>
           </button>
