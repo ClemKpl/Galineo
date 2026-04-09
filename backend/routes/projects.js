@@ -71,24 +71,22 @@ router.post('/', authMiddleware, (req, res) => {
                       [memberId, 'project_invite', 'Nouveau projet', `Vous avez été ajouté au projet "${title}"`, projectId, ownerId]
                     );
 
-                    // Email en arrière-plan
+                    /* Désactivé temporairement à la demande de l'utilisateur
                     db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [memberId], (uErr, memberData) => {
                       if (memberData && memberData.notif_added_to_project !== 0) {
-                        console.log(`[POST /projects] Tentative d'envoi email notification à ${memberData.email}...`);
                         sendMemberAdded({
                           email: memberData.email,
                           projectName: title,
                           inviterName: req.user.name,
                           projectId: projectId
                         }).then(() => {
-                           console.log(`✅ [POST /projects] Email envoyé à ${memberData.email}`);
                            logActivity(projectId, ownerId, 'system', memberId, 'email_sent', { text: `Email de notification envoyé à ${memberData.email} (Création projet)` }).catch(e => console.error(e));
                         }).catch((mErr) => {
-                          console.error('❌ [POST /projects] Erreur mail création projet:', mErr.message);
                           logActivity(projectId, ownerId, 'system', memberId, 'email_error', { text: `Échec envoi email à ${memberData.email}: ${mErr.message}` }).catch(e => console.error(e));
                         });
                       }
                     });
+                    */
                   }
                 );
               }
@@ -446,24 +444,22 @@ router.post('/:id/members', authMiddleware, (req, res) => {
               [userId, 'project_invite', 'Invitation au projet', `Vous avez été ajouté au projet "${project.title}"`, projectId, currentUserId]
             );
 
-            // 2. Email en arrière-plan
+            /* Désactivé temporairement
             db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [userId], (uErr, userData) => {
               if (userData && userData.notif_added_to_project !== 0) {
-                console.log(`[POST /members] Envoi email notification à ${userData.email}...`);
                 sendMemberAdded({
                   email: userData.email,
                   projectName: project.title,
                   inviterName: req.user.name,
                   projectId: projectId
                 }).then(() => {
-                   console.log(`✅ [POST /members] Email envoyé à ${userData.email}`);
                    logActivity(projectId, currentUserId, 'system', userId, 'email_sent', { text: `Email de notification envoyé à ${userData.email}` }).catch(e => console.error(e));
                 }).catch((mailErr) => {
-                   console.error('❌ [POST /members] Erreur email addition:', mailErr.message);
                    logActivity(projectId, currentUserId, 'system', userId, 'email_error', { text: `Échec envoi email à ${userData.email}: ${mailErr.message}` }).catch(e => console.error(e));
                 });
               }
             });
+            */
 
             // 3. Réponse immédiate
             res.json({ message: 'Membre ajouté et notifié.' });
@@ -488,20 +484,18 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                   [userExists.id, 'project_invite', 'Invitation au projet', `Vous avez été ajouté au projet "${project.title}"`, projectId, currentUserId]
                 );
 
-                // Email arrière-plan
-                console.log(`[POST /members] Envoi email notification à ${email}...`);
+                /* Désactivé temporairement
                 sendMemberAdded({
                   email: email,
                   projectName: project.title,
                   inviterName: req.user.name,
                   projectId: projectId
                 }).then(() => {
-                   console.log(`✅ [POST /members] Email envoyé à ${email}`);
                    logActivity(projectId, currentUserId, 'system', userExists.id, 'email_sent', { text: `Email de notification envoyé à ${email}` }).catch(e => console.error(e));
                 }).catch((mailErr) => {
-                  console.error('❌ [POST /members] Erreur email addition:', mailErr.message);
                   logActivity(projectId, currentUserId, 'system', userExists.id, 'email_error', { text: `Échec envoi email à ${email}: ${mailErr.message}` }).catch(e => console.error(e));
                 });
+                */
 
                 res.json({ message: 'Utilisateur trouvé et ajouté au projet.' });
               }
@@ -517,20 +511,18 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                 // Actions immédiates
                 logActivity(projectId, currentUserId, 'invitation', null, 'sent', { email, roleId: roleId || 3 }).catch(e => console.error(e));
                 
-                // Email arrière-plan
-                console.log(`[POST /members] Envoi email invitation à ${email}...`);
+                /* Désactivé temporairement
                 sendProjectInvitation({
                   email: email,
                   projectName: project.title,
                   inviterName: req.user.name,
                   token: token
                 }).then(() => {
-                   console.log(`✅ [POST /members] Invitation envoyée à ${email}`);
                    logActivity(projectId, currentUserId, 'system', null, 'email_sent', { text: `Email d'invitation envoyé à ${email}` }).catch(e => console.error(e));
                 }).catch((mailErr) => {
-                  console.error('❌ [POST /members] Erreur email invitation:', mailErr.message);
                   logActivity(projectId, currentUserId, 'system', null, 'email_error', { text: `Échec envoi invitation à ${email}: ${mailErr.message}` }).catch(e => console.error(e));
                 });
+                */
 
                 res.json({ message: 'Invitation envoyée par email.' });
               }
