@@ -204,19 +204,25 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
 
     try {
       const res = await api.post('/ai/chat', { messages: next, mode: 'wizard' });
+      
+      if (res.status === 'processing') {
+        // En arrière-plan. On laisse wizardLoading = true
+        return;
+      }
+
       setWizardMessages(prev => [...prev, { role: 'assistant', content: res.reply }]);
       
       // Détection via le nouveau champ d'actions
       if (res.actions && res.actions.includes('creer_projet')) {
          setTimeout(() => onCreated(), 1500);
       }
+      setWizardLoading(false);
     } catch (err) {
       console.error(err);
       setWizardMessages(prev => [...prev, { 
         role: 'assistant', 
         content: "⚠️ **Oups !** J'ai eu un petit problème technique pour traiter votre demande. Pourriez-vous réessayer dans un instant ?" 
       }]);
-    } finally {
       setWizardLoading(false);
     }
   };

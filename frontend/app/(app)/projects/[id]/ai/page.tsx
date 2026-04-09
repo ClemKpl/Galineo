@@ -216,6 +216,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
         user_name: 'Galineo Room',
         created_at: new Date().toISOString()
       }]);
+      setLoading(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erreur inconnue';
       setMessages(prev => [...prev, { 
@@ -224,7 +225,6 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
         user_name: 'Système',
         created_at: new Date().toISOString()
       }]);
-    } finally {
       setLoading(false);
     }
   }
