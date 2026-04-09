@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useProject } from '../ProjectContext';
 import { api } from '@/lib/api';
