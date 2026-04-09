@@ -24,7 +24,7 @@ if (isProd) {
       .replace(/GROUP_CONCAT\s*\(\s*(.*?)\s*\)/gi, (match, p1) => {
         // If it's already using STRING_AGG or has complex args, leave it mostly alone but ensure cast
         if (p1.toLowerCase().includes('distinct')) {
-           return `STRING_AGG(DISTINCT ${p1.replace(/distinct/gi, '').trim()}::text, ',')`;
+          return `STRING_AGG(DISTINCT ${p1.replace(/distinct/gi, '').trim()}::text, ',')`;
         }
         return `STRING_AGG(${p1.trim()}::text, ',')`;
       })
@@ -33,7 +33,7 @@ if (isProd) {
         // PG: NOW() + INTERVAL '-5 minutes'
         return `NOW() + INTERVAL '${p1}'`;
       });
-    
+
     // Add ON CONFLICT DO NOTHING for pseudo-IGNORE or DO UPDATE for REPLACE
     if (sql.toUpperCase().includes('INSERT OR IGNORE')) {
       converted += ' ON CONFLICT DO NOTHING';
@@ -46,12 +46,12 @@ if (isProd) {
         converted = converted.replace(/INSERT OR REPLACE/gi, 'INSERT');
       }
     }
-    
+
     // Auto-return ID for inserts if needed (except for link tables without 'id' column)
     if (sql.toUpperCase().includes('INSERT') && !sql.toUpperCase().includes('RETURNING')) {
-      const isLinkTable = sql.toLowerCase().includes('project_members') || 
-                          sql.toLowerCase().includes('role_permissions') ||
-                          sql.toLowerCase().includes('chat_group_members');
+      const isLinkTable = sql.toLowerCase().includes('project_members') ||
+        sql.toLowerCase().includes('role_permissions') ||
+        sql.toLowerCase().includes('chat_group_members');
       if (!isLinkTable) {
         converted += ' RETURNING id';
       }
@@ -101,13 +101,13 @@ if (isProd) {
         });
       return this;
     },
-    prepare: function(sql) {
+    prepare: function (sql) {
       return {
         run: (...args) => {
-          const cb = typeof args[args.length-1] === 'function' ? args.pop() : null;
+          const cb = typeof args[args.length - 1] === 'function' ? args.pop() : null;
           db.run(sql, args, cb);
         },
-        finalize: () => {}
+        finalize: () => { }
       };
     }
   };

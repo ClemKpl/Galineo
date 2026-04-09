@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
 
-interface Role   { id: number; name: string; is_default: number; }
-interface User   { id: number; name: string; email: string; }
+interface Role { id: number; name: string; is_default: number; }
+interface User { id: number; name: string; email: string; }
 interface Member { user: User; roleId: number; }
 interface Permission { id: number; name: string; description: string; }
 
@@ -59,26 +59,26 @@ function formatInline(text: string): React.ReactNode {
 type ModalView = 'choice' | 'manual' | 'wizard';
 
 export default function CreateProjectModal({ onClose, onCreated }: Props) {
-  const [view, setView]         = useState<ModalView>('choice');
-  const [title, setTitle]       = useState('');
-  const [desc, setDesc]         = useState('');
+  const [view, setView] = useState<ModalView>('choice');
+  const [title, setTitle] = useState('');
+  const [desc, setDesc] = useState('');
   const [deadline, setDeadline] = useState('');
   const [startDate, setStartDate] = useState('');
-  const [avatar, setAvatar]     = useState('');
-  const [members, setMembers]   = useState<Member[]>([]);
-  const [roles, setRoles]       = useState<Role[]>([]);
-  const [perms, setPerms]       = useState<Permission[]>([]);
+  const [avatar, setAvatar] = useState('');
+  const [members, setMembers] = useState<Member[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [perms, setPerms] = useState<Permission[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [search, setSearch]     = useState('');
+  const [search, setSearch] = useState('');
   const [showList, setShowList] = useState(false);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const [showRoleForm, setShowRoleForm]   = useState(false);
-  const [newRoleName, setNewRoleName]     = useState('');
-  const [newRolePerms, setNewRolePerms]   = useState<number[]>([]);
-  const [roleLoading, setRoleLoading]     = useState(false);
-  
+  const [showRoleForm, setShowRoleForm] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [newRolePerms, setNewRolePerms] = useState<number[]>([]);
+  const [roleLoading, setRoleLoading] = useState(false);
+
   const [wizardMessages, setWizardMessages] = useState<any[]>([
     { role: 'assistant', content: "Merveilleux ! Je suis là pour t'aider à donner vie à ton nouveau projet. ✨\n\nPour commencer, pourrais-tu me dire quel est le **nom** de ce beau projet ?" }
   ]);
@@ -122,7 +122,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
     if (view === 'wizard' && wizardLoading) {
       interval = setInterval(() => {
         checkActiveTask();
-      }, 3000);
+      }, 1500);
     }
     return () => { if (interval) clearInterval(interval); };
   }, [view, wizardLoading]);
@@ -142,8 +142,8 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
         setWizardLoading(true);
       } else {
         if (wizardLoading) {
-           setWizardLoading(false);
-           loadHistory();
+          setWizardLoading(false);
+          loadHistory();
         }
         // Si la tâche a échoué (failed), on pourrait afficher un message d'erreur
         if (res.task && res.task.status === 'failed') {
@@ -168,7 +168,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
           role: h.role === 'model' ? 'assistant' : 'user',
           content: h.content
         }));
-        
+
         // On garde le message de bienvenue s'il n'est pas déjà dans l'historique
         setWizardMessages([
           { role: 'assistant', content: "Merveilleux ! Je suis là pour t'aider à donner vie à ton nouveau projet. ✨\n\nPour commencer, pourrais-tu me dire quel est le **nom** de ce beau projet ?" },
@@ -235,24 +235,24 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
 
     try {
       const res = await api.post('/ai/chat', { messages: next, mode: 'wizard' });
-      
+
       if (res.status === 'processing') {
         // En arrière-plan. On laisse wizardLoading = true
         return;
       }
 
       setWizardMessages(prev => [...prev, { role: 'assistant', content: res.reply }]);
-      
+
       // Détection via le nouveau champ d'actions
       if (res.actions && res.actions.includes('creer_projet')) {
-         setTimeout(() => onCreated(), 1500);
+        setTimeout(() => onCreated(), 1500);
       }
       setWizardLoading(false);
     } catch (err) {
       console.error(err);
-      setWizardMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "⚠️ **Oups !** J'ai eu un petit problème technique pour traiter votre demande. Pourriez-vous réessayer dans un instant ?" 
+      setWizardMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "⚠️ **Oups !** J'ai eu un petit problème technique pour traiter votre demande. Pourriez-vous réessayer dans un instant ?"
       }]);
       setWizardLoading(false);
     }
@@ -261,9 +261,9 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end">
       <div className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
-      
-      <div className="relative w-full max-w-lg h-full bg-white shadow-2xl flex flex-col overflow-hidden animate-[slideIn_0.3s_cubic-bezier(0.16,1,0.3,1)]">
-        
+
+      <div className="relative w-full max-w-lg h-[100dvh] lg:h-full bg-white shadow-2xl flex flex-col overflow-hidden animate-[slideIn_0.3s_cubic-bezier(0.16,1,0.3,1)]">
+
         {/* Header (Depends on View) */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100 shrink-0">
           <div>
@@ -277,7 +277,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                 {view === 'choice' && 'Choisissez votre méthode'}
                 {(view === 'manual' || view === 'wizard') && (
                   <button onClick={() => setView('choice')} className="text-orange-500 hover:text-orange-600 font-medium flex items-center gap-1">
-                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
                     Retour aux choix
                   </button>
                 )}
@@ -286,14 +286,14 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
           </div>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 hover:bg-stone-50 p-2 rounded-xl transition-colors">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
         {/* View Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          
+
           {/* 1. CHOICE VIEW */}
           {view === 'choice' && (
             <div className="flex-1 p-8 flex flex-col items-center justify-center space-y-6">
@@ -302,7 +302,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
               </div>
 
               {/* AI Card */}
-              <button 
+              <button
                 onClick={() => setView('wizard')}
                 className="w-full group relative p-6 bg-gradient-to-br from-orange-500 to-amber-600 rounded-3xl shadow-xl shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all text-left overflow-hidden border-2 border-transparent hover:border-white/20"
               >
@@ -313,7 +313,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                     <p className="text-white/80 text-sm leading-relaxed mt-1">L'IA s'occupe de tout : objectifs, membres et structure. Rapide et intelligent.</p>
                   </div>
                   <div className="self-center text-white/40 group-hover:text-white transition-colors">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
                   </div>
                 </div>
                 {/* Decoration */}
@@ -321,7 +321,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
               </button>
 
               {/* Manual Card */}
-              <button 
+              <button
                 onClick={() => setView('manual')}
                 className="w-full group p-6 bg-stone-50 border-2 border-stone-100 rounded-3xl hover:bg-white hover:border-orange-200 hover:shadow-lg transition-all text-left flex items-start gap-4"
               >
@@ -331,7 +331,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                   <p className="text-stone-500 text-sm leading-relaxed mt-1">Vous avez déjà tout en tête ? Remplissez le formulaire classique.</p>
                 </div>
                 <div className="self-center text-stone-200 group-hover:text-orange-300 transition-colors">
-                  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" /></svg>
                 </div>
               </button>
             </div>
@@ -339,13 +339,12 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
 
           {/* 2. WIZARD VIEW */}
           {view === 'wizard' && (
-            <div className="flex-1 flex flex-col bg-stone-50 overflow-hidden">
-              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+            <div className="flex-1 flex flex-col bg-stone-50 overflow-hidden relative">
+              <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-4 lg:py-6 space-y-4">
                 {wizardMessages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm break-words ${
-                      m.role === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-white text-stone-700 border border-stone-200 rounded-tl-none font-medium'
-                    }`}>
+                    <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm break-words ${m.role === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-white text-stone-700 border border-stone-200 rounded-tl-none font-medium'
+                      }`}>
                       {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
                     </div>
                   </div>
@@ -360,31 +359,31 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                 <div ref={wizardEndRef} />
               </div>
               <div className="p-4 bg-white border-t border-stone-100 shrink-0">
-                 <div className="relative">
-                   <input 
-                     type="text"
-                     autoFocus
-                     value={wizardInput}
-                     onChange={(e) => setWizardInput(e.target.value)}
-                     onKeyDown={(e) => {
-                       if (e.key === 'Enter') {
-                         e.preventDefault();
-                         handleWizardSend();
-                       }
-                     }}
-                     placeholder="Répondez à l'assistant..."
-                     className="w-full pl-4 pr-12 py-3.5 rounded-2xl bg-stone-100 border-none text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all"
-                   />
-                   <button 
+                <div className="relative">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={wizardInput}
+                    onChange={(e) => setWizardInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleWizardSend();
+                      }
+                    }}
+                    placeholder="Répondez à l'assistant..."
+                    className="w-full pl-4 pr-12 py-3.5 rounded-2xl bg-stone-100 border-none text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all"
+                  />
+                  <button
                     onClick={handleWizardSend}
                     disabled={!wizardInput.trim() || wizardLoading}
                     className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center disabled:opacity-30 disabled:grayscale transition-all shadow-md shadow-orange-500/20"
-                   >
-                      <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                      </svg>
-                   </button>
-                 </div>
+                  >
+                    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                      <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -426,7 +425,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                   <div className="relative" ref={wrapperRef}>
                     <div className="relative">
                       <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                        <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
                       </svg>
                       <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} onFocus={() => setShowList(true)}
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all font-medium"
@@ -463,7 +462,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                             {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                           </select>
                           <button type="button" onClick={() => removeMember(m.user.id)} className="text-stone-300 hover:text-red-500 transition-colors p-1">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                           </button>
                         </div>
                       ))}

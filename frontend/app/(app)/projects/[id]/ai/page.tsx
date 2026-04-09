@@ -144,17 +144,17 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
               created_at: h.created_at,
             }));
             
-            // On préserve le message de bienvenue initial
-            setMessages([messages[0], ...mapped]);
+            // On préserve le message de bienvenue initial via une mise à jour fonctionnelle
+            setMessages(prev => [prev[0], ...mapped]);
             setLoading(false);
           }
         }
       } catch {
         // silencieux, on réessaie au prochain tick
       }
-    }, 3000);
+    }, 1500);
     return () => clearInterval(interval);
-  }, [loading, projectId, messages]);
+  }, [loading, projectId]);
 
   async function checkActiveTask() {
     try {
@@ -203,8 +203,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
           created_at: h.created_at
         }));
         
-        // On préserve le message de bienvenue si l'historique est chargé
-        setMessages([messages[0], ...mapped]);
+        setMessages(prev => [prev[0], ...mapped]);
       }
     } catch (err) {
       console.error('Failed to load history', err);
@@ -268,12 +267,12 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   }
 
   return (
-    <div className="flex flex-col h-full bg-stone-50 overflow-hidden">
-      {/* Header Interne (Optionnel car déjà dans Layout) */}
-      <div className="px-8 py-4 bg-white border-b border-stone-200 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-sm">
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <div className="flex flex-col h-[calc(100dvh-120px)] lg:h-full bg-stone-50 overflow-hidden">
+      {/* Header Interne */}
+      <div className="px-4 lg:px-8 py-3 lg:py-4 bg-white border-b border-stone-200 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2 lg:gap-3">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-sm">
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.96 9.96 0 0 1-5.06-1.37L2 22l1.37-4.94A9.96 9.96 0 0 1 2 12C2 6.48 6.48 2 12 2z"/>
               <path d="M8 10h.01M12 10h.01M16 10h.01" strokeLinecap="round" strokeWidth="2.5"/>
             </svg>
@@ -302,7 +301,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6 relative">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-4 lg:py-6 space-y-4 lg:space-y-6 relative">
         {fetchingHistory && (
           <div className="absolute inset-0 bg-stone-50/80 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center">
             <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mb-3" />
@@ -374,7 +373,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Input */}
-      <div className="p-8 bg-white border-t border-stone-200 shrink-0">
+      <div className="p-4 lg:p-8 bg-white border-t border-stone-200 shrink-0">
         <div className="max-w-[1000px] mx-auto relative">
           <textarea
             value={input}

@@ -28,7 +28,7 @@ const functions = {
 
     // 1. Ajouter le créateur comme Propriétaire
     await dbRun(`INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 1)`, [projectId, userId]);
-    
+
     // Notification pour le créateur
     await dbRun(
       'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -106,9 +106,9 @@ const functions = {
       details: "Configuration initiale complète du projet par l'IA"
     });
 
-    return { 
+    return {
       message: `Projet "${titre}" créé et configuré avec succès !`,
-      projectId: projectId 
+      projectId: projectId
     };
   },
 
@@ -238,10 +238,10 @@ const functions = {
     if (title) { fields.push('title = ?'); params.push(title); }
     if (description) { fields.push('description = ?'); params.push(description); }
     if (fields.length === 0) return { message: 'Aucune modification demandée' };
-    
+
     params.push(project_id);
     await dbRun(`UPDATE projects SET ${fields.join(', ')} WHERE id = ?`, params);
-    
+
     await logActivity(project_id, userId, 'project', project_id, 'updated', { title, description });
     return { message: `Les paramètres du projet ${project_id} ont été mis à jour avec succès.` };
   },
@@ -510,7 +510,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
   }
 
   // Réponse immédiate au client
-  res.status(202).json({ 
+  res.status(202).json({
     message: "L'assistant a commencé son analyse en arrière-plan.",
     taskId,
     status: 'processing'
@@ -531,7 +531,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
           let currentTools = undefined;
 
           const currentDate = new Date().toISOString().split('T')[0];
-          
+
           if (mode === 'global') {
             sysInstruct = `Tu es Galineo AI, le conseiller personnel de l'utilisateur.
             TON RÔLE :
@@ -584,7 +584,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
 
           const sendMessageWithRetry = async (payload) => {
             for (let attempt = 1; attempt <= 3; attempt++) {
-              try { return await chat.sendMessage(payload); } 
+              try { return await chat.sendMessage(payload); }
               catch (err) { if (attempt < 3) { await sleep(attempt * 1000); continue; } throw err; }
             }
           };
@@ -603,7 +603,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
               const fn = functions[call.name];
               if (fn) {
                 const apiRes = await fn(call.args, userId);
-                
+
                 // Si on a créé un projet, on récupère son ID pour la suite
                 if (call.name === 'creer_projet' && apiRes && apiRes.projectId) {
                   currentProjectIdTask = apiRes.projectId;
@@ -620,7 +620,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
             response = secondResult.response;
           }
 
-          try { text = response.text(); } catch (e) {}
+          try { text = response.text(); } catch (e) { }
           text = text.replace(/\[Actions:.*?\]/g, '').trim();
 
           if (!text || text.trim() === "") {
@@ -630,9 +630,9 @@ router.post('/chat', authMiddleware, async (req, res) => {
           // Sauvegarde de la réponse de l'IA (si projet existant ou nouvellement créé ou wizard)
           // Pour le wizard, on garde project_id = null (ou l'ID original passé) pour que l'interface wizard puisse le lire.
           const saveProjectId = (mode === 'wizard') ? (projectId || null) : (currentProjectIdTask || projectId || null);
-          
+
           await dbRun(
-            `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'model', ?)`, 
+            `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'model', ?)`,
             [saveProjectId, userId, text]
           );
 
