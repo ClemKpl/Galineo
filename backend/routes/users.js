@@ -22,7 +22,7 @@ router.get('/search', authMiddleware, (req, res) => {
 
 // GET /users/me — profil de l'utilisateur connecté
 router.get('/me', authMiddleware, (req, res) => {
-  db.get('SELECT id, name, email, avatar, created_at FROM users WHERE id = ?', [req.user.id], (err, row) => {
+  db.get('SELECT id, name, email, avatar, notif_project_updates, notif_added_to_project, notif_deadlines, created_at FROM users WHERE id = ?', [req.user.id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(404).json({ error: 'Utilisateur non trouvé' });
     res.json(row);
@@ -41,6 +41,12 @@ router.patch('/me', authMiddleware, (req, res) => {
   if (name)  { updates.push('name = ?');  values.push(name); }
   if (email) { updates.push('email = ?'); values.push(email); }
   if (req.body.avatar !== undefined) { updates.push('avatar = ?'); values.push(req.body.avatar); }
+  
+  // Notification settings
+  if (req.body.notif_project_updates !== undefined)   { updates.push('notif_project_updates = ?');   values.push(req.body.notif_project_updates ? 1 : 0); }
+  if (req.body.notif_added_to_project !== undefined)  { updates.push('notif_added_to_project = ?');  values.push(req.body.notif_added_to_project ? 1 : 0); }
+  if (req.body.notif_deadlines !== undefined)         { updates.push('notif_deadlines = ?');         values.push(req.body.notif_deadlines ? 1 : 0); }
+
   values.push(userId);
 
   db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values, function (err) {
@@ -48,7 +54,7 @@ router.patch('/me', authMiddleware, (req, res) => {
       if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Email déjà utilisé' });
       return res.status(500).json({ error: err.message });
     }
-    db.get('SELECT id, name, email, avatar FROM users WHERE id = ?', [userId], (err2, row) => {
+    db.get('SELECT id, name, email, avatar, notif_project_updates, notif_added_to_project, notif_deadlines FROM users WHERE id = ?', [userId], (err2, row) => {
       if (err2) return res.status(500).json({ error: err2.message });
       res.json(row);
     });

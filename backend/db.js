@@ -131,9 +131,15 @@ const initDb = async () => {
       password_hash TEXT NOT NULL,
       avatar TEXT,
       last_login_at TIMESTAMP,
+      notif_project_updates INTEGER DEFAULT 1,
+      notif_added_to_project INTEGER DEFAULT 1,
+      notif_deadlines INTEGER DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_project_updates INTEGER DEFAULT 1`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_added_to_project INTEGER DEFAULT 1`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_deadlines INTEGER DEFAULT 1`,
     `CREATE TABLE IF NOT EXISTS roles (
       id ${autoInc},
       name TEXT NOT NULL,

@@ -1,10 +1,10 @@
 const nodemailer = require('nodemailer');
 
-// Ionos SMTP Configuration from User
+// Configuration SMTP Ionos validée en test (port 587 avec STARTTLS)
 const transporter = nodemailer.createTransport({
-  host: 'smtp.ionos.com',
-  port: 465,
-  secure: true, // true for 465, false for other ports
+  host: 'smtp.ionos.fr',
+  port: 587,
+  secure: false, // true pour 465, false pour 587 (STARTTLS)
   auth: {
     user: 'contact@flavien-gherardi.fr',
     pass: 'Ionos74380!'

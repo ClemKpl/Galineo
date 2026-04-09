@@ -403,9 +403,9 @@ router.post('/:id/members', authMiddleware, (req, res) => {
           async function (err) {
             if (err) return res.status(500).json({ error: err.message });
             
-            // Envoyer email de notification
-            db.get('SELECT email FROM users WHERE id = ?', [userId], async (uErr, user) => {
-              if (user) {
+            // Envoyer email de notification si l'utilisateur l'a activé
+            db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [userId], async (uErr, user) => {
+              if (user && user.notif_added_to_project !== 0) {
                 try {
                   await sendMemberAdded({
                     email: user.email,

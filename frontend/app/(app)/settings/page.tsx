@@ -75,11 +75,34 @@ export default function SettingsPage() {
   const [pwdLoading, setPwdLoading] = useState(false);
 
   const { accent, setAccent } = useTheme();
+  const [accentLoading, setAccentLoading] = useState(false);
 
-  // Notifications (UI seulement pour V1)
+  // Notifications
   const [notifProject, setNotifProject]     = useState(true);
   const [notifMember, setNotifMember]       = useState(true);
-  const [notifDeadline, setNotifDeadline]   = useState(false);
+  const [notifDeadline, setNotifDeadline]   = useState(true);
+  const [notifLoading, setNotifLoading]     = useState(false);
+
+  // Charger les paramètres au montage
+  useEffect(() => {
+    if (user) {
+      setNotifProject(user.notif_project_updates !== 0);
+      setNotifMember(user.notif_added_to_project !== 0);
+      setNotifDeadline(user.notif_deadlines !== 0);
+    }
+  }, [user]);
+
+  const updateNotifSetting = async (key: string, value: boolean, setter: (v: boolean) => void) => {
+    const previousValue = value;
+    setter(value); // Optimistic update
+    try {
+      const updated = await api.patch('/users/me', { [key]: value });
+      if (token) login(token, updated);
+    } catch (err: any) {
+      setter(!value); // Rollback
+      showToast(err.message || 'Erreur lors de la mise à jour', 'error');
+    }
+  };
 
   // Danger zone
   const [deleteConfirm, setDeleteConfirm] = useState('');
@@ -238,16 +261,22 @@ export default function SettingsPage() {
       </Section>
 
       {/* ── Notifications ── */}
-      <Section title="Notifications" description="Choisissez ce que vous souhaitez recevoir">
-        <Toggle checked={notifProject}  onChange={setNotifProject}
+      <Section title="Notifications" description="Choisissez ce que vous souhaitez recevoir par email">
+        <Toggle 
+          checked={notifProject}  
+          onChange={(v) => updateNotifSetting('notif_project_updates', v, setNotifProject)}
           label="Activité sur mes projets"
-          description="Mises à jour, nouveaux membres, changements" />
-        <Toggle checked={notifMember}   onChange={setNotifMember}
+          description="Mises à jour, nouveaux messages et changements" />
+        <Toggle 
+          checked={notifMember}   
+          onChange={(v) => updateNotifSetting('notif_added_to_project', v, setNotifMember)}
           label="Ajout à un projet"
-          description="Quand quelqu'un vous ajoute à un projet" />
-        <Toggle checked={notifDeadline} onChange={setNotifDeadline}
+          description="Quand quelqu'un vous ajoute à un projet existant" />
+        <Toggle 
+          checked={notifDeadline} 
+          onChange={(v) => updateNotifSetting('notif_deadlines', v, setNotifDeadline)}
           label="Rappels de deadline"
-          description="3 jours avant l'échéance d'un projet" />
+          description="Alertes sur les échéances de vos projets" />
       </Section>
 
       {/* ── Apparence ── */}
