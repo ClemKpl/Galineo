@@ -3,13 +3,13 @@ import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { ProjectProvider } from './ProjectContext';
+import { ProjectProvider, Project } from './ProjectContext';
 
 export default function ProjectLayout({ children, params }: { children: React.ReactNode, params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
 
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();

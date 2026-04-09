@@ -22,8 +22,8 @@ export type Project = {
   members?: ProjectMember[];
   invitations?: any[];
   my_role_id?: number;
-  status: 'active' | 'completed' | 'deleted';
   avatar?: string | null;
+  is_favorite?: number;
 };
 
 const ProjectContext = createContext<Project | null>(null);
