@@ -611,12 +611,20 @@ HIÉRARCHIE DU PROJET :
             currentTools = toolConfig;
           } else { // mode === 'project'
             sysInstruct = `Tu es l'Assistant Galineo Room dédié au projet "${projectTitle}".
-            UTILISATEUR : ${userName} (${userEmail}).
+            UTILISATEUR ACTUEL : ${userName} (${userEmail}).
             CONTEXTE : ID Projet = ${projectId}. DATE DU JOUR : ${currentDate}.
+            
+            VOUS ÊTES DANS UN ENVIRONNEMENT MULTI-UTILISATEURS (Galineo Room).
+            - Chaque message de l'historique utilisateur est préfixé par son nom : [Nom].
+            - Tu dois être capable de distinguer qui a dit quoi.
+            - Adresse-toi aux utilisateurs par leur nom si la situation s'y prête.
+
+            ${hierarchyInfo}
+
             RÈGLES CRITIQUES :
-            1. STRUCTURE : Pour toute nouvelle fonctionnalité créée, tu DOIS générer AU MOINS 2 tâches liées.
+            1. STRUCTURE : Pour toute nouvelle fonctionnalité créée, génère AU MOINS 2 tâches liées.
             2. ÉCHÉANCES : Fournis TOUJOURS une 'start_date' et une 'due_date' pour toute création.
-            3. TON : Parle naturellement, évite les termes techniques de fonctions.`;
+            3. SUPPRESSION : L'outil 'supprimer_elements' est EXPÉRIMENTAL. Ne l'utilise que si explicitement demandé et confirme toujours avant. Tu ne peux PAS supprimer un projet entier, seulement ses tâches/fonctionnalités.`;
             currentTools = toolConfig;
           }
 
@@ -625,10 +633,19 @@ HIÉRARCHIE DU PROJET :
             systemInstruction: { role: "system", parts: [{ text: sysInstruct }] }
           }, { apiVersion: 'v1beta' });
 
-          const rawHistory = messages.slice(0, -1).map(m => ({
-            role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
-            parts: [{ text: m.content }]
-          }));
+          const rawHistory = messages.slice(0, -1).map(m => {
+            const isModel = m.role === 'assistant' || m.role === 'model';
+            const author = m.user_name || (isModel ? 'Assistant' : 'Utilisateur');
+            const contentWithAuthor = isModel ? m.content : `[${author}]: ${m.content}`;
+            
+            return {
+              role: isModel ? 'model' : 'user',
+              parts: [{ text: contentWithAuthor }]
+            };
+          });
+          
+          // Texte actuel de l'utilisateur (identifié lui aussi)
+          const identifiedUserText = `[${userName}]: ${userText}`;
 
           const history = [];
           let lastRole = null;
@@ -649,7 +666,7 @@ HIÉRARCHIE DU PROJET :
             }
           };
 
-          const result = await sendMessageWithRetry(userText);
+          const result = await sendMessageWithRetry(identifiedUserText);
           let response = result.response;
           let text = "";
           let currentProjectIdTask = projectId;
