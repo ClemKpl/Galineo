@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, use } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -8,6 +9,7 @@ import { ProjectProvider, Project } from './ProjectContext';
 export default function ProjectLayout({ children, params }: { children: React.ReactNode, params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
+  const { user } = useAuth();
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +52,7 @@ export default function ProjectLayout({ children, params }: { children: React.Re
     { name: 'Chat', path: `/projects/${projectId}/chat` },
   ];
 
-  const isAdmin = project.owner_id === project.my_user_id || project.my_role_id === 1 || project.my_role_id === 2;
+  const isAdmin = project.owner_id === user?.id || project.my_role_id === 1 || project.my_role_id === 2;
   if (isAdmin) {
     tabs.push({ name: 'Paramètres', path: `/projects/${projectId}/settings` });
   }
