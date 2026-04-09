@@ -22,10 +22,16 @@ router.get('/search', authMiddleware, (req, res) => {
 
 // GET /users/me — profil de l'utilisateur connecté
 router.get('/me', authMiddleware, (req, res) => {
-  db.get('SELECT id, name, email, avatar, notif_project_updates, notif_added_to_project, notif_deadlines, created_at FROM users WHERE id = ?', [req.user.id], (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!row) return res.status(404).json({ error: 'Utilisateur non trouvé' });
-    res.json(row);
+  const userId = req.user.id;
+  // Mise à jour de la dernière connexion lors de la validation de session
+  db.run('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [userId], (updateErr) => {
+    if (updateErr) console.error('❌ Erreur update last_login_at:', updateErr.message);
+    
+    db.get('SELECT id, name, email, avatar, notif_project_updates, notif_added_to_project, notif_deadlines, created_at FROM users WHERE id = ?', [userId], (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      res.json(row);
+    });
   });
 });
 
