@@ -280,6 +280,28 @@ const initDb = async () => {
       action_type TEXT NOT NULL,
       details TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS chat_groups (
+      id ${autoInc},
+      title TEXT NOT NULL,
+      description TEXT,
+      avatar TEXT,
+      created_by INTEGER NOT NULL REFERENCES users(id),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS chat_group_members (
+      group_id INTEGER NOT NULL REFERENCES chat_groups(id),
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      role TEXT DEFAULT 'member',
+      joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (group_id, user_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS chat_group_messages (
+      id ${autoInc},
+      group_id INTEGER NOT NULL REFERENCES chat_groups(id),
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`
   ];
 
