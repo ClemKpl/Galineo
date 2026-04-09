@@ -437,11 +437,13 @@ router.get('/active-task/:projectId', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   try {
     const isWizard = projectId === 'wizard';
+    // On ignore les tâches de plus de 5 minutes (zombie tasks)
     const task = await dbGet(
       `SELECT * FROM ai_active_tasks 
        WHERE user_id = ? 
        AND ${isWizard ? 'project_id IS NULL' : 'project_id = ?'} 
        AND status = 'running' 
+       AND created_at > datetime('now', '-5 minutes')
        LIMIT 1`,
       isWizard ? [userId] : [userId, projectId]
     );
@@ -483,6 +485,19 @@ router.post('/chat', authMiddleware, async (req, res) => {
     console.error('Initial DB ops error', err);
   }
 
+  // Nettoyage des anciennes tâches "bloquées" pour cet utilisateur/projet
+  try {
+    const isWizard = mode === 'wizard';
+    await dbRun(
+      `UPDATE ai_active_tasks SET status = 'failed' 
+       WHERE user_id = ? AND status = 'running' 
+       AND ${isWizard ? 'project_id IS NULL' : 'project_id = ?'}`,
+      isWizard ? [userId] : [userId, projectId]
+    );
+  } catch (err) {
+    console.error('Failed to clean up old tasks', err);
+  }
+
   // Création de la tâche en arrière-plan
   let taskId = null;
   try {
@@ -498,7 +513,8 @@ router.post('/chat', authMiddleware, async (req, res) => {
   // Réponse immédiate au client
   res.status(202).json({ 
     message: "L'assistant a commencé son analyse en arrière-plan.",
-    taskId
+    taskId,
+    status: 'processing'
   });
 
   // TRAITEMENT EN ARRIÈRE-PLAN
