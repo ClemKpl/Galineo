@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useEffect, use } from 'react';
+import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -99,18 +100,13 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
 
   async function checkActiveTask() {
     try {
-      const res = await fetch(`${API_URL}/ai/active-task/${projectId}`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        if (data.active) {
-          setLoading(true);
-        } else if (loading) {
-          // Si on était en loading et que la tâche n'est plus active, on recharge l'historique
-          setLoading(false);
-          loadHistory();
-        }
+      const res = await api.get(`/ai/active-task/${projectId}`);
+      if (res && res.active) {
+        setLoading(true);
+      } else if (loading) {
+        // Si on était en loading et que la tâche n'est plus active, on recharge l'historique
+        setLoading(false);
+        loadHistory();
       }
     } catch (err) {
       console.error('Failed to check active task', err);
@@ -126,12 +122,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
     
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/ai/history/${projectId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-      });
-      if (!res.ok) throw new Error("Échec de la réinitialisation");
-      
+      await api.delete(`/ai/history/${projectId}`);
       // Reset local messages
       setMessages([
         {
@@ -150,11 +141,8 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   async function loadHistory() {
     setFetchingHistory(true);
     try {
-      const res = await fetch(`${API_URL}/ai/history/${projectId}`, {
-        headers: { 'Authorization': `Bearer ${getToken()}` },
-      });
-      const data = await res.json();
-      if (res.ok && data.history && data.history.length > 0) {
+      const data = await api.get(`/ai/history/${projectId}`);
+      if (data && data.history && data.history.length > 0) {
         setMessages(data.history.map((h: any) => ({
           role: h.role === 'model' ? 'assistant' : 'user',
           content: h.content,
@@ -192,23 +180,13 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
         content: m.content 
       }));
 
-      const res = await fetch(`${API_URL}/ai/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}`,
-        },
-        body: JSON.stringify({ 
-          messages: history,
-          projectId: projectId,
-          mode: 'project'
-        }),
+      const res = await api.post('/ai/chat', { 
+        messages: history,
+        projectId: projectId,
+        mode: 'project'
       });
 
-      const data = await res.json();
-      if (!res.ok && res.status !== 202) throw new Error(data.error || 'Erreur serveur');
-
-      if (res.status === 202) {
+      if (res.status === 'processing') {
         // En arrière-plan sur le serveur. On laisse loading = true
         // Le polling de l'active-task prendra le relais
         return;
@@ -217,7 +195,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       // Cas synchrone (legacy ou fallback)
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: data.reply,
+        content: res.reply,
         user_name: 'Galineo Room',
         created_at: new Date().toISOString()
       }]);
