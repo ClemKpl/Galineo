@@ -1,11 +1,19 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="text-stone-400">Chargement...</div>}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
   const { login } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
