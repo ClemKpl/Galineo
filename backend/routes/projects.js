@@ -71,7 +71,6 @@ router.post('/', authMiddleware, (req, res) => {
                       [memberId, 'project_invite', 'Nouveau projet', `Vous avez été ajouté au projet "${title}"`, projectId, ownerId]
                     );
 
-                    /* Désactivé temporairement à la demande de l'utilisateur
                     db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [memberId], (uErr, memberData) => {
                       if (memberData && memberData.notif_added_to_project !== 0) {
                         sendMemberAdded({
@@ -86,7 +85,6 @@ router.post('/', authMiddleware, (req, res) => {
                         });
                       }
                     });
-                    */
                   }
                 );
               }
@@ -444,7 +442,6 @@ router.post('/:id/members', authMiddleware, (req, res) => {
               [userId, 'project_invite', 'Invitation au projet', `Vous avez été ajouté au projet "${project.title}"`, projectId, currentUserId]
             );
 
-            /* Désactivé temporairement
             db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [userId], (uErr, userData) => {
               if (userData && userData.notif_added_to_project !== 0) {
                 sendMemberAdded({
@@ -459,7 +456,6 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                 });
               }
             });
-            */
 
             // 3. Réponse immédiate
             res.json({ message: 'Membre ajouté et notifié.' });
@@ -484,7 +480,6 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                   [userExists.id, 'project_invite', 'Invitation au projet', `Vous avez été ajouté au projet "${project.title}"`, projectId, currentUserId]
                 );
 
-                /* Désactivé temporairement
                 sendMemberAdded({
                   email: email,
                   projectName: project.title,
@@ -495,7 +490,6 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                 }).catch((mailErr) => {
                   logActivity(projectId, currentUserId, 'system', userExists.id, 'email_error', { text: `Échec envoi email à ${email}: ${mailErr.message}` }).catch(e => console.error(e));
                 });
-                */
 
                 res.json({ message: 'Utilisateur trouvé et ajouté au projet.' });
               }

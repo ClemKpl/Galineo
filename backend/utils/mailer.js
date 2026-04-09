@@ -3,6 +3,9 @@ const db = require('../db');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const FROM = '"Galineo" <contact@flavien-gherardi.fr>';
+
 async function sendMail({ to, subject, html }) {
   const { error } = await resend.emails.send({
     from: FROM,
@@ -12,9 +15,6 @@ async function sendMail({ to, subject, html }) {
   });
   if (error) throw new Error(error.message);
 }
-
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
-const FROM = '"Galineo" <contact@flavien-gherardi.fr>';
 
 function baseTemplate(content) {
   return `
