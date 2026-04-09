@@ -103,22 +103,49 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Polling direct sur l'historique : détecte quand une nouvelle réponse IA apparaît
   useEffect(() => {
     if (!loading) return;
     const interval = setInterval(async () => {
       try {
+        const activeRes = await api.get(`/ai/active-task/${projectId}`);
+        
+        // Si la tâche a échoué (failed)
+        if (activeRes.task && activeRes.task.status === 'failed') {
+          setLoading(false);
+          setMessages(prev => {
+            if (prev[prev.length - 1].content.includes('⚠️')) return prev;
+            return [...prev, { 
+              role: 'assistant', 
+              content: "⚠️ **Désolé**, j'ai rencontré une difficulté technique. Peux-tu reformuler ou réessayer ?",
+              user_name: 'Système',
+              created_at: new Date().toISOString()
+            }];
+          });
+          return;
+        }
+
+        // Si la tâche n'est plus active mais qu'on était en train de charger
+        if (!activeRes.active) {
+           loadHistory();
+           setLoading(false);
+           return;
+        }
+
         const data = await api.get(`/ai/history/${projectId}`);
         if (data?.history?.length > 0) {
           const lastDbMsg = data.history[data.history.length - 1];
+          // On compare avec le dernier contenu connu pour voir si l'IA a répondu
           if (lastDbMsg.role === 'model' && lastDbMsg.content !== lastModelContentRef.current) {
-            setMessages(data.history.map((h: any) => ({
+            const mapped = data.history.map((h: any) => ({
               role: h.role === 'model' ? 'assistant' : 'user',
               content: h.content,
               user_name: h.user_name,
               user_avatar: h.user_avatar,
               created_at: h.created_at,
-            })));
+            }));
+            
+            // On préserve le message de bienvenue initial
+            setMessages([messages[0], ...mapped]);
             setLoading(false);
           }
         }
@@ -127,13 +154,15 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [loading, projectId]);
+  }, [loading, projectId, messages]);
 
   async function checkActiveTask() {
     try {
       const res = await api.get(`/ai/active-task/${projectId}`);
       if (res && res.active) {
         setLoading(true);
+      } else if (res.task && res.task.status === 'failed') {
+        setLoading(false);
       }
     } catch (err) {
       console.error('Failed to check active task', err);
@@ -166,13 +195,16 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
     try {
       const data = await api.get(`/ai/history/${projectId}`);
       if (data && data.history && data.history.length > 0) {
-        setMessages(data.history.map((h: any) => ({
+        const mapped = data.history.map((h: any) => ({
           role: h.role === 'model' ? 'assistant' : 'user',
           content: h.content,
           user_name: h.user_name,
           user_avatar: h.user_avatar,
           created_at: h.created_at
-        })));
+        }));
+        
+        // On préserve le message de bienvenue si l'historique est chargé
+        setMessages([messages[0], ...mapped]);
       }
     } catch (err) {
       console.error('Failed to load history', err);

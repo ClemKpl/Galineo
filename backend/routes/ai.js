@@ -628,9 +628,12 @@ router.post('/chat', authMiddleware, async (req, res) => {
           }
 
           // Sauvegarde de la réponse de l'IA (si projet existant ou nouvellement créé ou wizard)
+          // Pour le wizard, on garde project_id = null (ou l'ID original passé) pour que l'interface wizard puisse le lire.
+          const saveProjectId = (mode === 'wizard') ? (projectId || null) : (currentProjectIdTask || projectId || null);
+          
           await dbRun(
             `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'model', ?)`, 
-            [currentProjectIdTask || null, userId, text]
+            [saveProjectId, userId, text]
           );
 
           // Notification finale

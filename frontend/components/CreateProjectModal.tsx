@@ -140,10 +140,19 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
       const res = await api.get('/ai/active-task/wizard');
       if (res && res.active) {
         setWizardLoading(true);
-      } else if (wizardLoading) {
-        setWizardLoading(false);
-        // La tâche est finie ! On récupère les derniers messages (dont la réponse de l'IA)
-        loadHistory();
+      } else {
+        if (wizardLoading) {
+           setWizardLoading(false);
+           loadHistory();
+        }
+        // Si la tâche a échoué (failed), on pourrait afficher un message d'erreur
+        if (res.task && res.task.status === 'failed') {
+          setWizardLoading(false);
+          setWizardMessages(prev => {
+            if (prev[prev.length - 1].content.includes('⚠️')) return prev;
+            return [...prev, { role: 'assistant', content: "⚠️ **Désolé**, j'ai rencontré une difficulté technique. Peux-tu reformuler ou réessayer ?" }];
+          });
+        }
       }
     } catch (err) {
       console.error('Failed to check wizard task', err);
@@ -154,11 +163,17 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
   async function loadHistory() {
     try {
       const data = await api.get('/ai/history/wizard');
-      if (data && data.history) {
-        setWizardMessages(data.history.map((h: any) => ({
+      if (data && data.history && data.history.length > 0) {
+        const MappedHistory = data.history.map((h: any) => ({
           role: h.role === 'model' ? 'assistant' : 'user',
           content: h.content
-        })));
+        }));
+        
+        // On garde le message de bienvenue s'il n'est pas déjà dans l'historique
+        setWizardMessages([
+          { role: 'assistant', content: "Merveilleux ! Je suis là pour t'aider à donner vie à ton nouveau projet. ✨\n\nPour commencer, pourrais-tu me dire quel est le **nom** de ce beau projet ?" },
+          ...MappedHistory
+        ]);
       }
     } catch (err) {
       console.error('Failed to load wizard history', err);
