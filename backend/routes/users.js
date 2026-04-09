@@ -107,6 +107,68 @@ router.delete('/me', authMiddleware, (req, res) => {
   });
 });
 
+// POST /users/me/reset — Réinitialiser le compte ( quitter tous les projets )
+router.post('/reset', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  
+  // 1. Trouver tous les projets dont l'utilisateur est membre
+  db.all('SELECT project_id, role_id FROM project_members WHERE user_id = ?', [userId], async (err, memberships) => {
+    if (err) return res.status(500).json({ error: err.message });
+    
+    try {
+      for (const m of memberships) {
+        const projectId = m.project_id;
+        
+        // Si l'utilisateur est le propriétaire (role_id 1)
+        if (m.role_id === 1) {
+          // Trouver un successeur (le plus ancien membre non-propriétaire)
+          await new Promise((resolve, reject) => {
+            db.get(
+              'SELECT user_id FROM project_members WHERE project_id = ? AND user_id != ? ORDER BY created_at ASC LIMIT 1',
+              [projectId, userId],
+              (succErr, successor) => {
+                if (succErr) return reject(succErr);
+                
+                if (successor) {
+                  // Transférer la propriété
+                  db.run('UPDATE projects SET owner_id = ? WHERE id = ?', [successor.user_id, projectId], (updErr) => {
+                    if (updErr) return reject(updErr);
+                    // Mettre à jour son rôle en Propriétaire
+                    db.run('UPDATE project_members SET role_id = 1 WHERE project_id = ? AND user_id = ?', [projectId, successor.user_id], (roleErr) => {
+                       if (roleErr) return reject(roleErr);
+                       logActivity(projectId, userId, 'project', projectId, 'ownership_transferred', { new_owner_id: successor.user_id }).catch(console.error);
+                       resolve();
+                    });
+                  });
+                } else {
+                  // Personne d'autre : suppression du projet
+                  db.run("UPDATE projects SET status = 'deleted' WHERE id = ?", [projectId], (delErr) => {
+                    if (delErr) return reject(delErr);
+                    resolve();
+                  });
+                }
+              }
+            );
+          });
+        }
+        
+        // Quitter le projet
+        await new Promise((resolve, reject) => {
+          db.run('DELETE FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, userId], (leaveErr) => {
+            if (leaveErr) return reject(leaveErr);
+            resolve();
+          });
+        });
+      }
+      
+      res.json({ message: 'Compte réinitialisé : vous avez quitté tous vos projets.' });
+    } catch (loopErr) {
+      console.error('❌ Erreur reset account:', loopErr);
+      res.status(500).json({ error: 'Une erreur est survenue lors de la réinitialisation.' });
+    }
+  });
+});
+
 // GET /users — liste de tous les utilisateurs
 router.get('/', authMiddleware, (req, res) => {
   db.all('SELECT id, name, email, created_at FROM users', [], (err, rows) => {

@@ -106,6 +106,8 @@ export default function SettingsPage() {
   // Danger zone
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   // Toast
   const [toast, setToast] = useState<Toast | null>(null);
@@ -156,6 +158,21 @@ export default function SettingsPage() {
     } catch (err: unknown) {
       showToast((err as Error).message, 'error');
       setDeleteLoading(false);
+    }
+  };
+
+  const handleResetAccount = async () => {
+    if (resetConfirm !== 'RESET') { showToast('Tapez exactement « RESET » pour confirmer', 'error'); return; }
+    setResetLoading(true);
+    try {
+      const res = await api.post('/users/me/reset', {});
+      showToast(res.message);
+      setResetConfirm('');
+      // Optionnel: on peut logout ou juste rafraîchir le dashboard après redirection manuelle
+    } catch (err: unknown) {
+      showToast((err as Error).message, 'error');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -301,9 +318,35 @@ export default function SettingsPage() {
           <h2 className="font-semibold text-red-600 text-base">Zone de danger</h2>
           <p className="text-stone-400 text-sm mt-0.5">Actions irréversibles sur votre compte</p>
         </div>
+        
+        <div className="px-6 py-5 border-b border-stone-100 bg-stone-50/30">
+          <h3 className="text-sm font-bold text-stone-900 mb-1">Quitter tous les projets</h3>
+          <p className="text-xs text-stone-500 mb-4">
+            Vous quitterez tous vos projets. Pour ceux dont vous êtes propriétaire, la gestion sera transférée au membre le plus ancien ou le projet sera supprimé si vous êtes seul.
+          </p>
+          <div className="flex gap-3 items-center">
+            <input
+              type="text"
+              value={resetConfirm}
+              onChange={(e) => setResetConfirm(e.target.value)}
+              placeholder="Tapez « RESET » pour confirmer"
+              className="flex-1 px-4 py-2.5 rounded-xl border border-orange-200 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm font-medium"
+            />
+            <button
+              type="button"
+              onClick={handleResetAccount}
+              disabled={resetLoading || resetConfirm !== 'RESET'}
+              className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-40 flex items-center gap-2 shrink-0">
+              {resetLoading && <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+
         <div className="px-6 py-5">
+          <h3 className="text-sm font-bold text-red-600 mb-1">Supprimer le compte</h3>
           <p className="text-sm text-stone-600 mb-4">
-            La suppression de votre compte est <strong>définitive</strong>. Toutes vos données seront effacées et vous serez retiré de tous les projets.
+            La suppression de votre compte est <strong>définitive</strong>. Toutes vos données personnelles seront effacées.
           </p>
           <div className="flex gap-3 items-center">
             <input

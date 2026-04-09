@@ -448,7 +448,7 @@ export default function DashboardPage() {
             onDrop={async (e) => {
               e.preventDefault();
               try {
-                await api.patch(`/projects/${draggingProjectId}/complete`);
+                await api.patch(`/projects/${draggingProjectId}/complete`, {});
                 setDraggingProjectId(null);
                 fetchProjects();
               } catch (err) { alert("Erreur lors de l'archivage"); }

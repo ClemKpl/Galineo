@@ -190,7 +190,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
     const defaultRole = roles.find((r) => r.name === 'Membre') ?? roles[2];
     setMembers((prev) => [...prev, { user, roleId: defaultRole?.id ?? 3 }]);
     setSearch('');
-    setShowList(false);
+    // setShowList(false); // On laisse la liste ouverte pour permettre d'ajouter plusieurs membres
   }, [roles]);
 
   const removeMember = (id: number) => setMembers((prev) => prev.filter((m) => m.user.id !== id));

@@ -226,7 +226,7 @@ export default function ProjectSettingsPage() {
         <ManageMembersModal 
           projectId={project.id} 
           onClose={() => setShowMembersModal(false)}
-          onChanged={() => window.location.reload()}
+          onChanged={() => {}}
         />
       )}
     </div>
