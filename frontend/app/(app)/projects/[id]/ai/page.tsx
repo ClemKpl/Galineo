@@ -316,9 +316,9 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
 
           return (
             <div key={i} className={`flex w-full group ${isUser ? 'justify-end' : 'justify-start'}`}>
-              <div className={`flex max-w-[85%] sm:max-w-[70%] gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                {/* Avatar */}
-                <div className="shrink-0 pt-1">
+              <div className={`flex max-w-[95%] lg:max-w-[75%] gap-2 lg:gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                {/* Avatar - Masqué sur mobile pour l'IA, visible pour l'utilisateur */}
+                <div className={`shrink-0 pt-1 ${isUser ? '' : 'hidden lg:block'}`}>
                   <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden border ${
                     isUser ? 'bg-stone-100 border-stone-200' : 'bg-orange-500 border-orange-400 text-white'
                   }`}>
@@ -384,7 +384,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
                 send();
               }
             }}
-            placeholder="Échange avec l'IA pour gérer ton projet..."
+            placeholder="Échange avec l'IA..."
             className="w-full pl-5 pr-14 py-4 bg-stone-50 border border-stone-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all resize-none min-h-[60px] max-h-[200px]"
             rows={1}
             style={{ height: 'auto' }}
@@ -404,7 +404,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
             </svg>
           </button>
         </div>
-        <p className="text-center text-[10px] text-stone-400 mt-4 uppercase tracking-[0.2em] font-bold">
+        <p className="hidden sm:block text-center text-[10px] text-stone-400 mt-4 uppercase tracking-[0.2em] font-bold">
           Entrée pour envoyer · Shift+Entrée pour passer à la ligne
         </p>
       </div>
