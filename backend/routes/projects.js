@@ -50,40 +50,45 @@ router.post('/', authMiddleware, (req, res) => {
           // Logger l'activité de création
           await logActivity(projectId, ownerId, 'project', projectId, 'created', { title });
 
-          // Ajouter les autres membres et les notifier
+          // Ajouter les autres membres et les notifier (en arrière-plan pour l'email)
           if (members && Array.isArray(members) && members.length > 0) {
+            console.log(`[POST /projects] Ajout de ${members.length} membres pour le projet ${projectId}`);
             for (const { userId: memberId, roleId } of members) {
               if (memberId !== ownerId) {
                 db.run(
                   'INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
                   [projectId, memberId, roleId || 3],
-                  async (err) => {
-                    if (err) return;
-                    await logActivity(projectId, ownerId, 'member', memberId, 'added', { roleId: roleId || 3 });
-
-                    // Envoyer notification par email
-                    db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [memberId], async (uErr, member) => {
-                      if (member && member.notif_added_to_project !== 0) {
-                        try {
-                          await sendMemberAdded({
-                            email: member.email,
-                            projectName: title,
-                            inviterName: req.user.name,
-                            projectId: projectId
-                          });
-                          await logActivity(projectId, ownerId, 'system', memberId, 'email_sent', { text: `Email de notification envoyé à ${member.email} (Création projet)` });
-                        } catch (mErr) {
-                          console.error('❌ Erreur mail création projet:', mErr.message);
-                          await logActivity(projectId, ownerId, 'system', memberId, 'email_error', { text: `Échec envoi email à ${member.email}: ${mErr.message}` });
-                        }
-                      }
-                    });
-
-                    // Notification dans l'application
+                  (err) => {
+                    if (err) {
+                      console.error(`❌ [POST /projects] Erreur ajout membre ${memberId}:`, err.message);
+                      return;
+                    }
+                    
+                    // Activité et Notification interne Immédiate
+                    logActivity(projectId, ownerId, 'member', memberId, 'added', { roleId: roleId || 3 }).catch(e => console.error(e));
                     db.run(
                       'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
                       [memberId, 'project_invite', 'Nouveau projet', `Vous avez été ajouté au projet "${title}"`, projectId, ownerId]
                     );
+
+                    // Email en arrière-plan
+                    db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [memberId], (uErr, memberData) => {
+                      if (memberData && memberData.notif_added_to_project !== 0) {
+                        console.log(`[POST /projects] Tentative d'envoi email notification à ${memberData.email}...`);
+                        sendMemberAdded({
+                          email: memberData.email,
+                          projectName: title,
+                          inviterName: req.user.name,
+                          projectId: projectId
+                        }).then(() => {
+                           console.log(`✅ [POST /projects] Email envoyé à ${memberData.email}`);
+                           logActivity(projectId, ownerId, 'system', memberId, 'email_sent', { text: `Email de notification envoyé à ${memberData.email} (Création projet)` }).catch(e => console.error(e));
+                        }).catch((mErr) => {
+                          console.error('❌ [POST /projects] Erreur mail création projet:', mErr.message);
+                          logActivity(projectId, ownerId, 'system', memberId, 'email_error', { text: `Échec envoi email à ${memberData.email}: ${mErr.message}` }).catch(e => console.error(e));
+                        });
+                      }
+                    });
                   }
                 );
               }
@@ -424,99 +429,109 @@ router.post('/:id/members', authMiddleware, (req, res) => {
 
       // CAS 1 : On a un userId (l'utilisateur existe déjà et a été sélectionné)
       if (userId) {
+        console.log(`[POST /members] Ajout direct de l'userId ${userId} au projet ${projectId}`);
         db.run(
           'INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
           [projectId, userId, roleId || 3],
-          async function (err) {
-            if (err) return res.status(500).json({ error: err.message });
+          function (err) {
+            if (err) {
+              console.error(`❌ [POST /members] Erreur DB:`, err.message);
+              return res.status(500).json({ error: err.message });
+            }
             
-            // Envoyer email de notification si l'utilisateur l'a activé
-            db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [userId], async (uErr, user) => {
-              if (user && user.notif_added_to_project !== 0) {
-                try {
-                  await sendMemberAdded({
-                    email: user.email,
-                    projectName: project.title,
-                    inviterName: req.user.name,
-                    projectId: projectId
-                  });
-                  await logActivity(projectId, currentUserId, 'system', userId, 'email_sent', { text: `Email de notification envoyé à ${user.email}` });
-                } catch (mailErr) {
-                  console.error('❌ Erreur email addition:', mailErr.message);
-                  await logActivity(projectId, currentUserId, 'system', userId, 'email_error', { text: `Échec envoi email à ${user.email}: ${mailErr.message}` });
-                }
-              }
-            });
-
-            // Notification dans l'application
+            // 1. Actions immédiates (Domestiques)
+            logActivity(projectId, currentUserId, 'member', userId, 'added_or_updated', { roleId: roleId || 3 }).catch(e => console.error(e));
             db.run(
               'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
               [userId, 'project_invite', 'Invitation au projet', `Vous avez été ajouté au projet "${project.title}"`, projectId, currentUserId]
             );
 
-            await logActivity(projectId, currentUserId, 'member', userId, 'added_or_updated', { roleId: roleId || 3 });
+            // 2. Email en arrière-plan
+            db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [userId], (uErr, userData) => {
+              if (userData && userData.notif_added_to_project !== 0) {
+                console.log(`[POST /members] Envoi email notification à ${userData.email}...`);
+                sendMemberAdded({
+                  email: userData.email,
+                  projectName: project.title,
+                  inviterName: req.user.name,
+                  projectId: projectId
+                }).then(() => {
+                   console.log(`✅ [POST /members] Email envoyé à ${userData.email}`);
+                   logActivity(projectId, currentUserId, 'system', userId, 'email_sent', { text: `Email de notification envoyé à ${userData.email}` }).catch(e => console.error(e));
+                }).catch((mailErr) => {
+                   console.error('❌ [POST /members] Erreur email addition:', mailErr.message);
+                   logActivity(projectId, currentUserId, 'system', userId, 'email_error', { text: `Échec envoi email à ${userData.email}: ${mailErr.message}` }).catch(e => console.error(e));
+                });
+              }
+            });
+
+            // 3. Réponse immédiate
             res.json({ message: 'Membre ajouté et notifié.' });
           }
         );
       } 
       // CAS 2 : On a un email (invitation directe)
       else if (email) {
-        // Vérifier si l'utilisateur existe déjà
+        console.log(`[POST /members] Invitation par email: ${email}`);
         db.get('SELECT id FROM users WHERE email = ?', [email], (errSearch, userExists) => {
           if (userExists) {
-            // L'utilisateur existe, on l'ajoute directement
             db.run(
               'INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
               [projectId, userExists.id, roleId || 3],
-              async function (errAdd) {
+              function (errAdd) {
                 if (errAdd) return res.status(500).json({ error: errAdd.message });
                 
-                try {
-                  await sendMemberAdded({
-                    email: email,
-                    projectName: project.title,
-                    inviterName: req.user.name,
-                    projectId: projectId
-                  });
-                  await logActivity(projectId, currentUserId, 'system', userExists.id, 'email_sent', { text: `Email de notification envoyé à ${email}` });
-                } catch (mailErr) {
-                  console.error('❌ Erreur email addition:', mailErr.message);
-                  await logActivity(projectId, currentUserId, 'system', userExists.id, 'email_error', { text: `Échec envoi email à ${email}: ${mailErr.message}` });
-                }
-
-                // Notification interne si déjà inscrit
+                // Actions immédiates
+                logActivity(projectId, currentUserId, 'member', userExists.id, 'added', { roleId: roleId || 3 }).catch(e => console.error(e));
                 db.run(
                   'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
                   [userExists.id, 'project_invite', 'Invitation au projet', `Vous avez été ajouté au projet "${project.title}"`, projectId, currentUserId]
                 );
 
-                await logActivity(projectId, currentUserId, 'member', userExists.id, 'added', { roleId: roleId || 3 });
+                // Email arrière-plan
+                console.log(`[POST /members] Envoi email notification à ${email}...`);
+                sendMemberAdded({
+                  email: email,
+                  projectName: project.title,
+                  inviterName: req.user.name,
+                  projectId: projectId
+                }).then(() => {
+                   console.log(`✅ [POST /members] Email envoyé à ${email}`);
+                   logActivity(projectId, currentUserId, 'system', userExists.id, 'email_sent', { text: `Email de notification envoyé à ${email}` }).catch(e => console.error(e));
+                }).catch((mailErr) => {
+                  console.error('❌ [POST /members] Erreur email addition:', mailErr.message);
+                  logActivity(projectId, currentUserId, 'system', userExists.id, 'email_error', { text: `Échec envoi email à ${email}: ${mailErr.message}` }).catch(e => console.error(e));
+                });
+
                 res.json({ message: 'Utilisateur trouvé et ajouté au projet.' });
               }
             );
           } else {
-            // L'utilisateur n'existe pas, on crée une invitation
             const token = crypto.randomBytes(32).toString('hex');
             db.run(
               'INSERT INTO invitations (project_id, email, role_id, inviter_id, token) VALUES (?, ?, ?, ?, ?)',
               [projectId, email, roleId || 3, currentUserId, token],
-              async function (errInvite) {
+              function (errInvite) {
                 if (errInvite) return res.status(500).json({ error: errInvite.message });
                 
-                try {
-                  await sendProjectInvitation({
-                    email: email,
-                    projectName: project.title,
-                    inviterName: req.user.name,
-                    token: token
-                  });
-                  await logActivity(projectId, currentUserId, 'system', null, 'email_sent', { text: `Email d'invitation envoyé à ${email}` });
-                } catch (mailErr) {
-                  console.error('❌ Erreur email invitation:', mailErr.message);
-                  await logActivity(projectId, currentUserId, 'system', null, 'email_error', { text: `Échec envoi invitation à ${email}: ${mailErr.message}` });
-                }
+                // Actions immédiates
+                logActivity(projectId, currentUserId, 'invitation', null, 'sent', { email, roleId: roleId || 3 }).catch(e => console.error(e));
+                
+                // Email arrière-plan
+                console.log(`[POST /members] Envoi email invitation à ${email}...`);
+                sendProjectInvitation({
+                  email: email,
+                  projectName: project.title,
+                  inviterName: req.user.name,
+                  token: token
+                }).then(() => {
+                   console.log(`✅ [POST /members] Invitation envoyée à ${email}`);
+                   logActivity(projectId, currentUserId, 'system', null, 'email_sent', { text: `Email d'invitation envoyé à ${email}` }).catch(e => console.error(e));
+                }).catch((mailErr) => {
+                  console.error('❌ [POST /members] Erreur email invitation:', mailErr.message);
+                  logActivity(projectId, currentUserId, 'system', null, 'email_error', { text: `Échec envoi invitation à ${email}: ${mailErr.message}` }).catch(e => console.error(e));
+                });
 
-                await logActivity(projectId, currentUserId, 'invitation', null, 'sent', { email, roleId: roleId || 3 });
                 res.json({ message: 'Invitation envoyée par email.' });
               }
             );
