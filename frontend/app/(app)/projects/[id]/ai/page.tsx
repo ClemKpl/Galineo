@@ -83,6 +83,17 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
     checkActiveTask();
   }, [projectId]);
 
+  // Recharge l'historique quand une nouvelle notification arrive (ex: réponse IA prête)
+  useEffect(() => {
+    function onNewNotification() {
+      if (!loading) {
+        loadHistory();
+      }
+    }
+    window.addEventListener('new-notification', onNewNotification);
+    return () => window.removeEventListener('new-notification', onNewNotification);
+  }, [loading]);
+
   useEffect(() => {
     // Scroll auto lors de nouveaux messages ou changement d'état
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

@@ -91,7 +91,13 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
   const fetchUnreadCount = useCallback(async () => {
     try {
       const data = await api.get('/notifications/unread-count');
-      setUnreadCount(data.count || 0);
+      const newCount = data.count || 0;
+      setUnreadCount(prev => {
+        if (newCount > prev) {
+          window.dispatchEvent(new Event('new-notification'));
+        }
+        return newCount;
+      });
     } catch { }
   }, []);
 
