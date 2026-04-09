@@ -525,6 +525,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
       for (let i = 0; i < apiKeys.length; i++) {
         const apiKey = apiKeys[i];
         try {
+          const actions = [];
           const genAI = new GoogleGenerativeAI(apiKey);
           let sysInstruct = '';
           let currentTools = undefined;
