@@ -20,6 +20,7 @@ export type Project = {
   owner_id: number;
   owner_name?: string;
   members?: ProjectMember[];
+  invitations?: any[];
   my_role_id?: number;
   status: 'active' | 'completed' | 'deleted';
   avatar?: string | null;
