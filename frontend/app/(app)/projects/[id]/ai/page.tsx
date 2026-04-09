@@ -78,6 +78,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
 
   useEffect(() => {
     loadHistory();
+    // Appel immédiat pour détecter une tâche en cours dès le montage
     checkActiveTask();
   }, [projectId]);
 
@@ -315,15 +316,17 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
         })}
 
         {loading && (
-          <div className="flex justify-start">
+          <div className="flex justify-start animate-in fade-in slide-in-from-left-4 duration-500">
             <div className="flex max-w-[800px] gap-4">
-              <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center bg-orange-500 text-white text-[10px] font-bold shadow-sm">
-                AI
+              <div className="w-9 h-9 rounded-2xl shrink-0 flex items-center justify-center bg-orange-500 text-white shadow-md">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1-10 10A10 10 0 0 1 12 2zm0 2a8 8 0 1 0 8 8 8 8 0 0 0-8-8zm-1 3h2v2h-2zm0 4h2v6h-2z"/></svg>
               </div>
-              <div className="px-5 py-3.5 rounded-2xl bg-white border border-stone-100 text-stone-400 text-xs flex items-center gap-2 italic">
-                <span className="w-1 h-1 bg-stone-300 rounded-full animate-bounce" />
-                <span className="w-1 h-1 bg-stone-300 rounded-full animate-bounce [animation-delay:0.2s]" />
-                <span className="w-1 h-1 bg-stone-300 rounded-full animate-bounce [animation-delay:0.4s]" />
+              <div className="px-6 py-4 rounded-2xl bg-white border border-orange-100 text-stone-500 text-sm flex items-center gap-3 shadow-sm italic">
+                <div className="flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                  <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                  <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" />
+                </div>
                 Galineo réfléchit...
               </div>
             </div>

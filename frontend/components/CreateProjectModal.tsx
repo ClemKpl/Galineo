@@ -116,6 +116,39 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
     }
   }, [wizardMessages, view]);
 
+  // Polling pour le Wizard
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (view === 'wizard' && wizardLoading) {
+      interval = setInterval(() => {
+        checkActiveTask();
+      }, 3000);
+    }
+    return () => { if (interval) clearInterval(interval); };
+  }, [view, wizardLoading]);
+
+  // Détection initiale au montage du mode wizard
+  useEffect(() => {
+    if (view === 'wizard') {
+      checkActiveTask();
+    }
+  }, [view]);
+
+  async function checkActiveTask() {
+    try {
+      const res = await api.get('/ai/active-task/wizard');
+      if (res && res.active) {
+        setWizardLoading(true);
+      } else if (wizardLoading) {
+        setWizardLoading(false);
+        // Ici on ne peut pas vraiment recharger l'historique car non sauvegardé,
+        // mais on arrête au moins l'animation.
+      }
+    } catch (err) {
+      console.error('Failed to check wizard task', err);
+    }
+  }
+
   const addMember = useCallback((user: User) => {
     const defaultRole = roles.find((r) => r.name === 'Membre') ?? roles[2];
     setMembers((prev) => [...prev, { user, roleId: defaultRole?.id ?? 3 }]);

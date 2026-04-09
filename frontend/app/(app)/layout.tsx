@@ -43,7 +43,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           }}
         />
       )}
-      {!showModal && <AiChat />}
     </div>
   );
 }

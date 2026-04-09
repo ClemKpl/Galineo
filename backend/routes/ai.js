@@ -433,9 +433,14 @@ router.get('/active-task/:projectId', authMiddleware, async (req, res) => {
   const { projectId } = req.params;
   const userId = req.user.id;
   try {
+    const isWizard = projectId === 'wizard';
     const task = await dbGet(
-      `SELECT * FROM ai_active_tasks WHERE user_id = ? AND project_id = ? AND status = 'running' LIMIT 1`,
-      [userId, projectId]
+      `SELECT * FROM ai_active_tasks 
+       WHERE user_id = ? 
+       AND ${isWizard ? 'project_id IS NULL' : 'project_id = ?'} 
+       AND status = 'running' 
+       LIMIT 1`,
+      isWizard ? [userId] : [userId, projectId]
     );
     res.json({ active: !!task, task });
   } catch (err) {
