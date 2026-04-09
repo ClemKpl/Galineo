@@ -71,10 +71,10 @@ router.post('/', authMiddleware, (req, res) => {
                             inviterName: req.user.name,
                             projectId: projectId
                           });
-                          await logActivity(projectId, ownerId, 'system', memberId, 'email_sent', `Email de notification envoyé à ${member.email} (Création projet)`);
+                          await logActivity(projectId, ownerId, 'system', memberId, 'email_sent', { text: `Email de notification envoyé à ${member.email} (Création projet)` });
                         } catch (mErr) {
                           console.error('❌ Erreur mail création projet:', mErr.message);
-                          await logActivity(projectId, ownerId, 'system', memberId, 'email_error', `Échec envoi email à ${member.email}: ${mErr.message}`);
+                          await logActivity(projectId, ownerId, 'system', memberId, 'email_error', { text: `Échec envoi email à ${member.email}: ${mErr.message}` });
                         }
                       }
                     });
@@ -440,10 +440,10 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                     inviterName: req.user.name,
                     projectId: projectId
                   });
-                  await logActivity(projectId, currentUserId, 'system', userId, 'email_sent', `Email de notification envoyé à ${user.email}`);
+                  await logActivity(projectId, currentUserId, 'system', userId, 'email_sent', { text: `Email de notification envoyé à ${user.email}` });
                 } catch (mailErr) {
                   console.error('❌ Erreur email addition:', mailErr.message);
-                  await logActivity(projectId, currentUserId, 'system', userId, 'email_error', `Échec envoi email à ${user.email}: ${mailErr.message}`);
+                  await logActivity(projectId, currentUserId, 'system', userId, 'email_error', { text: `Échec envoi email à ${user.email}: ${mailErr.message}` });
                 }
               }
             });
@@ -478,10 +478,10 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                     inviterName: req.user.name,
                     projectId: projectId
                   });
-                  await logActivity(projectId, currentUserId, 'system', userExists.id, 'email_sent', `Email de notification envoyé à ${email}`);
+                  await logActivity(projectId, currentUserId, 'system', userExists.id, 'email_sent', { text: `Email de notification envoyé à ${email}` });
                 } catch (mailErr) {
                   console.error('❌ Erreur email addition:', mailErr.message);
-                  await logActivity(projectId, currentUserId, 'system', userExists.id, 'email_error', `Échec envoi email à ${email}: ${mailErr.message}`);
+                  await logActivity(projectId, currentUserId, 'system', userExists.id, 'email_error', { text: `Échec envoi email à ${email}: ${mailErr.message}` });
                 }
 
                 // Notification interne si déjà inscrit
@@ -510,10 +510,10 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                     inviterName: req.user.name,
                     token: token
                   });
-                  await logActivity(projectId, currentUserId, 'system', null, 'email_sent', `Email d'invitation envoyé à ${email}`);
+                  await logActivity(projectId, currentUserId, 'system', null, 'email_sent', { text: `Email d'invitation envoyé à ${email}` });
                 } catch (mailErr) {
                   console.error('❌ Erreur email invitation:', mailErr.message);
-                  await logActivity(projectId, currentUserId, 'system', null, 'email_error', `Échec envoi invitation à ${email}: ${mailErr.message}`);
+                  await logActivity(projectId, currentUserId, 'system', null, 'email_error', { text: `Échec envoi invitation à ${email}: ${mailErr.message}` });
                 }
 
                 await logActivity(projectId, currentUserId, 'invitation', null, 'sent', { email, roleId: roleId || 3 });

@@ -42,10 +42,19 @@ export default function ProjectActivityLog({ projectId }: Props) {
   };
 
   const renderActivityText = (a: Activity) => {
-    const details = a.details ? JSON.parse(a.details) : {};
+    let details: any = {};
+    try {
+      details = a.details ? JSON.parse(a.details) : {};
+    } catch (e) {
+      // Si ce n'est pas du JSON, on utilise la chaîne brute comme texte
+      if (typeof a.details === 'string') details = { text: a.details };
+    }
+
     const userName = <span className="font-bold text-stone-900">{a.user_name || 'Système'}</span>;
     
     switch (a.entity_type) {
+      case 'system':
+        return <>{userName} : <span className="text-stone-500">{details.text || a.action_type}</span></>;
       case 'project':
         if (a.action_type === 'created') return <>{userName} a créé le projet <span className="italic">"{details.title}"</span></>;
         if (a.action_type === 'updated') return <>{userName} a mis à jour les paramètres du projet</>;
@@ -76,6 +85,7 @@ export default function ProjectActivityLog({ projectId }: Props) {
 
   const getIcon = (type: string) => {
     switch (type) {
+      case 'system': return '📧';
       case 'project': return '📁';
       case 'task': return '✅';
       case 'member': return '👤';
