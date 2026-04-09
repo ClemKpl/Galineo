@@ -106,7 +106,10 @@ const functions = {
       details: "Configuration initiale complète du projet par l'IA"
     });
 
-    return { message: `Projet "${titre}" créé et configuré avec succès !` };
+    return { 
+      message: `Projet "${titre}" créé et configuré avec succès !`,
+      projectId: projectId 
+    };
   },
 
   creer_elements: async ({ project_id, elements }, userId) => {
@@ -511,22 +514,33 @@ router.post('/chat', authMiddleware, async (req, res) => {
           let sysInstruct = '';
           let currentTools = undefined;
 
+          const currentDate = new Date().toISOString().split('T')[0];
+          
           if (mode === 'global') {
             sysInstruct = `Tu es Galineo AI, le conseiller personnel de l'utilisateur.
             TON RÔLE :
             - Expert du logiciel Galineo. 
             - IMPORTANT : Tu n'as accès à AUCUNE donnée de projet spécifique ici. Redirige vers la 'Galineo Room' pour cela.
+            - DATE DU JOUR : ${currentDate}.
             - RÈGLE D'OR : N'appelle JAMAIS d'outil sans demander confirmation.`;
             currentTools = undefined;
           } else if (mode === 'wizard') {
             sysInstruct = `Tu es l'Assistant Wizard de Galineo. Ton but est d'accompagner l'utilisateur dans la création COMPLÈTE de son projet via un dialogue structuré et collaboratif.
-            ... (instructions wizard) ...`;
+            
+            RÈGLES CRITIQUES :
+            1. DATE DU JOUR : ${currentDate}. Tout projet doit commencer au plus tôt à cette date.
+            2. ÉCHÉANCES : Tu DOIS impérativement générer une 'start_date' et une 'due_date' (format YYYY-MM-DD) pour CHAQUE fonctionnalité et CHAQUE tâche créée via les outils. Ne laisse jamais ces champs vides.
+            3. OUTILS : Utilise 'creer_projet' pour tout finaliser.
+            4. TON : Professionnel, enthousiaste et efficace.`;
             currentTools = toolConfig;
           } else { // mode === 'project'
             sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet "${projectTitle}".
-            CONTEXTE CRITIQUE : ID Projet = ${projectId}.
+            CONTEXTE CRITIQUE : ID Projet = ${projectId}. DATE DU JOUR : ${currentDate}.
             RÔLE : Tu as accès aux outils pour gérer les tâches, les membres et les paramètres.
-            RÈGLE : Pas de noms techniques de fonctions. Parle naturellement.`;
+            
+            RÈGLES CRITIQUES :
+            1. ÉCHÉANCES : Pour toute création d'élément (outil 'creer_elements'), tu DOIS impérativement fournir une 'start_date' et une 'due_date' logiques.
+            2. Noms : Pas de noms techniques de fonctions. Parle naturellement.`;
             currentTools = toolConfig;
           }
 
@@ -562,7 +576,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
           const result = await sendMessageWithRetry(userText);
           let response = result.response;
           let text = "";
-          let actions = [];
+          let currentProjectIdTask = projectId;
 
           let toolCallsCount = 0;
           while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
@@ -573,6 +587,12 @@ router.post('/chat', authMiddleware, async (req, res) => {
               const fn = functions[call.name];
               if (fn) {
                 const apiRes = await fn(call.args, userId);
+                
+                // Si on a créé un projet, on récupère son ID pour la suite
+                if (call.name === 'creer_projet' && apiRes && apiRes.projectId) {
+                  currentProjectIdTask = apiRes.projectId;
+                }
+
                 toolLogs.push({ name: call.name, response: apiRes });
                 if (!actions.includes(call.name)) actions.push(call.name);
               }
@@ -591,15 +611,15 @@ router.post('/chat', authMiddleware, async (req, res) => {
             text = actions.length > 0 ? "C'est fait ! Les modifications ont été appliquées." : "Désolé, je rencontre une difficulté.";
           }
 
-          // Sauvegarde de la réponse de l'IA
-          if (projectId && mode === 'project') {
-            await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [projectId, text]);
+          // Sauvegarde de la réponse de l'IA (si projet existant ou nouvellement créé)
+          if (currentProjectIdTask) {
+            await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [currentProjectIdTask, text]);
           }
 
           // Notification finale
           await dbRun(
             'INSERT INTO notifications (user_id, type, title, message, project_id) VALUES (?, ?, ?, ?, ?)',
-            [userId, 'ai_response', 'Réponse de l\'IA prête', `L'Assistant a terminé son analyse pour le projet "${projectTitle}".`, projectId || null]
+            [userId, 'ai_response', 'Réponse de l\'IA prête', `L'Assistant a terminé son analyse pour le projet "${projectTitle}".`, currentProjectIdTask]
           );
 
           success = true;
