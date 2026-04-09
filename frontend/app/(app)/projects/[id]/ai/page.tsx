@@ -93,7 +93,6 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   // Recharge l'historique quand une nouvelle notification arrive (ex: réponse IA prête)
   useEffect(() => {
     function onNewNotification() {
-      setLoading(false);
       loadHistory();
     }
     window.addEventListener('new-notification', onNewNotification);

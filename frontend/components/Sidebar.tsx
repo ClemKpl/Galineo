@@ -87,15 +87,17 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifsLoading, setNotifsLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const notifInitialized = useRef(false);
 
   const fetchUnreadCount = useCallback(async () => {
     try {
       const data = await api.get('/notifications/unread-count');
       const newCount = data.count || 0;
       setUnreadCount(prev => {
-        if (newCount > prev) {
+        if (notifInitialized.current && newCount > prev) {
           window.dispatchEvent(new Event('new-notification'));
         }
+        notifInitialized.current = true;
         return newCount;
       });
     } catch { }
