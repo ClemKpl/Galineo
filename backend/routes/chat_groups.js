@@ -65,6 +65,17 @@ router.post('/', authMiddleware, (req, res) => {
         initialMembers.forEach(mId => {
           if (mId !== userId) {
             stmt.run(groupId, mId, 'member');
+            
+            // Notification pour le membre ajouté
+            db.run(`
+              INSERT INTO notifications (user_id, type, title, message, from_user_id)
+              VALUES (?, 'group_added', ?, ?, ?)
+            `, [
+              mId,
+              'Nouveau groupe de discussion',
+              `${req.user.name} vous a ajouté au groupe "${title}"`,
+              userId
+            ]);
           }
         });
         stmt.finalize();
@@ -125,6 +136,22 @@ router.post('/:id/members', authMiddleware, memberMiddleware, adminMiddleware, (
     VALUES (?, ?, 'member')
   `, [groupId, userId], function(err) {
     if (err) return res.status(500).json({ error: err.message });
+    
+    // Notification pour le membre ajouté
+    db.get('SELECT title FROM chat_groups WHERE id = ?', [groupId], (errGroup, group) => {
+      if (!errGroup && group) {
+        db.run(`
+          INSERT INTO notifications (user_id, type, title, message, from_user_id)
+          VALUES (?, 'group_added', ?, ?, ?)
+        `, [
+          userId,
+          'Ajouté à un groupe',
+          `${req.user.name} vous a ajouté au groupe "${group.title}"`,
+          req.user.id
+        ]);
+      }
+    });
+
     res.json({ message: 'Membre ajoute' });
   });
 });
