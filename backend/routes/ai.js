@@ -435,10 +435,11 @@ router.delete('/history/:projectId', authMiddleware, async (req, res) => {
 // ─── Route Chat ───────────────────────────────────────────────────────────────
 // ─── Route pour vérifier si l'Assistant travaille ───────────────────────────
 router.get('/active-task/:projectId', authMiddleware, async (req, res) => {
-  const { projectId } = req.params;
+  const { projectId: rawId } = req.params;
   const userId = req.user.id;
   try {
-    const isWizard = projectId === 'wizard';
+    const isWizard = rawId === 'wizard';
+    const projectId = isWizard ? null : parseInt(rawId);
     // On ignore les tâches de plus de 5 minutes (zombie tasks)
     const task = await dbGet(
       `SELECT * FROM ai_active_tasks 

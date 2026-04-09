@@ -27,6 +27,11 @@ if (isProd) {
            return `STRING_AGG(DISTINCT ${p1.replace(/distinct/gi, '').trim()}::text, ',')`;
         }
         return `STRING_AGG(${p1.trim()}::text, ',')`;
+      })
+      .replace(/datetime\('now',\s*'(.*?)'\)/gi, (_, p1) => {
+        // SQLite: datetime('now', '-5 minutes')
+        // PG: NOW() + INTERVAL '-5 minutes'
+        return `NOW() + INTERVAL '${p1}'`;
       });
     
     // Add ON CONFLICT DO NOTHING for pseudo-IGNORE or DO UPDATE for REPLACE

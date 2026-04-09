@@ -147,6 +147,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
       }
     } catch (err) {
       console.error('Failed to check wizard task', err);
+      setWizardLoading(false);
     }
   }
 

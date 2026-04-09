@@ -110,6 +110,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       }
     } catch (err) {
       console.error('Failed to check active task', err);
+      setLoading(false); // On arrête de mouliner en cas d'erreur
     }
   }
 
