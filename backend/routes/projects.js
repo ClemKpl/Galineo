@@ -76,6 +76,12 @@ router.post('/', authMiddleware, (req, res) => {
                         }
                       }
                     });
+
+                    // Notification dans l'application
+                    db.run(
+                      'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
+                      [memberId, 'project_invite', 'Nouveau projet', `Vous avez été ajouté au projet "${title}"`, projectId, ownerId]
+                    );
                   }
                 );
               }
@@ -438,6 +444,12 @@ router.post('/:id/members', authMiddleware, (req, res) => {
               }
             });
 
+            // Notification dans l'application
+            db.run(
+              'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
+              [userId, 'project_invite', 'Invitation au projet', `Vous avez été ajouté au projet "${project.title}"`, projectId, currentUserId]
+            );
+
             await logActivity(projectId, currentUserId, 'member', userId, 'added_or_updated', { roleId: roleId || 3 });
             res.json({ message: 'Membre ajouté et notifié.' });
           }
@@ -465,6 +477,12 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                 } catch (mailErr) {
                   console.error('❌ Erreur email addition:', mailErr.message);
                 }
+
+                // Notification interne si déjà inscrit
+                db.run(
+                  'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
+                  [userExists.id, 'project_invite', 'Invitation au projet', `Vous avez été ajouté au projet "${project.title}"`, projectId, currentUserId]
+                );
 
                 await logActivity(projectId, currentUserId, 'member', userExists.id, 'added', { roleId: roleId || 3 });
                 res.json({ message: 'Utilisateur trouvé et ajouté au projet.' });
@@ -770,6 +788,17 @@ router.post('/join/:token', authMiddleware, (req, res) => {
       [link.project_id, userId, link.role_id],
       async function (errJoin) {
         if (errJoin) return res.status(500).json({ error: errJoin.message });
+        
+        // Notification interne
+        db.get('SELECT title, owner_id FROM projects WHERE id = ?', [link.project_id], (pErr, project) => {
+          if (project) {
+            db.run(
+              'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
+              [userId, 'project_join', 'Projet rejoint', `Vous avez rejoint "${project.title}" via un lien`, link.project_id, project.owner_id]
+            );
+          }
+        });
+
         await logActivity(link.project_id, userId, 'member', userId, 'joined_via_link');
         res.json({ message: 'Bienvenue dans le projet !', projectId: link.project_id });
       }

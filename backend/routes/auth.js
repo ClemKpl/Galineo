@@ -25,22 +25,31 @@ router.post('/register', async (req, res) => {
         const token = jwt.sign({ id: this.lastID, name, email }, JWT_SECRET, { expiresIn: '7d' });
         const newUserId = this.lastID;
 
-        // Auto-join projects if invited
-        db.all('SELECT * FROM invitations WHERE email = ? AND status = ?', [email, 'pending'], (invErr, invites) => {
-          if (!invErr && invites && invites.length > 0) {
-            const stmt = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)');
-            const updateStmt = db.prepare('UPDATE invitations SET status = ? WHERE id = ?');
-            
-            invites.forEach(inv => {
-              stmt.run(inv.project_id, newUserId, inv.role_id);
-              updateStmt.run('accepted', inv.id);
+            // Auto-join projects if invited
+            db.all('SELECT * FROM invitations WHERE email = ? AND status = ?', [email, 'pending'], (invErr, invites) => {
+              if (!invErr && invites && invites.length > 0) {
+                const stmt = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)');
+                const updateStmt = db.prepare('UPDATE invitations SET status = ? WHERE id = ?');
+                const notifStmt = db.prepare('INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)');
+                
+                invites.forEach(inv => {
+                  stmt.run(inv.project_id, newUserId, inv.role_id);
+                  updateStmt.run('accepted', inv.id);
+                  
+                  // Récupérer le nom du projet pour la notification interne
+                  db.get('SELECT title, owner_id FROM projects WHERE id = ?', [inv.project_id], (pErr, project) => {
+                    if (project) {
+                      notifStmt.run(newUserId, 'project_invite', 'Projet rejoint', `Bienvenue ! Vous avez rejoint le projet "${project.title}"`, inv.project_id, inv.inviter_id || project.owner_id);
+                    }
+                  });
+                });
+                
+                stmt.finalize();
+                updateStmt.finalize();
+                // note: notifStmt is async and might finish after response, but ok for this simple use case
+              }
+              res.json({ token, user: { id: newUserId, name, email } });
             });
-            
-            stmt.finalize();
-            updateStmt.finalize();
-          }
-          res.json({ token, user: { id: newUserId, name, email } });
-        });
       }
     );
   } catch (err) {
