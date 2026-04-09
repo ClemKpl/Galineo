@@ -122,24 +122,24 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   }
 
   return (
-    <div className="flex flex-col h-full bg-stone-50">
+    <div className="flex flex-col h-full bg-stone-50 animate-fadeIn">
       {/* HEADER & INFO BULLE */}
-      <div className="relative z-20 px-8 py-5 border-b border-stone-200 bg-white shrink-0">
+      <div className="relative z-20 px-4 md:px-8 py-4 md:py-5 border-b border-stone-200 bg-white shrink-0">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-bold text-stone-900">Discussion</h2>
-          <div className="group relative z-30">
-            <div className="w-5 h-5 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-xs font-bold cursor-help hover:bg-orange-100 hover:text-orange-600 transition-colors">?</div>
-            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[80]">
-              Espace d'échange du projet. Utilisez <strong>@NomDuMembre</strong> pour les notifier (les mentions s'afficheront en couleur). Les messages s'actualisent sans recharger la page.
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-full border-4 border-transparent border-b-stone-800"></div>
+          <h2 className="text-xl md:text-2xl font-black text-stone-900 tracking-tight">Discussion</h2>
+          <div className="group relative">
+            <div className="w-5 h-5 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center text-[10px] font-black cursor-help hover:bg-orange-100 hover:text-orange-600 transition-colors">?</div>
+            <div className="absolute left-0 md:left-1/2 md:-translate-x-1/2 top-full mt-2 w-72 bg-stone-900 border border-stone-800 text-stone-300 text-[11px] p-4 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-[80] leading-relaxed">
+              Espace d'échange du projet. Utilisez <strong>@Nom</strong> pour les notifier. Les messages s'actualisent automatiquement.
+              <div className="absolute left-4 md:left-1/2 md:-translate-x-1/2 bottom-full border-8 border-transparent border-b-stone-900"></div>
             </div>
           </div>
         </div>
-        <p className="text-stone-400 text-sm mt-0.5">Échangez avec votre équipe</p>
+        <p className="text-stone-400 text-[10px] font-bold uppercase tracking-widest mt-1">Échangez avec votre équipe</p>
       </div>
 
       {/* CHAT MESSAGES */}
-      <div className="flex-1 overflow-y-auto p-8 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scrollbar-none">
         {loading ? (
           <div className="text-center text-stone-400 text-sm">Chargement...</div>
         ) : messages.length === 0 ? (
@@ -152,8 +152,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             const avatar = msg.author_avatar; // Assumer que author_avatar est retourné par l'API
             
             return (
-              <div key={msg.id} className={`flex w-full group ${isMe ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex max-w-[85%] sm:max-w-[70%] gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div key={msg.id} className={`flex w-full group ${isMe ? 'justify-end' : 'justify-start'} animate-fadeUp`}>
+                <div className={`flex max-w-[90%] sm:max-w-[75%] lg:max-w-[70%] gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                   {/* Avatar */}
                   <div className="shrink-0 pt-1">
                     <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden border ${
@@ -233,30 +233,30 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       {/* CHAT INPUT AREA */}
-      <div className="px-8 pb-8 pt-4 bg-transparent shrink-0">
+      <div className="px-4 md:px-8 pb-24 lg:pb-8 pt-4 bg-white border-t border-stone-100 shrink-0">
         <form onSubmit={handleSend} className="relative max-w-4xl mx-auto">
           {/* Autocomplete Mentions Box */}
           {mentionListVisible && (
-            <div className="absolute bottom-full mb-2 left-0 min-w-48 bg-white border border-stone-200 rounded-xl shadow-lg p-2 z-10 flex flex-col gap-1">
-              <span className="text-xs font-bold text-stone-400 px-2 pb-1 uppercase">Membres</span>
+            <div className="absolute bottom-full mb-3 left-0 min-w-48 bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl p-2 z-10 flex flex-col gap-1">
+              <span className="text-[10px] font-black text-stone-500 px-3 pb-1 pt-1 uppercase tracking-widest">Membres</span>
               {members.filter(m => m.id !== currentUser?.id).map(m => (
-                <button type="button" key={m.id} onClick={() => insertMention(m.name)} className="text-left px-3 py-2 text-sm text-stone-700 hover:bg-stone-100 rounded-lg transition-colors font-medium">
+                <button type="button" key={m.id} onClick={() => insertMention(m.name)} className="text-left px-3 py-2 text-xs text-stone-300 hover:bg-stone-800 hover:text-orange-400 rounded-xl transition-all font-bold">
                   @{m.name}
                 </button>
               ))}
             </div>
           )}
           
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             <input id="chat-input" type="text"
-              className="flex-1 bg-white border border-stone-200 rounded-full px-6 py-3.5 shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm text-stone-900"
-              placeholder="Écrivez un message... (Tapez @ pour mentionner)"
+              className="flex-1 bg-stone-50 border border-stone-200 rounded-2xl px-5 py-3.5 shadow-inner focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm text-stone-900 placeholder:text-stone-400"
+              placeholder="Message... (@ pour mentionner)"
               value={newMessage}
               onChange={handleInputChange}
               autoComplete="off"
             />
-            <button type="submit" disabled={!newMessage.trim()} className="w-12 h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-300 disabled:cursor-not-allowed text-white rounded-full flex items-center justify-center transition-colors shadow-sm shrink-0">
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <button type="submit" disabled={!newMessage.trim()} className="w-12 h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-2xl flex items-center justify-center transition-all shadow-lg shadow-orange-500/20 shrink-0 active:scale-90">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
             </button>
           </div>
         </form>

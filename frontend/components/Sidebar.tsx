@@ -77,7 +77,15 @@ function timeAgo(dateStr: string) {
   return `Il y a ${diffD}j`;
 }
 
-export default function Sidebar({ onNewProject }: { onNewProject: () => void }) {
+export default function Sidebar({ 
+  onNewProject, 
+  mobileOpen, 
+  onCloseMobile 
+}: { 
+  onNewProject: () => void;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -215,12 +223,29 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
   const sortedProjects = [...projects].sort((a, b) => a.title.localeCompare(b.title));
 
   return (
-    <aside className="w-64 h-screen bg-stone-900 flex flex-col shrink-0 select-none">
-      {/* Logo */}
-      <div className="px-5 h-16 flex items-center border-b border-stone-800">
-        <span className="text-white font-bold text-lg tracking-tight">Galineo</span>
-        <span className="ml-2 text-xs bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-md font-medium">v1</span>
-      </div>
+    <>
+      {/* Backdrop for mobile */}
+      <div 
+        className={`fixed inset-0 bg-stone-950/40 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={onCloseMobile}
+      />
+
+      <aside className={`fixed inset-y-0 left-0 w-72 lg:w-64 bg-stone-900 flex flex-col shrink-0 select-none z-50 transition-transform duration-300 transform lg:translate-x-0 lg:static h-full ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        {/* Logo & Close Button */}
+        <div className="px-5 h-16 flex items-center justify-between border-b border-stone-800">
+          <div className="flex items-center">
+            <span className="text-white font-bold text-lg tracking-tight">Galineo</span>
+            <span className="ml-2 text-xs bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-md font-medium">v1</span>
+          </div>
+          <button 
+            onClick={onCloseMobile}
+            className="lg:hidden p-2 text-stone-500 hover:text-white transition-colors"
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
       {/* User card */}
       <div className="px-3 py-3 border-b border-stone-800">
@@ -430,8 +455,12 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
       </div>
 
       <style jsx>{`
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
       `}</style>
     </aside>
+    </>
   );
 }

@@ -127,10 +127,11 @@ export default function AiChat() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white flex items-center justify-center rounded-full shadow-lg shadow-orange-500/30 transition-all duration-150 cursor-pointer group"
+          className="fixed bottom-24 lg:bottom-6 right-4 lg:right-6 z-40 w-14 h-14 bg-stone-900 hover:bg-stone-800 active:scale-95 text-white flex items-center justify-center rounded-2xl shadow-2xl shadow-stone-900/20 transition-all duration-300 cursor-pointer group"
           title="Galineo AI Advisor"
         >
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="relative z-10">
             <path d="M22 10L12 5L2 10L12 15L22 10z" />
             <path d="M6 12V17c0 0 3 2 6 2s6-2 6-2V12" />
           </svg>
@@ -139,67 +140,67 @@ export default function AiChat() {
 
       {/* ── Fenêtre de chat ──────────────────────────────────────────────── */}
       {open && (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col w-[380px] h-[540px] bg-white rounded-2xl shadow-2xl border border-stone-200 overflow-hidden">
+        <div className="fixed inset-0 lg:inset-auto lg:bottom-6 lg:right-6 z-[60] flex flex-col lg:w-[400px] lg:h-[640px] bg-white lg:rounded-3xl shadow-2xl lg:border border-stone-200 overflow-hidden animate-fadeUp">
 
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-orange-500 text-white shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <div className="flex items-center justify-between px-6 py-4 bg-stone-900 text-white shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.96 9.96 0 0 1-5.06-1.37L2 22l1.37-4.94A9.96 9.96 0 0 1 2 12C2 6.48 6.48 2 12 2z"/>
-                  <path d="M8 10h.01M12 10h.01M16 10h.01" strokeLinecap="round" strokeWidth="2.5"/>
+                  <path d="M8 10h.01M12 10h.01M16 10h.01" strokeLinecap="round" strokeWidth="3"/>
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold leading-tight">Galineo AI</p>
-                <p className="text-[11px] text-white/70 leading-tight">Gère ton projet avec un simple prompt</p>
+                <p className="text-sm font-black uppercase tracking-widest leading-tight">Galineo AI</p>
+                <p className="text-[10px] text-stone-400 font-bold uppercase tracking-tighter leading-tight mt-0.5">Conseiller stratégique</p>
               </div>
             </div>
             <button
               onClick={() => setOpen(false)}
-              className="w-7 h-7 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-10 h-10 rounded-xl hover:bg-white/10 flex items-center justify-center transition-all active:scale-90"
             >
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 bg-stone-50 relative">
+          <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6 bg-stone-50/50 scrollbar-none relative">
             {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeUp`}>
                 {m.role === 'assistant' && (
-                  <div className="w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mr-2 mt-0.5">
+                  <div className="w-8 h-8 rounded-xl bg-stone-900 border border-stone-800 text-white flex items-center justify-center text-[10px] font-black shrink-0 mr-3 mt-1 shadow-sm uppercase">
                     AI
                   </div>
                 )}
                 <div
-                  className={`max-w-[82%] px-3 py-2 rounded-2xl text-sm ${
+                  className={`max-w-[85%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed shadow-sm ${
                     m.role === 'user'
-                      ? 'bg-orange-500 text-white rounded-br-sm'
-                      : 'bg-white text-stone-700 border border-stone-200 rounded-bl-sm shadow-sm'
+                      ? 'bg-orange-500 text-white rounded-br-none shadow-orange-500/20'
+                      : 'bg-white text-stone-700 border border-stone-100 rounded-bl-none'
                   }`}
                 >
                   {m.role === 'assistant' ? (
-                    <div className="space-y-0.5">{renderMarkdown(m.content)}</div>
+                    <div className="space-y-1">{renderMarkdown(m.content)}</div>
                   ) : (
-                    <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
+                    <p className="whitespace-pre-wrap">{m.content}</p>
                   )}
                 </div>
               </div>
             ))}
 
             {loading && (
-              <div className="flex justify-start">
-                <div className="w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mr-2 mt-0.5">
+              <div className="flex justify-start animate-pulse">
+                <div className="w-8 h-8 rounded-xl bg-stone-900 border border-stone-800 text-white flex items-center justify-center text-[10px] font-black shrink-0 mr-3 mt-1 uppercase">
                   AI
                 </div>
-                <div className="bg-white border border-stone-200 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
-                  <div className="flex gap-1 items-center h-4">
-                    <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:0ms]"/>
-                    <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:150ms]"/>
-                    <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:300ms]"/>
+                <div className="bg-white border border-stone-100 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm">
+                  <div className="flex gap-1.5 items-center">
+                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.3s]"/>
+                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce [animation-delay:-0.15s]"/>
+                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce"/>
                   </div>
                 </div>
               </div>
@@ -208,8 +209,8 @@ export default function AiChat() {
           </div>
 
           {/* Input */}
-          <div className="px-3 py-3 border-t border-stone-200 bg-white shrink-0">
-            <div className="flex items-end gap-2">
+          <div className="px-5 py-5 border-t border-stone-100 bg-white shrink-0">
+            <div className="flex items-end gap-3">
               <textarea
                 ref={inputRef}
                 rows={1}
@@ -217,26 +218,25 @@ export default function AiChat() {
                 onChange={e => {
                   setInput(e.target.value);
                   e.target.style.height = 'auto';
-                  e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="Décris ton projet…"
                 disabled={loading}
-                className="flex-1 resize-none bg-stone-100 rounded-xl px-3 py-2 text-sm text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-50 overflow-hidden leading-relaxed"
-                style={{ minHeight: '38px', maxHeight: '96px' }}
+                className="flex-1 resize-none bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-orange-400/20 focus:border-orange-400 disabled:opacity-50 overflow-hidden leading-relaxed transition-all"
+                style={{ minHeight: '44px', maxHeight: '120px' }}
               />
               <button
                 onClick={send}
                 disabled={!input.trim() || loading}
-                className="w-9 h-9 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                className="w-11 h-11 rounded-2xl bg-stone-900 hover:bg-stone-800 disabled:bg-stone-100 disabled:text-stone-400 text-white flex items-center justify-center transition-all shrink-0 active:scale-90 shadow-lg shadow-stone-900/10"
               >
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <line x1="22" y1="2" x2="11" y2="13"/>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                 </svg>
               </button>
             </div>
-            <p className="text-[10px] text-stone-400 mt-1.5 text-center">Entrée pour envoyer · Maj+Entrée pour nouvelle ligne</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-stone-400 mt-3 text-center">Entrée pour envoyer · Maj+Entrée pour saut</p>
           </div>
         </div>
       )}

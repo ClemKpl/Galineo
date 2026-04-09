@@ -329,56 +329,58 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     const isDone = task.status === 'done';
     
     return (
-      <div className={`flex items-start gap-3 px-4 py-3 border-b border-stone-100 hover:bg-stone-50 transition-colors group ${isDone ? 'opacity-60' : ''} ${isFeature ? 'bg-stone-50/50' : 'pl-10 sm:pl-12'}`}>
-        {isFeature && (
-          <button 
-            onClick={() => toggleFeature(task.id)}
-            className="mt-1 flex items-center justify-center w-5 h-5 text-stone-400 hover:text-stone-900 transition-transform duration-200"
-            style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+      <div className={`flex items-start gap-4 px-4 sm:px-6 py-4 border-b border-stone-100 hover:bg-stone-50 transition-all group ${isDone ? 'opacity-50' : ''} ${isFeature ? 'bg-stone-50/50' : 'pl-10 sm:pl-16'}`}>
+        <div className="flex flex-col items-center gap-3 shrink-0 mt-0.5">
+          {isFeature && (
+            <button 
+              onClick={() => toggleFeature(task.id)}
+              className="flex items-center justify-center w-6 h-6 text-stone-400 hover:text-stone-900 transition-all duration-300"
+              style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+            </button>
+          )}
+          <button onClick={(e) => { e.stopPropagation(); toggleStatus(task); }} className={`w-5 h-5 rounded-full border-2 flex flex-shrink-0 items-center justify-center transition-all ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-stone-200 hover:border-orange-500 active:scale-90'}`}>
+            {isDone && <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>}
           </button>
-        )}
-        <button onClick={(e) => { e.stopPropagation(); toggleStatus(task); }} className={`mt-0.5 w-5 h-5 rounded-full border flex flex-shrink-0 items-center justify-center transition-colors ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-stone-300 hover:border-orange-400'}`}>
-          {isDone && <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>}
-        </button>
+        </div>
         
-        <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={`${isFeature ? 'text-base font-bold text-stone-900' : 'text-sm font-medium'} max-w-[200px] sm:max-w-xs md:max-w-md truncate ${isDone ? 'line-through text-stone-500' : 'text-stone-900'}`}>{task.title}</span>
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className={`${isFeature ? 'text-base font-black text-stone-900' : 'text-sm font-bold text-stone-800'} truncate tracking-tight ${isDone ? 'line-through text-stone-400' : ''}`}>{task.title}</span>
             {!isFeature && renderStatusBadge(task.status || 'todo')}
-            {task.description && <span className="hidden sm:inline-block px-2 py-0.5 bg-stone-100 text-stone-500 rounded-md text-[10px] font-semibold uppercase tracking-wider">Descr.</span>}
             {renderPriority(task.priority)}
-            {task.phase && <span className="px-2 py-0.5 bg-stone-100 text-stone-600 rounded-md text-[10px] font-bold uppercase tracking-wider">{task.phase}</span>}
+            {task.phase && <span className="px-2 py-0.5 bg-stone-100 text-stone-500 rounded-md text-[9px] font-black uppercase tracking-widest border border-stone-200">{task.phase}</span>}
           </div>
           
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs shrink-0 mt-1 sm:mt-0">
+          <div className="flex flex-wrap items-center gap-4 text-[10px] font-black uppercase tracking-widest text-stone-400">
             {task.due_date && (
-              <span className={`flex items-center gap-1 ${new Date(task.due_date) < new Date() && !isDone ? 'text-red-500 font-semibold' : 'text-stone-400'}`}>
-                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span className={`flex items-center gap-1.5 ${new Date(task.due_date) < new Date() && !isDone ? 'text-red-500 font-semibold' : ''}`}>
+                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 {new Date(task.due_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
               </span>
             )}
             {task.assignee_name && (
-              <span className="bg-stone-100 text-stone-600 px-2 py-1 rounded-full border border-stone-200">{task.assignee_name}</span>
+              <span className="flex items-center gap-1.5">
+                <div className="w-4 h-4 rounded-full bg-stone-200 flex items-center justify-center text-[8px]">{task.assignee_name.substring(0,2)}</div>
+                {task.assignee_name}
+              </span>
             )}
             
-            <div className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 flex items-center gap-1 transition-opacity">
+            <div className="flex items-center gap-3 lg:opacity-0 lg:group-hover:opacity-100 transition-all ml-auto lg:ml-0">
               {isFeature && (
-                <button onClick={(e) => { e.stopPropagation(); openCreateTask(task.id); }} className="px-2 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-100 bg-orange-50 rounded-lg transition-colors" title="Ajouter une tâche à cette fonctionnalité">
-                  + Tâche
+                <button onClick={(e) => { e.stopPropagation(); openCreateTask(task.id); }} className="text-orange-600 hover:text-orange-700 active:scale-95 transition-transform" title="Ajouter une tâche">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                 </button>
               )}
-              <button onClick={(e) => { e.stopPropagation(); openHistoryModal(task); }} className="px-2 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-200 bg-stone-100 rounded-lg transition-colors" title="Historique d'avancement">
-                Historique
+              <button onClick={(e) => { e.stopPropagation(); openHistoryModal(task); }} className="text-stone-400 hover:text-stone-900 active:scale-95 transition-transform" title="Historique">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </button>
-              <button onClick={(e) => { e.stopPropagation(); openEditModal(task); }} className="p-1.5 text-stone-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors" title="Modifier">
-                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              <button onClick={(e) => { e.stopPropagation(); openEditModal(task); }} className="text-stone-400 hover:text-blue-500 active:scale-95 transition-transform" title="Modifier">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
               </button>
-              <button onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }} className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Supprimer">
-                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              <button onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }} className="text-stone-400 hover:text-red-500 active:scale-95 transition-transform" title="Supprimer">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
               </button>
             </div>
           </div>
@@ -456,117 +458,126 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto pb-24 lg:pb-8">
       {/* HEADER & INFO BULLE */}
-      <div className="relative z-20 flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-stone-900 flex items-center gap-2 sm:gap-3">
+      <div className="relative z-20 flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-6">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl sm:text-2xl font-black text-stone-900 flex items-center gap-3 tracking-tight">
             Fonctionnalités & Tâches
-            <div className="group relative z-30">
-              <div className="w-5 h-5 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-xs font-bold cursor-help hover:bg-orange-100 hover:text-orange-600 transition-colors">?</div>
-              <div className="absolute left-0 sm:left-1/2 sm:-translate-x-1/2 top-full mt-2 w-64 sm:w-72 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[80]">
+            <div className="group relative">
+              <div className="w-5 h-5 rounded-full bg-stone-200 text-stone-500 flex items-center justify-center text-[10px] font-black cursor-help hover:bg-orange-100 hover:text-orange-600 transition-colors">?</div>
+              <div className="absolute left-0 lg:left-1/2 lg:-translate-x-1/2 top-full mt-2 w-72 bg-stone-900 border border-stone-800 text-stone-300 text-[11px] p-4 rounded-2xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-[80] leading-relaxed">
                 Créez d'abord vos "Fonctionnalités" (ex: Page d'Accueil), puis insérez vos "Tâches" à l'intérieur (ex: Maquetter le Header).
-                <div className="absolute left-6 sm:left-1/2 sm:-translate-x-1/2 bottom-full border-4 border-transparent border-b-stone-800"></div>
+                <div className="absolute left-4 lg:left-1/2 lg:-translate-x-1/2 bottom-full border-8 border-transparent border-b-stone-900"></div>
               </div>
             </div>
           </h2>
-          <p className="text-stone-400 text-xs sm:text-sm mt-1">Séparez votre projet en grands blocs (Fonctionnalités) puis découpez-les (Tâches)</p>
+          <p className="text-stone-400 text-xs font-bold uppercase tracking-widest mt-2 leading-relaxed max-w-lg">Séparez votre projet en grands blocs puis découpez-les</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-           <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-white p-1 shadow-sm shrink-0">
-              <button onClick={() => setViewMode('list')} className={`rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors ${viewMode === 'list' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+        
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+           <div className="flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-sm">
+              <button 
+                onClick={() => setViewMode('list')} 
+                className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/20' : 'text-stone-400 hover:bg-stone-50'}`}
+              >
                 Liste
               </button>
-              <button onClick={() => setViewMode('kanban')} className={`rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-colors ${viewMode === 'kanban' ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}>
+              <button 
+                onClick={() => setViewMode('kanban')} 
+                className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/20' : 'text-stone-400 hover:bg-stone-50'}`}
+              >
                 Kanban
               </button>
            </div>
-           <button onClick={() => openCreateTask()} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5">
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Tâche
-           </button>
-           <button onClick={() => openCreateFeature()} className="px-3 sm:px-4 py-1.5 sm:py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200 font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5 line-clamp-1 overflow-hidden max-w-[120px] sm:max-w-none">
-               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-               <span className="hidden xs:inline">Fonctionnalité</span><span className="xs:hidden">Fonc.</span>
-            </button>
-            <button onClick={handleClearProject} className="px-3 py-1.5 sm:py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 font-semibold rounded-xl text-xs sm:text-sm transition-colors shadow-sm flex items-center gap-1.5" title="Vider le projet">
-               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-               Vider
-            </button>
+           
+           <div className="flex items-center gap-2 w-full sm:w-auto">
+             <button onClick={() => openCreateTask()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-stone-200 hover:border-stone-300 text-stone-700 font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-sm">
+                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                Tâche
+             </button>
+             <button onClick={() => openCreateFeature()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-orange-500/20">
+                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                 <span>Fonc.</span>
+              </button>
+              <button onClick={handleClearProject} className="flex h-10 w-10 shrink-0 items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-xl transition-all active:scale-95 shadow-sm" title="Vider le projet">
+                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
+           </div>
         </div>
       </div>
 
       {/* FILTER BAR FOR KANBAN */}
       {viewMode === 'kanban' && (
-        <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mr-2 shrink-0">Filtrer :</span>
-          <button
-            onClick={() => setSelectedFeatureId(null)}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
-              selectedFeatureId === null
-                ? 'bg-stone-900 border-stone-900 text-white shadow-md'
-                : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
-            }`}
-          >
-            Toutes
-          </button>
-          {features.map((f: any) => (
+        <div className="mb-6 flex flex-col gap-4">
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 md:-mx-0 md:px-0">
+            <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest shrink-0">Fonctionnalités :</span>
             <button
-              key={f.id}
-              onClick={() => setSelectedFeatureId(f.id)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
-                selectedFeatureId === f.id
-                  ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-100'
-                  : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+              onClick={() => setSelectedFeatureId(null)}
+              className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shrink-0 border ${
+                selectedFeatureId === null
+                  ? 'bg-stone-900 border-stone-900 text-white shadow-lg shadow-stone-900/20'
+                  : 'bg-white border-stone-200 text-stone-400 hover:border-stone-300'
               }`}
             >
-              {f.title}
+              Toutes
             </button>
-          ))}
-        </div>
-      )}
+            {features.map((f: any) => (
+              <button
+                key={f.id}
+                onClick={() => setSelectedFeatureId(f.id)}
+                className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shrink-0 border ${
+                  selectedFeatureId === f.id
+                    ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20'
+                    : 'bg-white border-stone-200 text-stone-400 hover:border-stone-300'
+                }`}
+              >
+                {f.title}
+              </button>
+            ))}
+          </div>
 
-      {viewMode === 'kanban' && (
-        <div className="mb-8 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mr-2 shrink-0">Par membre :</span>
-          <button
-            onClick={() => setSelectedMemberId(null)}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
-              selectedMemberId === null
-                ? 'bg-stone-900 border-stone-900 text-white shadow-md'
-                : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
-            }`}
-          >
-            Tous
-          </button>
-          {members.map((m: any) => (
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 md:-mx-0 md:px-0">
+            <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest shrink-0">Par membre :</span>
             <button
-              key={m.id}
-              onClick={() => setSelectedMemberId(m.id)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 border ${
-                selectedMemberId === m.id
-                  ? 'bg-orange-500 border-orange-500 text-white shadow-md shadow-orange-100'
-                  : 'bg-white border-stone-200 text-stone-500 hover:border-stone-300'
+              onClick={() => setSelectedMemberId(null)}
+              className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shrink-0 border ${
+                selectedMemberId === null
+                  ? 'bg-stone-900 border-stone-900 text-white shadow-lg shadow-stone-900/20'
+                  : 'bg-white border-stone-200 text-stone-400 hover:border-stone-300'
               }`}
             >
-              <div className="w-5 h-5 rounded-full bg-stone-100 flex items-center justify-center text-[10px] font-black uppercase text-stone-600 border border-stone-200 shrink-0">
-                {m.avatar ? <img src={m.avatar} alt={m.name} className="w-full h-full rounded-full object-cover" /> : m.name.substring(0, 2)}
-              </div>
-              {m.name}
+              Tous
             </button>
-          ))}
+            {members.map((m: any) => (
+              <button
+                key={m.id}
+                onClick={() => setSelectedMemberId(m.id)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shrink-0 border ${
+                  selectedMemberId === m.id
+                    ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20'
+                    : 'bg-white border-stone-200 text-stone-400 hover:border-stone-300'
+                }`}
+              >
+                <div className="w-5 h-5 rounded-full bg-stone-100 flex items-center justify-center text-[9px] font-black uppercase text-stone-600 border border-stone-200 shrink-0 overflow-hidden">
+                  {m.avatar ? <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" /> : m.name.substring(0, 2)}
+                </div>
+                {m.name}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
       {loading ? (
-         <div className="animate-pulse bg-white border border-stone-200 rounded-2xl h-64"></div>
+         <div className="animate-pulse bg-white border border-stone-200 rounded-3xl h-64"></div>
       ) : tasks.length === 0 ? (
-        <div className="bg-white border text-center border-stone-200 rounded-2xl py-16">
-          <p className="text-stone-400 mb-4">Votre projet est vide.</p>
-          <button onClick={() => openCreateFeature()} className="text-orange-500 text-sm font-semibold hover:underline">Créer la première fonctionnalité</button>
+        <div className="bg-white border text-center border-stone-200 rounded-3xl py-16 px-6">
+          <p className="text-stone-400 font-bold uppercase tracking-widest text-xs mb-4">Votre projet est encore vide</p>
+          <button onClick={() => openCreateFeature()} className="text-orange-500 text-sm font-black uppercase tracking-tighter hover:underline transition-all">Créer la première fonctionnalité</button>
         </div>
       ) : viewMode === 'kanban' ? (
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="flex lg:grid gap-5 lg:grid-cols-3 overflow-x-auto lg:overflow-x-visible pb-8 lg:pb-0 scrollbar-none -mx-4 px-4 md:-mx-0 md:px-0">
           {tasksByStatus.map((column) => (
             <section
               key={column.key}
@@ -589,22 +600,22 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                   await moveTaskToStatus(droppedTaskId, column.key);
                 }
               }}
-              className={`overflow-hidden rounded-3xl border border-stone-200 bg-stone-50/80 shadow-sm transition-all ${dragOverColumn === column.key ? 'border-orange-300 ring-2 ring-orange-200' : ''}`}
+              className={`flex-none w-[85vw] sm:w-[320px] lg:w-auto overflow-hidden rounded-3xl border border-stone-200 bg-stone-50 shadow-sm transition-all ${dragOverColumn === column.key ? 'border-orange-300 ring-2 ring-orange-200/50' : ''}`}
             >
-              <div className="border-b border-stone-200 bg-white/90 px-5 py-4 backdrop-blur">
+              <div className="border-b border-stone-200 bg-white px-5 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className={`h-3 w-3 rounded-full ${column.accent}`}></span>
-                    <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-stone-700">{column.label}</h3>
+                    <span className={`h-2.5 w-2.5 rounded-full ${column.accent} shadow-sm shadow-current/20 animate-pulse`}></span>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-600">{column.label}</h3>
                   </div>
-                  <span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-600">{column.tasks.length}</span>
+                  <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-black text-stone-500 border border-stone-200">{column.tasks.length}</span>
                 </div>
               </div>
 
-              <div className="space-y-3 p-4">
+              <div className="space-y-4 p-4 min-h-[500px]">
                 {column.tasks.length === 0 ? (
-                  <div className={`rounded-2xl border border-dashed bg-white/70 px-4 py-8 text-center text-sm transition-colors ${dragOverColumn === column.key ? 'border-orange-300 text-orange-500' : 'border-stone-300 text-stone-400'}`}>
-                    {dragOverColumn === column.key ? 'Deposez la tache ici.' : 'Aucune tache dans cette colonne.'}
+                  <div className={`rounded-2xl border-2 border-dashed px-4 py-12 text-center text-[10px] font-bold uppercase tracking-widest transition-all ${dragOverColumn === column.key ? 'border-orange-300 text-orange-500 bg-orange-50/50' : 'border-stone-200 text-stone-400'}`}>
+                    {dragOverColumn === column.key ? 'Deposer ici' : 'Aucune tache'}
                   </div>
                 ) : (
                   column.tasks.map((task) => <KanbanCard key={task.id} task={task} />)

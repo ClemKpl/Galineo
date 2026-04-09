@@ -211,18 +211,18 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">Mes projets</h1>
+          <h1 className="text-2xl font-bold text-stone-900 tracking-tight">Mes projets</h1>
           <p className="text-stone-400 text-sm mt-0.5">
             {loading ? 'Chargement...' : `${projects.length} projet${projects.length > 1 ? 's' : ''} au total`}
           </p>
         </div>
         <button onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-colors text-sm shadow-sm">
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all text-sm shadow-sm active:scale-95 shrink-0">
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           Nouveau projet
@@ -230,12 +230,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Assigned tasks */}
-      <section className="mb-10">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Mes tâches assignées</h2>
+      <section className="mb-10 animate-fadeUp">
+        <div className="flex items-center justify-between mb-4 px-1">
+          <h2 className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Mes tâches assignées</h2>
           <button
             onClick={() => { setAssignedLoading(true); fetchAssignedTasks(); }}
-            className="text-xs font-semibold text-stone-500 hover:text-stone-800"
+            className="text-[10px] font-black text-orange-500 hover:text-orange-600 uppercase tracking-widest transition-colors"
           >
             Rafraîchir
           </button>
@@ -260,20 +260,20 @@ export default function DashboardPage() {
                 <button
                   key={t.id}
                   onClick={() => router.push(`/projects/${t.project_id}/tasks`)}
-                  className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-md hover:border-stone-300 hover:-translate-y-0.5 transition-all duration-200"
+                  className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-xl hover:shadow-stone-200/40 hover:border-orange-200 transition-all duration-300 group active:scale-[0.98]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-stone-900 line-clamp-2">{t.title}</p>
-                      <p className="text-xs text-stone-400 mt-1 truncate">{t.project_title}</p>
+                      <p className="text-sm font-bold text-stone-900 line-clamp-2 group-hover:text-orange-500 transition-colors leading-snug">{t.title}</p>
+                      <p className="text-[10px] text-stone-400 mt-1.5 uppercase font-black tracking-widest truncate">{t.project_title}</p>
                     </div>
-                    <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] px-2.5 py-1 rounded-full bg-stone-100 text-stone-700">
-                      {statusLabel(t.status || 'todo')}
-                    </span>
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-xs text-stone-400">
-                    <span>#{t.id}</span>
-                    <span>{dueText ? `Échéance: ${dueText}` : 'Aucune échéance'}</span>
+                  <div className="mt-5 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] text-stone-400">
+                    <span className="px-2 py-0.5 bg-stone-50 rounded-md border border-stone-100 text-stone-500">{t.status === 'in_progress' ? 'En cours' : 'À faire'}</span>
+                    <span className="flex items-center gap-1 opacity-60">
+                       <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                       {dueText || 'Libre'}
+                    </span>
                   </div>
                 </button>
               );
@@ -283,12 +283,12 @@ export default function DashboardPage() {
       </section>
 
       {/* Upcoming events */}
-      <section className="mb-10">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Mes prochains événements</h2>
+      <section className="mb-10 animate-fadeUp [animation-delay:100ms]">
+        <div className="flex items-center justify-between mb-4 px-1">
+          <h2 className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Mes prochains événements</h2>
           <button
             onClick={() => { setEventsLoading(true); fetchUpcomingEvents(); }}
-            className="text-xs font-semibold text-stone-500 hover:text-stone-800"
+            className="text-[10px] font-black text-orange-500 hover:text-orange-600 uppercase tracking-widest transition-colors"
           >
             Rafraîchir
           </button>
@@ -316,29 +316,20 @@ export default function DashboardPage() {
                 <button
                   key={ev.id}
                   onClick={() => router.push(`/projects/${ev.project_id}/calendar`)}
-                  className="text-left bg-white rounded-2xl border border-violet-100 p-5 hover:shadow-md hover:border-violet-200 hover:-translate-y-0.5 transition-all duration-200"
+                  className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-xl hover:shadow-violet-100 hover:border-violet-200 transition-all duration-300 active:scale-[0.98]"
                 >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <p className="text-sm font-semibold text-stone-900 line-clamp-1">{ev.title}</p>
-                    <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${isToday ? 'bg-orange-100 text-orange-600' : isTomorrow ? 'bg-amber-50 text-amber-600' : 'bg-violet-50 text-violet-600'}`}>
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <p className="text-sm font-bold text-stone-900 line-clamp-1 leading-tight">{ev.title}</p>
+                    <span className={`shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${isToday ? 'bg-orange-100 text-orange-700' : isTomorrow ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'}`}>
                       {dateLabel}
                     </span>
                   </div>
-                  <p className="text-xs text-stone-400 truncate mb-1">{ev.project_title}</p>
-                  <div className="flex items-center justify-between text-xs text-stone-400 mt-2">
-                    <span className="flex items-center gap-1">
-                      <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest truncate mb-1">{ev.project_title}</p>
+                  <div className="flex items-center justify-between text-[10px] font-bold text-stone-400 mt-3 uppercase tracking-wider">
+                    <span className="flex items-center gap-1.5 opacity-60">
+                      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                       {timeLabel}
                     </span>
-                    {ev.location && (
-                      <span className="flex items-center gap-1 truncate max-w-[120px]">
-                        <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                        {ev.location}
-                      </span>
-                    )}
-                    {!ev.location && ev.attendee_count > 0 && (
-                      <span>{ev.attendee_count} participant{ev.attendee_count > 1 ? 's' : ''}</span>
-                    )}
                   </div>
                 </button>
               );
@@ -363,10 +354,10 @@ export default function DashboardPage() {
         <div className="space-y-8">
           {ownedProjects.length > 0 && (
             <section>
-              <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
-                Propriétaire · {ownedProjects.length}
+              <h2 className="text-[10px] font-black text-stone-400 uppercase tracking-[0.25em] mb-4 px-1 flex items-center gap-3">
+                Propriétaire <span className="w-1 h-1 rounded-full bg-stone-300"></span> {ownedProjects.length}
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {ownedProjects.map((p) => (
                   <ProjectCard
                     key={p.id}
@@ -381,10 +372,10 @@ export default function DashboardPage() {
           )}
           {memberProjects.length > 0 && (
             <section>
-              <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
-                Membre · {memberProjects.length}
+              <h2 className="text-[10px] font-black text-stone-400 uppercase tracking-[0.25em] mb-4 px-1 flex items-center gap-3">
+                Membre <span className="w-1 h-1 rounded-full bg-stone-300"></span> {memberProjects.length}
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {memberProjects.map((p) => (
                   <ProjectCard
                     key={p.id}
