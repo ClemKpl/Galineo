@@ -9,7 +9,7 @@ interface Permission { id: number; name: string; description: string; }
 
 interface Props {
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (newId?: number) => void;
 }
 
 function initials(name: string) {
@@ -145,6 +145,12 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
           setWizardLoading(false);
           loadHistory();
         }
+        // Redirection automatique si le projet vient d'être créé par l'IA en arrière-plan
+        if (res.task && res.task.status === 'completed' && res.task.project_id && wizardLoading) {
+           setWizardLoading(false);
+           setTimeout(() => onCreated(res.task.project_id), 1500);
+        }
+
         // Si la tâche a échoué (failed), on pourrait afficher un message d'erreur
         if (res.task && res.task.status === 'failed') {
           setWizardLoading(false);
@@ -209,7 +215,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
     if (!title.trim()) { setError('Le titre est requis'); return; }
     setLoading(true); setError('');
     try {
-      await api.post('/projects', {
+      const res = await api.post('/projects', {
         title: title.trim(),
         description: desc.trim() || null,
         deadline: deadline || null,
@@ -217,7 +223,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
         avatar: avatar || null,
         members: members.map((m) => ({ userId: m.user.id, roleId: m.roleId })),
       });
-      onCreated();
+      onCreated(res.id);
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally { setLoading(false); }
@@ -243,9 +249,9 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
 
       setWizardMessages(prev => [...prev, { role: 'assistant', content: res.reply }]);
 
-      // Détection via le nouveau champ d'actions
-      if (res.actions && res.actions.includes('creer_projet')) {
-        setTimeout(() => onCreated(), 1500);
+      // Détection via le nouveau champ d'actions (cas synchrone extrêmement rare pour wizard)
+      if (res.actions && res.actions.includes('creer_projet') && res.projectId) {
+        setTimeout(() => onCreated(res.projectId), 1500);
       }
       setWizardLoading(false);
     } catch (err) {

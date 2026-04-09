@@ -394,7 +394,11 @@ export default function DashboardPage() {
       {showModal && (
         <CreateProjectModal
           onClose={() => setShowModal(false)}
-          onCreated={() => { setShowModal(false); fetchProjects(); }}
+          onCreated={(newId) => { 
+            setShowModal(false); 
+            if (newId) router.push(`/projects/${newId}`);
+            else fetchProjects(); 
+          }}
         />
       )}
 

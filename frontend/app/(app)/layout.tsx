@@ -132,9 +132,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {showModal && (
         <CreateProjectModal
           onClose={() => setShowModal(false)}
-          onCreated={() => {
+          onCreated={(newId) => {
             setShowModal(false);
-            window.dispatchEvent(new Event('project-created'));
+            if (newId) router.push(`/projects/${newId}`);
+            else window.dispatchEvent(new Event('project-created'));
           }}
         />
       )}
