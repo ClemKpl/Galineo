@@ -626,7 +626,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                             draggable
                             onDragStart={(e) => handleDragStart(e, task.id)}
                             onClick={() => setEditingTask(task)}
-                            className={`absolute flex items-center px-3 h-7 text-[11px] font-bold text-white shadow-sm cursor-grab active:cursor-grabbing transition-all hover:brightness-110 group ${isDone ? 'opacity-40 grayscale-[0.5]' : ''} ${isDragging ? 'opacity-20 scale-95' : ''} ${isFeature ? 'h-8 rounded-none z-10' : 'rounded-lg'}`}
+                            className={`absolute flex items-center shadow-sm cursor-grab active:cursor-grabbing transition-all hover:brightness-110 group ${isDone ? 'opacity-40 grayscale-[0.5]' : ''} ${isDragging ? 'opacity-20 scale-95' : ''} ${isFeature ? 'h-3 z-10' : 'h-7 px-3 rounded-lg'}`}
                             style={{
                               left: `${((segment.startCol - 1) * 100) / 7}%`,
                               width: `${((segment.endCol - segment.startCol + 1) * 100) / 7}%`,
@@ -637,19 +637,19 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                               borderBottomLeftRadius: isFeature ? '0' : (segment.isStart ? '8px' : '0'),
                               borderTopRightRadius: isFeature ? '0' : (segment.isEnd ? '8px' : '0'),
                               borderBottomRightRadius: isFeature ? '0' : (segment.isEnd ? '8px' : '0'),
-                              backgroundColor: task.color || '#f97316',
+                              backgroundColor: isFeature ? '#1c1917' : (task.color || '#f97316'),
                               clipPath: isFeature ? (
                                 `polygon(
-                                  ${segment.isStart ? '0% 0%, 100% 0%' : '0% 0%, 100% 0%'},
-                                  ${segment.isEnd ? '100% 0%, 100% 70%, 95% 100%, 5% 100%, 0% 70%, 0% 0%' : '100% 0%, 100% 100%, 0% 100%, 0% 0%'}
+                                  0% 0%, 100% 0%, 
+                                  100% 100%, 
+                                  ${segment.isEnd ? 'calc(100% - 6px) 60%' : '100% 60%'}, 
+                                  ${segment.isStart ? '6px 60%' : '0% 60%'}, 
+                                  0% 100%
                                 )`
-                              ) : undefined,
-                              borderBottom: isFeature ? '2px solid rgba(0,0,0,0.2)' : 'none'
+                              ) : undefined
                             }}
                           >
-                            <div className={`absolute inset-0 bg-black/10 pointer-events-none ${isFeature ? 'block' : 'hidden'}`} />
-                            <span className="truncate relative z-10">
-                              {isFeature && <span className="mr-1.5 opacity-70">📦</span>}
+                            <span className={`truncate leading-none uppercase tracking-widest relative z-10 ${isFeature ? 'text-[9px] font-black text-stone-400 absolute -top-4 left-0 w-max pr-4' : 'text-[11px] font-bold text-white w-full'}`}>
                               {task.title}
                             </span>
                             <button type="button" onClick={(e) => { e.stopPropagation(); setEditingTask(task); }} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 hover:bg-white/40 p-0.5 rounded">
