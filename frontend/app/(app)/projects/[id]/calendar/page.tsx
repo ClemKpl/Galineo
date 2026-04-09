@@ -228,8 +228,21 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
 
   const weeks = useMemo(() => {
     const normalizedTasks = tasks
-      .filter(t => t.parent_id && (selectedFeatureId === null || t.parent_id === selectedFeatureId))
-      .filter(t => (selectedMemberId === null || t.assigned_to === selectedMemberId))
+      .filter(t => {
+        const isFeature = !t.parent_id;
+        // If sorting by feature, only show the selected feature and its children
+        if (selectedFeatureId !== null) {
+          return t.id === selectedFeatureId || t.parent_id === selectedFeatureId;
+        }
+        return true;
+      })
+      .filter(t => {
+        const isFeature = !t.parent_id;
+        if (selectedMemberId === null) return true;
+        // Features might not be assigned, but we show them if we have subtasks matching
+        if (isFeature) return true; 
+        return t.assigned_to === selectedMemberId;
+      })
       .map((task) => {
         const start = task.start_date ? startOfDay(new Date(task.start_date)) : null;
         const due = task.due_date ? startOfDay(new Date(task.due_date)) : null;
@@ -275,7 +288,15 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
           };
         })
         .sort((a, b) => {
-          // Sort by assignee name first (Group by person)
+          // 1. Features come first
+          const isFeatureA = !a.task.parent_id;
+          const isFeatureB = !b.task.parent_id;
+          if (isFeatureA !== isFeatureB) return isFeatureA ? -1 : 1;
+
+          // 2. Map tasks to their feature title for grouping if possible
+          // But here segments are already per week. Let's stick to Feature prominence.
+          
+          // 3. Sort by assignee name (Group by person)
           const nameA = a.task.assigned_name || '';
           const nameB = b.task.assigned_name || '';
           if (nameA !== nameB) return nameA.localeCompare(nameB);
@@ -597,27 +618,40 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                         const isDone = task.status === 'done';
                         const isDragging = draggingTaskId === task.id;
 
+                        const isFeature = !task.parent_id;
+
                         return (
                           <div
                             key={`${task.id}-${segment.startCol}-${segment.endCol}-${segment.lane}`}
                             draggable
                             onDragStart={(e) => handleDragStart(e, task.id)}
                             onClick={() => setEditingTask(task)}
-                            className={`absolute flex items-center px-3 h-7 rounded-lg text-[11px] font-bold text-white shadow-sm cursor-grab active:cursor-grabbing transition-all hover:brightness-110 group ${isDone ? 'opacity-40 grayscale-[0.5]' : ''} ${isDragging ? 'opacity-20 scale-95' : ''}`}
+                            className={`absolute flex items-center px-3 h-7 text-[11px] font-bold text-white shadow-sm cursor-grab active:cursor-grabbing transition-all hover:brightness-110 group ${isDone ? 'opacity-40 grayscale-[0.5]' : ''} ${isDragging ? 'opacity-20 scale-95' : ''} ${isFeature ? 'h-8 rounded-none z-10' : 'rounded-lg'}`}
                             style={{
                               left: `${((segment.startCol - 1) * 100) / 7}%`,
                               width: `${((segment.endCol - segment.startCol + 1) * 100) / 7}%`,
                               top: `${segment.lane * 32 + 8}px`,
                               marginLeft: segment.isStart ? '4px' : '0',
                               marginRight: segment.isEnd ? '4px' : '0',
-                              borderTopLeftRadius: segment.isStart ? '8px' : '0',
-                              borderBottomLeftRadius: segment.isStart ? '8px' : '0',
-                              borderTopRightRadius: segment.isEnd ? '8px' : '0',
-                              borderBottomRightRadius: segment.isEnd ? '8px' : '0',
-                              backgroundColor: task.color || '#f97316'
+                              borderTopLeftRadius: isFeature ? '0' : (segment.isStart ? '8px' : '0'),
+                              borderBottomLeftRadius: isFeature ? '0' : (segment.isStart ? '8px' : '0'),
+                              borderTopRightRadius: isFeature ? '0' : (segment.isEnd ? '8px' : '0'),
+                              borderBottomRightRadius: isFeature ? '0' : (segment.isEnd ? '8px' : '0'),
+                              backgroundColor: task.color || '#f97316',
+                              clipPath: isFeature ? (
+                                `polygon(
+                                  ${segment.isStart ? '0% 0%, 100% 0%' : '0% 0%, 100% 0%'},
+                                  ${segment.isEnd ? '100% 0%, 100% 70%, 95% 100%, 5% 100%, 0% 70%, 0% 0%' : '100% 0%, 100% 100%, 0% 100%, 0% 0%'}
+                                )`
+                              ) : undefined,
+                              borderBottom: isFeature ? '2px solid rgba(0,0,0,0.2)' : 'none'
                             }}
                           >
-                            <span className="truncate">{task.title}</span>
+                            <div className={`absolute inset-0 bg-black/10 pointer-events-none ${isFeature ? 'block' : 'hidden'}`} />
+                            <span className="truncate relative z-10">
+                              {isFeature && <span className="mr-1.5 opacity-70">📦</span>}
+                              {task.title}
+                            </span>
                             <button type="button" onClick={(e) => { e.stopPropagation(); setEditingTask(task); }} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 hover:bg-white/40 p-0.5 rounded">
                               <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
