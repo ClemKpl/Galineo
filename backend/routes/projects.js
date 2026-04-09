@@ -505,7 +505,6 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                 // Actions immédiates
                 logActivity(projectId, currentUserId, 'invitation', null, 'sent', { email, roleId: roleId || 3 }).catch(e => console.error(e));
                 
-                /* Désactivé temporairement
                 sendProjectInvitation({
                   email: email,
                   projectName: project.title,
@@ -516,7 +515,6 @@ router.post('/:id/members', authMiddleware, (req, res) => {
                 }).catch((mailErr) => {
                   logActivity(projectId, currentUserId, 'system', null, 'email_error', { text: `Échec envoi invitation à ${email}: ${mailErr.message}` }).catch(e => console.error(e));
                 });
-                */
 
                 res.json({ message: 'Invitation envoyée par email.' });
               }
