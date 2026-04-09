@@ -77,9 +77,16 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   const [fetchingHistory, setFetchingHistory] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Ref vers le dernier message model affiché — pour détecter une nouvelle réponse IA
+  const lastModelContentRef = useRef<string>('');
+
+  useEffect(() => {
+    const lastModel = [...messages].reverse().find(m => m.role === 'assistant' || m.role === 'model');
+    lastModelContentRef.current = lastModel?.content ?? '';
+  }, [messages]);
+
   useEffect(() => {
     loadHistory();
-    // Appel immédiat pour détecter une tâche en cours dès le montage
     checkActiveTask();
   }, [projectId]);
 
@@ -94,30 +101,33 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   }, []);
 
   useEffect(() => {
-    // Scroll auto lors de nouveaux messages ou changement d'état
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Utilise une ref pour éviter les stale closures dans le polling
-  const loadingRef = useRef(loading);
-  loadingRef.current = loading;
-
+  // Polling direct sur l'historique : détecte quand une nouvelle réponse IA apparaît
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (loading) {
-      interval = setInterval(async () => {
-        try {
-          const res = await api.get(`/ai/active-task/${projectId}`);
-          if (!res.active && loadingRef.current) {
+    if (!loading) return;
+    const interval = setInterval(async () => {
+      try {
+        const data = await api.get(`/ai/history/${projectId}`);
+        if (data?.history?.length > 0) {
+          const lastDbMsg = data.history[data.history.length - 1];
+          if (lastDbMsg.role === 'model' && lastDbMsg.content !== lastModelContentRef.current) {
+            setMessages(data.history.map((h: any) => ({
+              role: h.role === 'model' ? 'assistant' : 'user',
+              content: h.content,
+              user_name: h.user_name,
+              user_avatar: h.user_avatar,
+              created_at: h.created_at,
+            })));
             setLoading(false);
-            loadHistory();
           }
-        } catch {
-          setLoading(false);
         }
-      }, 3000);
-    }
-    return () => { if (interval) clearInterval(interval); };
+      } catch {
+        // silencieux, on réessaie au prochain tick
+      }
+    }, 3000);
+    return () => clearInterval(interval);
   }, [loading, projectId]);
 
   async function checkActiveTask() {
@@ -130,10 +140,6 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       console.error('Failed to check active task', err);
     }
   }
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
 
   async function handleResetHistory() {
     if (!confirm("Voulez-vous vraiment effacer tout l'historique de cette Galineo Room ? Cette action est irréversible pour tous les membres.")) return;
