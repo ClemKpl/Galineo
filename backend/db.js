@@ -44,7 +44,9 @@ if (isProd) {
     
     // Auto-return ID for inserts if needed (except for link tables without 'id' column)
     if (sql.toUpperCase().includes('INSERT') && !sql.toUpperCase().includes('RETURNING')) {
-      const isLinkTable = sql.toLowerCase().includes('project_members') || sql.toLowerCase().includes('role_permissions');
+      const isLinkTable = sql.toLowerCase().includes('project_members') || 
+                          sql.toLowerCase().includes('role_permissions') ||
+                          sql.toLowerCase().includes('chat_group_members');
       if (!isLinkTable) {
         converted += ' RETURNING id';
       }
