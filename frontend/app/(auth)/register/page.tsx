@@ -90,7 +90,7 @@ function RegisterForm() {
         </form>
         <p className="text-center text-sm text-stone-500 mt-6">
           Déjà un compte ?{' '}
-          <Link href="/login" className="text-orange-500 hover:text-orange-600 font-semibold">
+          <Link href={`/login${joinToken ? `?join=${joinToken}` : ''}`} className="text-orange-500 hover:text-orange-600 font-semibold">
             Se connecter
           </Link>
         </p>

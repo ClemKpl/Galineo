@@ -1,15 +1,29 @@
 'use client';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="text-stone-400">Chargement...</div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const joinToken = searchParams.get('join');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,6 +31,10 @@ export default function LoginPage() {
     try {
       const data = await api.post('/auth/login', { email, password });
       login(data.token, data.user);
+      
+      if (joinToken) {
+        router.push(`/join/${joinToken}`);
+      }
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally {
@@ -63,7 +81,7 @@ export default function LoginPage() {
         </form>
         <p className="text-center text-sm text-stone-500 mt-6">
           Pas encore de compte ?{' '}
-          <Link href="/register" className="text-orange-500 hover:text-orange-600 font-semibold">
+          <Link href={`/register${joinToken ? `?join=${joinToken}` : ''}`} className="text-orange-500 hover:text-orange-600 font-semibold">
             S&apos;inscrire
           </Link>
         </p>
