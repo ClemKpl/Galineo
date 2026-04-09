@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
 
 interface User { 
   id: number; 
@@ -18,6 +19,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, user: User) => void;
   updateUser: (user: User) => void;
+  refreshUser: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -30,11 +32,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  const refreshUser = async () => {
+    try {
+      const freshUser = await api.get('/users/me');
+      if (freshUser) {
+        localStorage.setItem('galineo_user', JSON.stringify(freshUser));
+        setUser(freshUser);
+      }
+    } catch (err) {
+      console.error('❌ Failed to refresh user profile:', err);
+      // If unauthorized, could logout, but let's keep it simple for now as it might be a network error
+    }
+  };
+
   useEffect(() => {
     const t = localStorage.getItem('galineo_token');
     const u = localStorage.getItem('galineo_user');
-    if (t && u) { setToken(t); setUser(JSON.parse(u)); }
-    setIsLoading(false);
+    
+    const initAuth = async () => {
+      if (t) {
+        setToken(t);
+        if (u) setUser(JSON.parse(u));
+        
+        // Refresh from DB to ensure name/avatar/notifs are synced
+        await refreshUser();
+      }
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = (newToken: string, newUser: User) => {

@@ -122,7 +122,7 @@ export default function SettingsPage() {
     try {
       const updated = await api.patch('/users/me', { name, email, avatar });
       // Update auth context with new name/email/avatar
-      if (token) login(token, { id: user!.id, name: updated.name, email: updated.email, avatar: updated.avatar });
+      updateUser(updated);
       showToast('Profil mis à jour !');
     } catch (err: unknown) {
       showToast((err as Error).message, 'error');

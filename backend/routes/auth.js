@@ -46,9 +46,9 @@ router.post('/register', async (req, res) => {
                 
                 stmt.finalize();
                 updateStmt.finalize();
-                // note: notifStmt is async and might finish after response, but ok for this simple use case
+               // note: notifStmt is async and might finish after response, but ok for this simple use case
               }
-              res.json({ token, user: { id: newUserId, name, email } });
+              res.json({ token, user: { id: newUserId, name, email, avatar: null } });
             });
       }
     );
@@ -72,7 +72,18 @@ router.post('/login', (req, res) => {
 
     db.run('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id], () => {
       const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-      res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+      res.json({ 
+        token, 
+        user: { 
+          id: user.id, 
+          name: user.name, 
+          email: user.email, 
+          avatar: user.avatar,
+          notif_project_updates: user.notif_project_updates,
+          notif_added_to_project: user.notif_added_to_project,
+          notif_deadlines: user.notif_deadlines
+        } 
+      });
     });
   });
 });
