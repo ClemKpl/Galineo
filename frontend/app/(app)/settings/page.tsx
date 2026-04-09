@@ -60,7 +60,7 @@ function Toggle({ checked, onChange, label, description }: { checked: boolean; o
 }
 
 export default function SettingsPage() {
-  const { user, login, logout, token } = useAuth();
+  const { user, login, updateUser, logout, token } = useAuth();
 
   // Profil
   const [name, setName]   = useState(user?.name ?? '');
@@ -93,11 +93,10 @@ export default function SettingsPage() {
   }, [user]);
 
   const updateNotifSetting = async (key: string, value: boolean, setter: (v: boolean) => void) => {
-    const previousValue = value;
     setter(value); // Optimistic update
     try {
       const updated = await api.patch('/users/me', { [key]: value });
-      if (token) login(token, updated);
+      updateUser(updated);
     } catch (err: any) {
       setter(!value); // Rollback
       showToast(err.message || 'Erreur lors de la mise à jour', 'error');

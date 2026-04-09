@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { sendNotificationEmail } = require('../utils/mailer');
 
 // Middleware pour verifier si l'utilisateur est membre du groupe
 function memberMiddleware(req, res, next) {
@@ -65,17 +66,12 @@ router.post('/', authMiddleware, (req, res) => {
         initialMembers.forEach(mId => {
           if (mId !== userId) {
             stmt.run(groupId, mId, 'member');
-            
-            // Notification pour le membre ajouté
+            const notifMsg = `${req.user.name} vous a ajouté au groupe "${title}"`;
             db.run(`
               INSERT INTO notifications (user_id, type, title, message, from_user_id)
               VALUES (?, 'group_added', ?, ?, ?)
-            `, [
-              mId,
-              'Nouveau groupe de discussion',
-              `${req.user.name} vous a ajouté au groupe "${title}"`,
-              userId
-            ]);
+            `, [mId, 'Nouveau groupe de discussion', notifMsg, userId]);
+            sendNotificationEmail({ userId: mId, type: 'group_added', title: 'Nouveau groupe de discussion', message: notifMsg });
           }
         });
         stmt.finalize();
@@ -140,15 +136,12 @@ router.post('/:id/members', authMiddleware, memberMiddleware, adminMiddleware, (
     // Notification pour le membre ajouté
     db.get('SELECT title FROM chat_groups WHERE id = ?', [groupId], (errGroup, group) => {
       if (!errGroup && group) {
+        const notifMsg = `${req.user.name} vous a ajouté au groupe "${group.title}"`;
         db.run(`
           INSERT INTO notifications (user_id, type, title, message, from_user_id)
           VALUES (?, 'group_added', ?, ?, ?)
-        `, [
-          userId,
-          'Ajouté à un groupe',
-          `${req.user.name} vous a ajouté au groupe "${group.title}"`,
-          req.user.id
-        ]);
+        `, [userId, 'Ajouté à un groupe', notifMsg, req.user.id]);
+        sendNotificationEmail({ userId, type: 'group_added', title: 'Ajouté à un groupe', message: notifMsg });
       }
     });
 
@@ -208,15 +201,12 @@ router.post('/:id/messages', authMiddleware, memberMiddleware, (req, res) => {
         if (!errUsers && users) {
           users.forEach(u => {
             if (mentionNames.includes(u.name.toLowerCase())) {
-               db.run(`
+              const notifMsg = req.user.name + ' vous a mentionné dans un groupe de discussion';
+              db.run(`
                 INSERT INTO notifications (user_id, type, title, message, from_user_id)
                 VALUES (?, 'mention', ?, ?, ?)
-              `, [
-                u.id, 
-                'Mention dans un groupe', 
-                req.user.name + ' vous a mentionne dans un groupe de discussion', 
-                userId
-              ]);
+              `, [u.id, 'Mention dans un groupe', notifMsg, userId]);
+              sendNotificationEmail({ userId: u.id, type: 'mention', title: 'Mention dans un groupe', message: notifMsg });
             }
           });
         }

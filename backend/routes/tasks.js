@@ -3,6 +3,7 @@ const router = express.Router({ mergeParams: true });
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
+const { sendNotificationEmail } = require('../utils/mailer');
  
 /**
  * Helper to sync a parent task's status based on its children's status
@@ -241,8 +242,10 @@ router.post('/', authMiddleware, (req, res) => {
     logActivity(projectId, createdBy, 'task', taskId, 'created', { title });
 
     if (assigned_to && assigned_to !== createdBy) {
+      const notifMsg = `"${title}" vous a été assignée.`;
       db.run('INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [assigned_to, 'task_assigned', 'Nouvelle tâche', `"${title}" vous a été assignée.`, projectId, taskId, createdBy]);
+        [assigned_to, 'task_assigned', 'Nouvelle tâche', notifMsg, projectId, taskId, createdBy]);
+      sendNotificationEmail({ userId: assigned_to, type: 'task_assigned', title: 'Nouvelle tâche', message: notifMsg, projectId });
     }
 
     if (parent_id) {
@@ -300,8 +303,10 @@ router.patch('/:id', authMiddleware, (req, res) => {
   if (req.body.assigned_to !== undefined) {
     db.get('SELECT title, assigned_to FROM tasks WHERE id = ?', [id], (err, oldTask) => {
       if (oldTask && req.body.assigned_to && req.body.assigned_to !== oldTask.assigned_to) {
+        const notifMsg = `"${oldTask.title}" vous a été assignée.`;
         db.run('INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [req.body.assigned_to, 'task_assigned', 'Tâche assignée', `"${oldTask.title}" vous a été assignée.`, projectId, id, userId]);
+          [req.body.assigned_to, 'task_assigned', 'Tâche assignée', notifMsg, projectId, id, userId]);
+        sendNotificationEmail({ userId: req.body.assigned_to, type: 'task_assigned', title: 'Tâche assignée', message: notifMsg, projectId });
       }
       doUpdate();
     });
