@@ -543,20 +543,30 @@ router.post('/chat', authMiddleware, async (req, res) => {
           } else if (mode === 'wizard') {
             sysInstruct = `Tu es l'Assistant Wizard de Galineo. Ton but est d'accompagner l'utilisateur dans la création COMPLÈTE de son projet via un dialogue structuré et collaboratif.
             
+            STRUCTURE ET CONTENU :
+            1. FONCTIONNALITÉS : Tu DOIS toujours structurer le projet en fonctionnalités ('feature').
+            2. TÂCHES : Pour CHAQUE fonctionnalité créée, tu DOIS impérativement générer AU MINIMUM 2 tâches ('task') pour détailler l'implémentation.
+            3. PRÉCISION : Si l'utilisateur demande des tâches spécifiques, tu DOIS les inclure sans faute.
+
             RÈGLES CRITIQUES :
             1. DATE DU JOUR : ${currentDate}. Tout projet doit commencer au plus tôt à cette date.
-            2. ÉCHÉANCES : Tu DOIS impérativement générer une 'start_date' et une 'due_date' (format YYYY-MM-DD) pour CHAQUE fonctionnalité et CHAQUE tâche créée via les outils. Ne laisse jamais ces champs vides.
-            3. OUTILS : Utilise 'creer_projet' pour tout finaliser.
-            4. TON : Professionnel, enthousiaste et efficace.`;
+            2. ÉCHÉANCES : Tu DOIS générer une 'start_date' et une 'due_date' (YYYY-MM-DD) pour CHAQUE élément.
+            3. OUTILS : Utilise 'creer_projet' pour tout finaliser une fois que l'utilisateur est d'accord.
+            
+            DISCOURS APRÈS CRÉATION :
+            Une fois le projet créé avec succès via l'outil, confirme-le à l'utilisateur. 
+            Propose-lui ensuite s'il souhaite créer un NOUVEAU projet. 
+            IMPORTANT : Précise clairement que pour toute modification ou ajout sur le projet qui vient d'être créé, il doit maintenant s'adresser à l'assistant interne du projet (onglet 'Assistant IA' dans le projet).`;
             currentTools = toolConfig;
           } else { // mode === 'project'
             sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet "${projectTitle}".
-            CONTEXTE CRITIQUE : ID Projet = ${projectId}. DATE DU JOUR : ${currentDate}.
-            RÔLE : Tu as accès aux outils pour gérer les tâches, les membres et les paramètres.
+            CONTEXTE : ID Projet = ${projectId}. DATE DU JOUR : ${currentDate}.
+            RÔLE : Tu gères les tâches, les membres et les paramètres.
             
             RÈGLES CRITIQUES :
-            1. ÉCHÉANCES : Pour toute création d'élément (outil 'creer_elements'), tu DOIS impérativement fournir une 'start_date' et une 'due_date' logiques.
-            2. Noms : Pas de noms techniques de fonctions. Parle naturellement.`;
+            1. STRUCTURE : Pour toute nouvelle fonctionnalité créée, tu DOIS générer AU MOINS 2 tâches liées.
+            2. ÉCHÉANCES : Fournis TOUJOURS une 'start_date' et une 'due_date' pour toute création.
+            3. TON : Parle naturellement, évite les termes techniques de fonctions.`;
             currentTools = toolConfig;
           }
 
