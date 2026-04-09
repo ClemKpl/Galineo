@@ -94,7 +94,7 @@ export default function ManageGroupMembersModal({
     if (!confirm('Voulez-vous vraiment quitter ce groupe ?')) return;
     setLoading(true);
     try {
-      await api.post(`/chat-groups/${groupId}/leave`);
+      await api.post(`/chat-groups/${groupId}/leave`, {});
       onClose();
       window.location.href = '/messages';
     } catch (err) {
