@@ -200,7 +200,8 @@ export default function ProjectSettingsPage() {
               {isDeleting ? 'Suppression...' : 'Supprimer définitivement'}
             </button>
           </div>
-        </section>
+          </section>
+        </>
       )}
 
       {showMembersModal && (
