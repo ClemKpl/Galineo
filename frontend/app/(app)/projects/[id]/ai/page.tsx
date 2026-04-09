@@ -86,24 +86,35 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   // Recharge l'historique quand une nouvelle notification arrive (ex: réponse IA prête)
   useEffect(() => {
     function onNewNotification() {
-      if (!loading) {
-        loadHistory();
-      }
+      setLoading(false);
+      loadHistory();
     }
     window.addEventListener('new-notification', onNewNotification);
     return () => window.removeEventListener('new-notification', onNewNotification);
-  }, [loading]);
+  }, []);
 
   useEffect(() => {
     // Scroll auto lors de nouveaux messages ou changement d'état
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  // Utilise une ref pour éviter les stale closures dans le polling
+  const loadingRef = useRef(loading);
+  loadingRef.current = loading;
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (loading) {
-      interval = setInterval(() => {
-        checkActiveTask();
+      interval = setInterval(async () => {
+        try {
+          const res = await api.get(`/ai/active-task/${projectId}`);
+          if (!res.active && loadingRef.current) {
+            setLoading(false);
+            loadHistory();
+          }
+        } catch {
+          setLoading(false);
+        }
       }, 3000);
     }
     return () => { if (interval) clearInterval(interval); };
@@ -114,14 +125,9 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       const res = await api.get(`/ai/active-task/${projectId}`);
       if (res && res.active) {
         setLoading(true);
-      } else if (loading) {
-        // Si on était en loading et que la tâche n'est plus active, on recharge l'historique
-        setLoading(false);
-        loadHistory();
       }
     } catch (err) {
       console.error('Failed to check active task', err);
-      setLoading(false); // On arrête de mouliner en cas d'erreur
     }
   }
 
