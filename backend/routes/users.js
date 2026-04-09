@@ -34,7 +34,16 @@ router.patch('/me', authMiddleware, (req, res) => {
   const { name, email } = req.body;
   const userId = req.user.id;
 
-  if (!name && !email && req.body.avatar === undefined) return res.status(400).json({ error: 'Aucune donnée à modifier' });
+  if (
+    !name && 
+    !email && 
+    req.body.avatar === undefined && 
+    req.body.notif_project_updates === undefined &&
+    req.body.notif_added_to_project === undefined &&
+    req.body.notif_deadlines === undefined
+  ) {
+    return res.status(400).json({ error: 'Aucune donnée à modifier' });
+  }
 
   const updates = [];
   const values = [];
