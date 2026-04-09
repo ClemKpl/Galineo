@@ -271,7 +271,14 @@ export default function Sidebar({
       {/* Notifications */}
       <div className="px-3 py-2.5 border-b border-stone-800 relative" ref={panelRef}>
         <button
-          onClick={() => setShowNotifs(!showNotifs)}
+          onClick={() => {
+            if (window.innerWidth < 1024) {
+              router.push('/notifications');
+              if (onCloseMobile) onCloseMobile();
+            } else {
+              setShowNotifs(!showNotifs);
+            }
+          }}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${showNotifs ? 'bg-stone-800 text-white' : 'text-stone-400 hover:text-stone-100 hover:bg-stone-800'}`}
         >
           <div className="relative">

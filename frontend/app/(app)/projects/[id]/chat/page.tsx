@@ -233,7 +233,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       {/* CHAT INPUT AREA */}
-      <div className="px-4 md:px-8 pb-24 lg:pb-8 pt-4 bg-white border-t border-stone-100 shrink-0">
+      <div className="px-4 md:px-8 pb-20 lg:pb-8 pt-3 bg-white border-t border-stone-100 shrink-0">
         <form onSubmit={handleSend} className="relative max-w-4xl mx-auto">
           {/* Autocomplete Mentions Box */}
           {mentionListVisible && (
@@ -249,14 +249,14 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           
           <div className="flex gap-2.5">
             <input id="chat-input" type="text"
-              className="flex-1 bg-stone-50 border border-stone-200 rounded-2xl px-5 py-3.5 shadow-inner focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm text-stone-900 placeholder:text-stone-400"
-              placeholder="Message... (@ pour mentionner)"
+              className="flex-1 bg-stone-50 border border-stone-200 rounded-2xl px-5 py-2.5 shadow-inner focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm text-stone-900 placeholder:text-stone-400"
+              placeholder="Message..."
               value={newMessage}
               onChange={handleInputChange}
               autoComplete="off"
             />
-            <button type="submit" disabled={!newMessage.trim()} className="w-12 h-12 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-2xl flex items-center justify-center transition-all shadow-lg shadow-orange-500/20 shrink-0 active:scale-90">
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            <button type="submit" disabled={!newMessage.trim()} className="w-10 h-10 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-orange-500/20 shrink-0 active:scale-90">
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
             </button>
           </div>
         </form>

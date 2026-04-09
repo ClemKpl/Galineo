@@ -209,7 +209,7 @@ export default function AiChat() {
           </div>
 
           {/* Input */}
-          <div className="px-5 py-5 border-t border-stone-100 bg-white shrink-0">
+          <div className="px-4 pb-12 lg:pb-5 pt-4 border-t border-stone-100 bg-white shrink-0">
             <div className="flex items-end gap-3">
               <textarea
                 ref={inputRef}
@@ -218,25 +218,24 @@ export default function AiChat() {
                 onChange={e => {
                   setInput(e.target.value);
                   e.target.style.height = 'auto';
-                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="Décris ton projet…"
                 disabled={loading}
-                className="flex-1 resize-none bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-orange-400/20 focus:border-orange-400 disabled:opacity-50 overflow-hidden leading-relaxed transition-all"
-                style={{ minHeight: '44px', maxHeight: '120px' }}
+                className="flex-1 resize-none bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-sm text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-orange-400/10 focus:border-orange-400/50 disabled:opacity-50 overflow-hidden leading-relaxed transition-all"
+                style={{ minHeight: '40px', maxHeight: '100px' }}
               />
               <button
                 onClick={send}
                 disabled={!input.trim() || loading}
-                className="w-11 h-11 rounded-2xl bg-stone-900 hover:bg-stone-800 disabled:bg-stone-100 disabled:text-stone-400 text-white flex items-center justify-center transition-all shrink-0 active:scale-90 shadow-lg shadow-stone-900/10"
+                className="w-10 h-10 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:bg-stone-100 disabled:text-stone-400 text-white flex items-center justify-center transition-all shrink-0 active:scale-90 shadow-lg shadow-stone-900/10"
               >
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                 </svg>
               </button>
             </div>
-            <p className="text-[9px] font-black uppercase tracking-[0.15em] text-stone-400 mt-3 text-center">Entrée pour envoyer · Maj+Entrée pour saut</p>
           </div>
         </div>
       )}

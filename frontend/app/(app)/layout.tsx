@@ -44,7 +44,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           ? 'Historique'
           : pathname === '/trash'
             ? 'Corbeille'
-            : pathname === '/settings'
+            : pathname === '/notifications'
+      ? 'Notifications'
+      : pathname === '/settings'
               ? 'Parametres'
               : 'Galineo';
 

@@ -457,47 +457,40 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   }
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto animate-fadeIn">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto animate-fadeIn overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-stone-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-stone-200">
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <div className="w-12 h-12 bg-stone-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-stone-200 shrink-0">
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-stone-900 tracking-tight">GANTT</h1>
-            <p className="text-stone-500 mt-1 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
-              Timeline visuelle des tâches et jalons
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight truncate uppercase">GANTT</h1>
+            <p className="text-stone-400 mt-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest leading-none">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse"></span>
+              Timeline visuelle des tâches
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="bg-white border border-stone-200 rounded-2xl p-1.5 flex items-center shadow-sm">
-            <button onClick={prevMonth} className="p-2 text-stone-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all">
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            <button onClick={prevMonth} className="p-2 text-stone-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all active:scale-90">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
-            <button onClick={today} className="px-4 py-1.5 text-sm font-bold text-stone-700 hover:text-orange-600 transition-colors">Aujourd'hui</button>
-            <button onClick={nextMonth} className="p-2 text-stone-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all">
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <button onClick={today} className="px-4 py-1.5 text-xs font-black text-stone-700 hover:text-orange-600 transition-colors uppercase tracking-widest">Aujourd'hui</button>
+            <button onClick={nextMonth} className="p-2 text-stone-500 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all active:scale-90">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
-          </div>
-
-          <div className="group relative z-30">
-            <div className="w-6 h-6 rounded-full bg-stone-100 text-stone-400 flex items-center justify-center text-xs font-bold cursor-help hover:bg-orange-100 hover:text-orange-600 transition-colors">?</div>
-            <div className="absolute right-0 top-full mt-2 w-72 bg-stone-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[80]">
-              Utilisez le GANTT pour visualiser l&apos;enchaînement des tâches. Glissez-déposez une barre pour changer sa date de début.
-            </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="cursor-pointer rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-700 transition hover:bg-stone-50">
-              Import CSV
+            <label className="cursor-pointer rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-[11px] font-black uppercase tracking-widest text-stone-700 transition hover:bg-stone-50 active:scale-95 shadow-sm">
+              Import
               <input type="file" accept=".csv" onChange={handleImport} className="hidden" />
             </label>
-            <button type="button" onClick={handleExport} className="rounded-2xl bg-stone-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-stone-800 shadow-sm">
-              Export CSV
+            <button type="button" onClick={handleExport} className="rounded-2xl bg-stone-900 px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-white transition hover:bg-stone-800 active:scale-95 shadow-lg shadow-stone-900/20">
+              Export
             </button>
           </div>
         </div>
@@ -561,25 +554,25 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
         ))}
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-[2.5rem] overflow-hidden shadow-sm shadow-stone-200/50 flex flex-col">
-          <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/50 px-8 py-4">
-            <h2 className="text-lg font-bold text-stone-800 capitalize">
+      <div className="bg-white border border-stone-200 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-sm shadow-stone-200/50 flex flex-col">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-100 bg-stone-50/50 px-6 md:px-8 py-4 gap-4">
+            <h2 className="text-sm md:text-lg font-black text-stone-900 uppercase tracking-widest">
               {currentDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
             </h2>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-stone-400 font-medium">Glissez une tâche pour replanifier</span>
-              <button type="button" onClick={() => fetchData(true)} className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-xs font-bold text-stone-600 transition hover:bg-stone-50 hover:border-stone-300">
-                {refreshing ? 'Actualisation...' : 'Actualiser'}
+              <span className="hidden md:inline text-[10px] text-stone-400 font-bold uppercase tracking-widest">Glissez une tâche pour replanifier</span>
+              <button type="button" onClick={() => fetchData(true)} className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-stone-600 transition hover:bg-stone-50 active:scale-95 shadow-sm">
+                {refreshing ? '...' : 'Actualiser'}
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <div className="min-w-[1000px]">
+          <div className="overflow-x-auto scrollbar-none">
+            <div className="min-w-[800px] lg:min-w-full">
               {/* Day headers */}
-              <div className="grid grid-cols-7 border-b border-stone-200">
+              <div className="grid grid-cols-7 border-b border-stone-200 bg-stone-50">
                 {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((d) => (
-                  <div key={d} className="py-3 text-center text-[11px] font-bold uppercase tracking-widest text-stone-400">{d}</div>
+                  <div key={d} className="py-2.5 text-center text-[9px] md:text-[11px] font-black uppercase tracking-[0.2em] text-stone-400">{d}</div>
                 ))}
               </div>
 
@@ -596,12 +589,12 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                           key={dayIndex}
                           onDragOver={(e) => handleDragOver(e, dateKey)}
                           onDrop={(e) => handleDrop(e, dateKey)}
-                          className={`min-h-[140px] bg-white border-r border-stone-100 last:border-r-0 p-2 transition-colors relative ${!dayInfo.currentMonth ? 'bg-stone-50/50' : ''} ${isDragOver ? 'bg-orange-50' : ''}`}
+                          className={`min-h-[100px] md:min-h-[140px] bg-white border-r border-stone-100 last:border-r-0 p-1 md:p-2 transition-colors relative ${!dayInfo.currentMonth ? 'bg-stone-50/30' : ''} ${isDragOver ? 'bg-orange-50' : ''}`}
                         >
                           <button
                             type="button"
                             onClick={() => openDayPanel(dateKey)}
-                            className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${isTodayDate ? 'bg-orange-500 text-white shadow-md shadow-orange-200' : 'text-stone-400 hover:bg-stone-100 hover:text-stone-900'}`}
+                            className={`w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-lg text-[10px] md:text-xs font-black transition-all ${isTodayDate ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' : 'text-stone-400 hover:bg-stone-100 hover:text-stone-900'}`}
                           >
                             {dayInfo.day}
                           </button>
