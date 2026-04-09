@@ -75,6 +75,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetchingHistory, setFetchingHistory] = useState(true);
+  const [aiSettings, setAiSettings] = useState<any>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Ref vers le dernier message model affiché — pour détecter une nouvelle réponse IA
@@ -88,7 +89,15 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   useEffect(() => {
     loadHistory();
     checkActiveTask();
+    loadAiSettings();
   }, [projectId]);
+
+  async function loadAiSettings() {
+    try {
+      const res = await api.get(`/projects/${projectId}/ai-settings`);
+      setAiSettings(res);
+    } catch (err) { console.error(err); }
+  }
 
   // Recharge l'historique quand une nouvelle notification arrive (ex: réponse IA prête)
   useEffect(() => {
@@ -302,6 +311,16 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-4 lg:py-6 space-y-4 lg:space-y-6 relative">
+        {aiSettings?.allow_delete === 1 && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 animate-pulse">
+            <span className="text-xl">⚠️</span>
+            <div className="text-xs text-red-800 font-medium">
+              <span className="font-bold uppercase tracking-wider">Mode Expérimental :</span> 
+              L'Assistant IA est autorisé à supprimer des éléments dans ce projet. Soyez précis dans vos demandes.
+            </div>
+          </div>
+        )}
+
         {fetchingHistory && (
           <div className="absolute inset-0 bg-stone-50/80 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center">
             <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin mb-3" />

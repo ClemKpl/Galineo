@@ -21,6 +21,28 @@ export default function ProjectSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [aiSettings, setAiSettings] = useState({ allow_create: 1, allow_modify: 1, allow_members: 1, allow_delete: 0 });
+  const [aiLoading, setAiLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadAiSettings() {
+      try {
+        const res = await api.get(`/projects/${project.id}/ai-settings`);
+        setAiSettings(res);
+      } catch (err) { console.error('Error loading AI settings', err); }
+    }
+    loadAiSettings();
+  }, [project.id]);
+
+  async function handleToggleAiPermission(key: string, value: number) {
+    const newSettings = { ...aiSettings, [key]: value };
+    setAiSettings(newSettings);
+    try {
+      await api.patch(`/projects/${project.id}/ai-settings`, newSettings);
+    } catch (err) {
+      alert("Erreur lors de la mise à jour des permissions IA");
+    }
+  }
 
   async function handleUpdateProject(e: React.FormEvent) {
     e.preventDefault();
@@ -132,6 +154,48 @@ export default function ProjectSettingsPage() {
         </form>
       </section>
 
+      {/* ── Assistant AI Permissions ── */}
+      {isOwner && (
+        <section className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-stone-100 bg-gradient-to-r from-orange-50 to-white">
+            <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
+              <span className="text-xl">🤖</span> Permissions de l'Assistant IA
+            </h2>
+            <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold mt-1">Contrôlez les actions autonomes autorisées</p>
+          </div>
+          
+          <div className="p-6 space-y-4">
+            <PermissionToggle 
+              label="Créer des éléments" 
+              description="Autoriser l'IA à créer des fonctionnalités et des tâches."
+              active={aiSettings.allow_create === 1}
+              onChange={(val) => handleToggleAiPermission('allow_create', val ? 1 : 0)}
+            />
+            <PermissionToggle 
+              label="Modifier les tâches" 
+              description="Autoriser l'IA à changer les dates, priorités et statuts."
+              active={aiSettings.allow_modify === 1}
+              onChange={(val) => handleToggleAiPermission('allow_modify', val ? 1 : 0)}
+            />
+            <PermissionToggle 
+              label="Gérer les membres" 
+              description="Autoriser l'IA à ajouter ou retirer des collaborateurs via email."
+              active={aiSettings.allow_members === 1}
+              onChange={(val) => handleToggleAiPermission('allow_members', val ? 1 : 0)}
+            />
+            <div className="pt-4 border-t border-stone-100">
+              <PermissionToggle 
+                label="Supprimer des éléments" 
+                description="Action irréversible. L'IA pourra supprimer des tâches existantes."
+                active={aiSettings.allow_delete === 1}
+                isExperimental={true}
+                onChange={(val) => handleToggleAiPermission('allow_delete', val ? 1 : 0)}
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
           <div>
@@ -229,6 +293,30 @@ export default function ProjectSettingsPage() {
           onChanged={() => {}}
         />
       )}
+    </div>
+  );
+}
+
+function PermissionToggle({ label, description, active, onChange, isExperimental }: { label: string, description: string, active: boolean, onChange: (val: boolean) => void, isExperimental?: boolean }) {
+  return (
+    <div className="flex items-center justify-between py-2 group">
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-bold text-stone-900 uppercase tracking-tight">{label}</h4>
+          {isExperimental && (
+            <span className="px-1.5 py-0.5 bg-red-100 text-red-600 text-[9px] font-black rounded uppercase tracking-widest animate-pulse border border-red-200">
+              ⚠️ Expérimental
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">{description}</p>
+      </div>
+      <button 
+        onClick={() => onChange(!active)}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${active ? 'bg-orange-600' : 'bg-stone-200'}`}
+      >
+        <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${active ? 'translate-x-5' : 'translate-x-0'}`} />
+      </button>
     </div>
   );
 }

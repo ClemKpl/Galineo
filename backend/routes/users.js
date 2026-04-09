@@ -177,5 +177,28 @@ router.get('/', authMiddleware, (req, res) => {
   });
 });
 
+// GET /users/me/ai-settings — Voir les préférences IA (Durée historique)
+router.get('/me/ai-settings', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  db.get('SELECT ai_history_duration FROM users WHERE id = ?', [userId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(row || { ai_history_duration: 60 });
+  });
+});
+
+// PATCH /users/me/ai-settings — Modifier les préférences IA
+router.patch('/me/ai-settings', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  const { ai_history_duration } = req.body;
+  
+  const val = parseInt(ai_history_duration);
+  if (isNaN(val) || val < 1) return res.status(400).json({ error: "Durée d'historique invalide (minimum 1 min)." });
+
+  db.run('UPDATE users SET ai_history_duration = ? WHERE id = ?', [val, userId], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Préférences IA mises à jour." });
+  });
+});
+
 module.exports = router;
 

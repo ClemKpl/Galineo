@@ -256,6 +256,17 @@ const functions = {
       ORDER BY r.id ASC, u.name ASC
     `, [project_id]);
     return { members: rows };
+  },
+  
+  supprimer_elements: async ({ project_id, element_ids }, userId) => {
+    if (!element_ids || !Array.isArray(element_ids) || element_ids.length === 0) return { error: "Aucun ID d'élément fourni." };
+    
+    const count = element_ids.length;
+    await dbRun(`UPDATE tasks SET status = 'deleted' WHERE project_id = ? AND id IN (${element_ids.map(() => '?').join(',')})`, [project_id, ...element_ids]);
+    
+    await logActivity(project_id, userId, 'task', null, 'deleted_batch', { count, ids: element_ids });
+    
+    return { message: `${count} éléments marqués comme supprimés dans le projet ${project_id}.` };
   }
 };
 
@@ -397,6 +408,21 @@ const toolConfig = [
           properties: { project_id: { type: "number" } },
           required: ["project_id"]
         }
+      },
+      {
+        name: "supprimer_elements",
+        description: "Marque des tâches ou fonctionnalités comme supprimées (DANGER: EXPÉRIMENTAL)",
+        parameters: {
+          type: "object",
+          properties: {
+            project_id: { type: "number" },
+            element_ids: {
+              type: "array",
+              items: { type: "number" }
+            }
+          },
+          required: ["project_id", "element_ids"]
+        }
       }
     ]
   }
@@ -408,13 +434,20 @@ router.get('/history/:projectId', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   try {
     const isWizard = projectId === 'wizard';
+    
+    // Récupération de la durée de l'historique configurée (ou 60min par défaut)
+    const user = await dbGet('SELECT ai_history_duration FROM users WHERE id = ?', [userId]);
+    const durationMin = user?.ai_history_duration ?? 60;
+    
+    // Filtre sur created_at en fonction de la durée (Gestion SQLite/PG simplifiée via JS ou SQL standard)
     const rows = await dbAll(
       `SELECT m.role, m.content, m.created_at, u.name as user_name, u.avatar as user_avatar 
        FROM ai_messages m 
        LEFT JOIN users u ON u.id = m.user_id 
-       WHERE ${isWizard ? 'm.project_id IS NULL AND m.user_id = ?' : 'm.project_id = ?'} 
+       WHERE ${isWizard ? 'm.project_id IS NULL AND m.user_id = ?' : 'm.project_id = ?'}
+       AND m.created_at >= datetime('now', '-' || ? || ' minute')
        ORDER BY m.id ASC`,
-      isWizard ? [userId] : [projectId]
+      isWizard ? [userId, durationMin] : [projectId, durationMin]
     );
     res.json({ history: rows });
   } catch (err) {
@@ -470,10 +503,17 @@ router.post('/chat', authMiddleware, async (req, res) => {
   let projectTitle = 'ce projet';
 
   try {
+    const user = await dbGet('SELECT name, email FROM users WHERE id = ?', [userId]);
+    const userName = user?.name || 'Utilisateur';
+    const userEmail = user?.email || 'inconnu';
+
     if (projectId) {
       const p = await dbGet(`SELECT title FROM projects WHERE id = ?`, [projectId]);
       if (p) projectTitle = p.title;
     }
+    
+    // On injecte les infos utilisateur dans le scope interne pour sysInstruct
+    req.userInfo = { name: userName, email: userEmail };
 
     // Sauvegarde immédiate du message utilisateur (si mode projet ou wizard)
     await dbRun(
@@ -531,9 +571,18 @@ router.post('/chat', authMiddleware, async (req, res) => {
           let currentTools = undefined;
 
           const currentDate = new Date().toISOString().split('T')[0];
+          const userName = req.userInfo.name;
+          const userEmail = req.userInfo.email;
+
+          // Hiérarchie commune
+          const hierarchyInfo = `
+HIÉRARCHIE DU PROJET :
+1. 'feature' (Fonctionnalité) : Un module majeur ou un pilier fonctionnel. C'est un élément PARENT.
+2. 'task' (Tâche) : Une action concrète ou un détail technique. C'est un élément ENFANT qui doit avoir un 'parent_title' correspondant à une 'feature'.`;
 
           if (mode === 'global') {
             sysInstruct = `Tu es Galineo AI, le conseiller personnel de l'utilisateur.
+            UTILISATEUR : Tu parles avec ${userName} (${userEmail}). Ne demande JAMAIS son identité.
             TON RÔLE :
             - Expert du logiciel Galineo. 
             - IMPORTANT : Tu n'as accès à AUCUNE donnée de projet spécifique ici. Redirige vers la 'Galineo Room' pour cela.
@@ -541,28 +590,29 @@ router.post('/chat', authMiddleware, async (req, res) => {
             - RÈGLE D'OR : N'appelle JAMAIS d'outil sans demander confirmation.`;
             currentTools = undefined;
           } else if (mode === 'wizard') {
-            sysInstruct = `Tu es l'Assistant Wizard de Galineo. Ton but est d'accompagner l'utilisateur dans la création COMPLÈTE de son projet via un dialogue structuré et collaboratif.
+            sysInstruct = `Tu es l'Assistant Wizard de Galineo. Tu accompagnes ${userName} (${userEmail}) dans la création de son projet.
             
-            STRUCTURE ET CONTENU :
-            1. FONCTIONNALITÉS : Tu DOIS toujours structurer le projet en fonctionnalités ('feature').
-            2. TÂCHES : Pour CHAQUE fonctionnalité créée, tu DOIS impérativement générer AU MINIMUM 2 tâches ('task') pour détailler l'implémentation.
-            3. PRÉCISION : Si l'utilisateur demande des tâches spécifiques, tu DOIS les inclure sans faute.
+            ${hierarchyInfo}
+
+            CONSIGNES GÉNÉRALES :
+            1. MINIMUMS : Un projet DOIT comporter au moins 3 fonctionnalités ('feature') et un total de 6 tâches ('task') réparties (idéalement 2 par fonctionnalité).
+            2. PRÉCISION : Si l'utilisateur demande des tâches spécifiques, tu DOIS les inclure sans faute.
+            3. DATES : Initialise TOUJOURS les dates en commençant par aujourd'hui (${currentDate}).
+            4. ASSIGNATION : Assigne par défaut les tâches à l'utilisateur actuel (${userEmail}).
 
             RÈGLES CRITIQUES :
-            1. DATE DU JOUR : ${currentDate}. Tout projet doit commencer au plus tôt à cette date.
-            2. ÉCHÉANCES : Tu DOIS générer une 'start_date' et une 'due_date' (YYYY-MM-DD) pour CHAQUE élément.
-            3. OUTILS : Utilise 'creer_projet' pour tout finaliser une fois que l'utilisateur est d'accord.
+            1. PAS DE DOUBLONS : Si l'historique montre que le projet est déjà créé, refuse de recommencer et renvoie vers la Room.
+            2. DATE DU JOUR : ${currentDate}.
+            3. ÉCHÉANCES : Tu DOIS générer une 'start_date' et une 'due_date' (YYYY-MM-DD) pour CHAQUE élément.
+            4. OUTILS : Utilise 'creer_projet' pour tout finaliser une fois que l'utilisateur est d'accord.
             
             DISCOURS APRÈS CRÉATION :
-            Une fois le projet créé avec succès via l'outil, confirme-le à l'utilisateur. 
-            Propose-lui ensuite s'il souhaite créer un NOUVEAU projet. 
-            IMPORTANT : Précise clairement que pour toute modification ou ajout sur le projet qui vient d'être créé, il doit maintenant s'adresser à l'assistant interne du projet (onglet 'Assistant IA' dans le projet).`;
+            Confirme la création et précise que pour modifier ou AJOUTER des éléments, il doit maintenant utiliser l'Assistant IA interne au projet.`;
             currentTools = toolConfig;
           } else { // mode === 'project'
-            sysInstruct = `Tu es l'Assistant de Projet Galineo Room dédié au projet "${projectTitle}".
+            sysInstruct = `Tu es l'Assistant Galineo Room dédié au projet "${projectTitle}".
+            UTILISATEUR : ${userName} (${userEmail}).
             CONTEXTE : ID Projet = ${projectId}. DATE DU JOUR : ${currentDate}.
-            RÔLE : Tu gères les tâches, les membres et les paramètres.
-            
             RÈGLES CRITIQUES :
             1. STRUCTURE : Pour toute nouvelle fonctionnalité créée, tu DOIS générer AU MOINS 2 tâches liées.
             2. ÉCHÉANCES : Fournis TOUJOURS une 'start_date' et une 'due_date' pour toute création.
@@ -610,6 +660,33 @@ router.post('/chat', authMiddleware, async (req, res) => {
             const calls = response.functionCalls();
             const toolLogs = [];
             for (const call of calls) {
+              // --- VÉRIFICATION DES PERMISSIONS (Si mode projet) ---
+              if (projectId) {
+                const settings = await dbGet('SELECT * FROM project_ai_settings WHERE project_id = ?', [projectId]);
+                // On assume "autorisé" par défaut (1) si la ligne n'existe pas, sauf pour delete (0)
+                const canCreate = !settings || settings.allow_create === 1;
+                const canModify = !settings || settings.allow_modify === 1;
+                const canMembers = !settings || settings.allow_members === 1;
+                const canDelete = settings && settings.allow_delete === 1;
+
+                if (call.name === 'creer_elements' && !canCreate) {
+                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La création d'éléments par l'IA est désactivée pour ce projet." } });
+                  continue;
+                }
+                if (call.name === 'modifier_tache' && !canModify) {
+                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La modification de tâches par l'IA est désactivée pour ce projet." } });
+                  continue;
+                }
+                if (call.name === 'gerer_membres' && !canMembers) {
+                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La gestion des membres par l'IA est désactivée pour ce projet." } });
+                  continue;
+                }
+                if (call.name === 'supprimer_elements' && !canDelete) {
+                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La suppression d'éléments par l'IA est désactivée (Désactivé par défaut / Expérimental)." } });
+                  continue;
+                }
+              }
+
               const fn = functions[call.name];
               if (fn) {
                 const apiRes = await fn(call.args, userId);

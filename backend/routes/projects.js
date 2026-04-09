@@ -828,4 +828,39 @@ router.delete('/:id/invitations/:invitationId', authMiddleware, (req, res) => {
   });
 });
 
+// GET /projects/:id/ai-settings — Voir les permissions de l'IA
+router.get('/:id/ai-settings', authMiddleware, (req, res) => {
+  const projectId = req.params.id;
+  db.get('SELECT * FROM project_ai_settings WHERE project_id = ?', [projectId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    // Si pas de ligne, on renvoie les défauts
+    res.json(row || { project_id: projectId, allow_create: 1, allow_modify: 1, allow_members: 1, allow_delete: 0 });
+  });
+});
+
+// PATCH /projects/:id/ai-settings — Modifier les permissions (Propriétaire uniquement)
+router.patch('/:id/ai-settings', authMiddleware, (req, res) => {
+  const projectId = req.params.id;
+  const userId = req.user.id;
+  const { allow_create, allow_modify, allow_members, allow_delete } = req.body;
+
+  db.get('SELECT owner_id FROM projects WHERE id = ?', [projectId], (err, p) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!p || p.owner_id !== userId) return res.status(403).json({ error: "Seul le propriétaire peut modifier ces réglages." });
+
+    db.run(`
+      INSERT INTO project_ai_settings (project_id, allow_create, allow_modify, allow_members, allow_delete)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(project_id) DO UPDATE SET
+        allow_create = excluded.allow_create,
+        allow_modify = excluded.allow_modify,
+        allow_members = excluded.allow_members,
+        allow_delete = excluded.allow_delete
+    `, [projectId, allow_create, allow_modify, allow_members, allow_delete], (errRun) => {
+      if (errRun) return res.status(500).json({ error: errRun.message });
+      res.json({ message: "Réglages de l'IA mis à jour." });
+    });
+  });
+});
+
 module.exports = router;

@@ -138,11 +138,16 @@ const initDb = async () => {
       last_login_at TIMESTAMP,
       notif_project_updates INTEGER DEFAULT 1,
       notif_added_to_project INTEGER DEFAULT 1,
+      notif_added_to_project INTEGER DEFAULT 1,
       notif_deadlines INTEGER DEFAULT 1,
+      ai_history_duration INTEGER DEFAULT 60,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_project_updates INTEGER DEFAULT 1`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_added_to_project INTEGER DEFAULT 1`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_deadlines INTEGER DEFAULT 1`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_history_duration INTEGER DEFAULT 60`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_added_to_project INTEGER DEFAULT 1`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_deadlines INTEGER DEFAULT 1`,
     `CREATE TABLE IF NOT EXISTS roles (
@@ -340,6 +345,13 @@ const initDb = async () => {
       project_id INTEGER,
       status TEXT DEFAULT 'running',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS project_ai_settings (
+      project_id INTEGER PRIMARY KEY REFERENCES projects(id),
+      allow_create INTEGER DEFAULT 1,
+      allow_modify INTEGER DEFAULT 1,
+      allow_members INTEGER DEFAULT 1,
+      allow_delete INTEGER DEFAULT 0
     )`
   ];
 
