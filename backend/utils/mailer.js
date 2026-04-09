@@ -1,24 +1,17 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const db = require('../db');
 
-// Configuration SMTP Ionos (Port 465 SSL)
-const transporter = nodemailer.createTransport({
-  host: 'smtp.ionos.fr',
-  port: 465,
-  secure: true,
-  auth: {
-    user: 'contact@flavien-gherardi.fr',
-    pass: 'Ionos74380!'
-  },
-  connectionTimeout: 20000,
-  greetingTimeout: 20000,
-  socketTimeout: 20000,
-  debug: true,
-  logger: true,
-  tls: {
-    rejectUnauthorized: false
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+async function sendMail({ to, subject, html }) {
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject,
+    html
+  });
+  if (error) throw new Error(error.message);
+}
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const FROM = '"Galineo" <contact@flavien-gherardi.fr>';
@@ -48,8 +41,7 @@ function btn(url, label) {
  */
 async function sendMemberAdded({ email, projectName, inviterName, projectId }) {
   const projectUrl = `${FRONTEND_URL}/projects/${projectId}`;
-  return transporter.sendMail({
-    from: FROM,
+  return sendMail({
     to: email,
     subject: `Vous avez été ajouté au projet : ${projectName}`,
     html: baseTemplate(`
@@ -67,8 +59,7 @@ async function sendMemberAdded({ email, projectName, inviterName, projectId }) {
  */
 async function sendProjectInvitation({ email, projectName, inviterName, token }) {
   const joinUrl = `${FRONTEND_URL}/register?invite=${token}`;
-  return transporter.sendMail({
-    from: FROM,
+  return sendMail({
     to: email,
     subject: `Invitation à rejoindre le projet : ${projectName}`,
     html: baseTemplate(`
@@ -154,8 +145,7 @@ async function sendNotificationEmail({ userId, type, title, message, projectId, 
       }
 
       try {
-        await transporter.sendMail({
-          from: FROM,
+        await sendMail({
           to: user.email,
           subject,
           html: baseTemplate(bodyContent)
