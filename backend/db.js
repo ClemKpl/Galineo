@@ -182,8 +182,10 @@ const initDb = async () => {
       project_id INTEGER,
       user_id INTEGER,
       role_id INTEGER,
+      is_favorite INTEGER DEFAULT 0,
       PRIMARY KEY (project_id, user_id)
     )`,
+    `ALTER TABLE project_members ADD COLUMN IF NOT EXISTS is_favorite INTEGER DEFAULT 0`,
     `CREATE TABLE IF NOT EXISTS tasks (
       id ${autoInc},
       project_id INTEGER NOT NULL,

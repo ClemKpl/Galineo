@@ -30,6 +30,15 @@ export default function ProjectLayout({ children, params }: { children: React.Re
     init();
   }, [projectId, router]);
 
+  async function toggleFavorite() {
+    try {
+      const res = await api.post(`/projects/${projectId}/toggle-favorite`, {});
+      setProject(prev => prev ? { ...prev, is_favorite: res.is_favorite } : null);
+    } catch (err) {
+      console.error('Failed to toggle favorite', err);
+    }
+  }
+
   if (loading) return <div className="p-8"><div className="animate-pulse h-10 bg-stone-200 rounded-xl w-64 mb-6"></div></div>;
   if (!project) return null;
 
@@ -65,8 +74,19 @@ export default function ProjectLayout({ children, params }: { children: React.Re
                   (project?.title || 'PR').substring(0, 2).toUpperCase()
                 )}
               </div>
-              <div className="min-w-0">
-                <h1 className="text-lg lg:text-2xl font-black text-stone-900 leading-tight tracking-tight truncate">{project.title}</h1>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-3">
+                  <h1 className="text-lg lg:text-2xl font-black text-stone-900 leading-tight tracking-tight truncate">{project.title}</h1>
+                  <button 
+                    onClick={toggleFavorite}
+                    className={`p-1.5 rounded-xl transition-all hover:scale-110 active:scale-95 ${project.is_favorite ? 'text-amber-400 bg-amber-50' : 'text-stone-300 hover:text-stone-400 bg-stone-50'}`}
+                    title={project.is_favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                  >
+                    <svg width="20" height="20" fill={project.is_favorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                    </svg>
+                  </button>
+                </div>
                 <p className="hidden lg:block text-[10px] lg:text-xs text-stone-400 font-bold uppercase tracking-widest mt-1 truncate max-w-xl">{project.description || 'Projet sans description'}</p>
               </div>
             </div>

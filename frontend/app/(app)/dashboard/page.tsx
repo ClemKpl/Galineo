@@ -18,6 +18,7 @@ interface Project {
   my_role_name?: string | null;
   created_at: string;
   avatar?: string | null;
+  is_favorite?: number;
 }
 
 interface AssignedTask {
@@ -50,7 +51,8 @@ function ProjectCard({
   onManageMembers,
   onDragStart,
   onDragEnd,
-  isDragging
+  isDragging,
+  onToggleFavorite
 }: { 
   project: Project; 
   currentUserId: number; 
@@ -59,6 +61,7 @@ function ProjectCard({
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   isDragging: boolean;
+  onToggleFavorite: (e: React.MouseEvent, id: number) => void;
 }) {
   const isOwner = project.owner_id === currentUserId;
   const canManageMembers = isOwner || project.my_role_id === 2 || project.my_role_id === 1;
@@ -88,14 +91,24 @@ function ProjectCard({
           <h3 className="font-semibold text-stone-900 text-base group-hover:text-orange-500 transition-colors leading-tight truncate">
             {project.title}
           </h3>
-          <span className={`inline-block mt-1 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md border ${
-            isOwner
-              ? 'bg-orange-50 text-orange-600 border-orange-100'
-              : 'bg-stone-50 text-stone-500 border-stone-200'
-          }`}>
-            {isOwner ? 'Propriétaire' : 'Membre'}
-          </span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`inline-block text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md border ${
+              isOwner
+                ? 'bg-orange-50 text-orange-600 border-orange-100'
+                : 'bg-stone-50 text-stone-500 border-stone-200'
+            }`}>
+              {isOwner ? 'Propriétaire' : 'Membre'}
+            </span>
+          </div>
         </div>
+        <button 
+          onClick={(e) => onToggleFavorite(e, project.id)}
+          className={`p-1.5 rounded-xl transition-all hover:scale-110 active:scale-95 ${project.is_favorite ? 'text-amber-400 bg-amber-50' : 'text-stone-300 hover:text-stone-400 bg-stone-50'}`}
+        >
+          <svg width="18" height="18" fill={project.is_favorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+          </svg>
+        </button>
       </div>
 
       {project.description && (
@@ -177,6 +190,17 @@ export default function DashboardPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [draggingProjectId, setDraggingProjectId] = useState<number | null>(null);
+
+  const handleToggleFavorite = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+      const res = await api.post(`/projects/${id}/toggle-favorite`, {});
+      setProjects(prev => prev.map(p => p.id === id ? { ...p, is_favorite: res.is_favorite } : p));
+    } catch (err) {
+      console.error('Failed to toggle favorite', err);
+    }
+  };
   const router = useRouter();
 
   const fetchProjects = useCallback(async () => {
@@ -381,7 +405,9 @@ export default function DashboardPage() {
                 Propriétaire <span className="w-1 h-1 rounded-full bg-stone-300"></span> {ownedProjects.length}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {ownedProjects.map((p) => (
+                {ownedProjects
+                  .sort((a, b) => (b.is_favorite || 0) - (a.is_favorite || 0) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                  .map((p) => (
                   <ProjectCard
                     key={p.id}
                     project={p}
@@ -391,6 +417,7 @@ export default function DashboardPage() {
                     onDragEnd={() => setDraggingProjectId(null)}
                     onClick={() => router.push(`/projects/${p.id}`)}
                     onManageMembers={() => setManageProjectId(p.id)}
+                    onToggleFavorite={handleToggleFavorite}
                   />
                 ))}
               </div>
@@ -402,7 +429,9 @@ export default function DashboardPage() {
                 Membre <span className="w-1 h-1 rounded-full bg-stone-300"></span> {memberProjects.length}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {memberProjects.map((p) => (
+                {memberProjects
+                  .sort((a, b) => (b.is_favorite || 0) - (a.is_favorite || 0) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                  .map((p) => (
                   <ProjectCard
                     key={p.id}
                     project={p}
@@ -412,6 +441,7 @@ export default function DashboardPage() {
                     onDragEnd={() => setDraggingProjectId(null)}
                     onClick={() => router.push(`/projects/${p.id}`)}
                     onManageMembers={() => setManageProjectId(p.id)}
+                    onToggleFavorite={handleToggleFavorite}
                   />
                 ))}
               </div>

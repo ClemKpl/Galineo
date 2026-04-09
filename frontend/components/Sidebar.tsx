@@ -203,6 +203,17 @@ export default function Sidebar({
     }
   }, []);
 
+  async function handleToggleFavorite(e: React.MouseEvent, projectId: number) {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const res = await api.post(`/projects/${projectId}/toggle-favorite`, {});
+      setProjects(prev => prev.map(p => p.id === projectId ? { ...p, is_favorite: res.is_favorite } : p));
+    } catch (err) {
+      console.error('Failed to toggle favorite', err);
+    }
+  }
+
   useEffect(() => {
     fetchProjects();
     window.addEventListener('project-created', fetchProjects);
@@ -220,7 +231,10 @@ export default function Sidebar({
     { href: '/trash', label: 'Corbeille', icon: <IconTrash /> },
   ];
 
-  const sortedProjects = [...projects].sort((a, b) => a.title.localeCompare(b.title));
+  const sortedProjects = [...projects].sort((a, b) => 
+    (b.is_favorite || 0) - (a.is_favorite || 0) || 
+    a.title.localeCompare(b.title)
+  );
 
   return (
     <>
@@ -403,13 +417,24 @@ export default function Sidebar({
                   {projects.filter(p => p.owner_id === user?.id).length > 0 && (
                     <div className="mb-2">
                       <p className="px-3 py-1 text-[9px] font-bold text-stone-500 uppercase tracking-widest">Propriétaire</p>
-                      {projects.filter(p => p.owner_id === user?.id).map(p => (
+                      {projects
+                        .filter(p => p.owner_id === user?.id)
+                        .sort((a, b) => (b.is_favorite || 0) - (a.is_favorite || 0))
+                        .map(p => (
                         <Link key={p.id} href={`/projects/${p.id}`}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
+                          className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all group/item ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
                           <div className="w-5 h-5 rounded-md bg-stone-800 flex items-center justify-center text-[8px] font-bold text-stone-500 overflow-hidden shrink-0 border border-stone-700/50">
                             {p.avatar ? <img src={p.avatar} alt="" className="w-full h-full object-cover" /> : p.title[0].toUpperCase()}
                           </div>
-                          <span className="truncate">{p.title}</span>
+                          <span className="truncate flex-1">{p.title}</span>
+                          <button 
+                            onClick={(e) => handleToggleFavorite(e, p.id)}
+                            className={`opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5 hover:scale-110 active:scale-95 ${p.is_favorite ? 'opacity-100 text-amber-400' : 'text-stone-600 hover:text-stone-400'}`}
+                          >
+                            <svg width="14" height="14" fill={p.is_favorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                            </svg>
+                          </button>
                         </Link>
                       ))}
                     </div>
@@ -418,13 +443,24 @@ export default function Sidebar({
                   {projects.filter(p => p.owner_id !== user?.id).length > 0 && (
                     <div>
                       <p className="px-3 py-1 text-[9px] font-bold text-stone-500 uppercase tracking-widest">Invité</p>
-                      {projects.filter(p => p.owner_id !== user?.id).map(p => (
+                      {projects
+                        .filter(p => p.owner_id !== user?.id)
+                        .sort((a, b) => (b.is_favorite || 0) - (a.is_favorite || 0))
+                        .map(p => (
                         <Link key={p.id} href={`/projects/${p.id}`}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
+                          className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all group/item ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
                           <div className="w-5 h-5 rounded-md bg-stone-800 flex items-center justify-center text-[8px] font-bold text-stone-500 overflow-hidden shrink-0 border border-stone-700/50">
                             {p.avatar ? <img src={p.avatar} alt="" className="w-full h-full object-cover" /> : p.title[0].toUpperCase()}
                           </div>
-                          <span className="truncate">{p.title}</span>
+                          <span className="truncate flex-1">{p.title}</span>
+                          <button 
+                            onClick={(e) => handleToggleFavorite(e, p.id)}
+                            className={`opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5 hover:scale-110 active:scale-95 ${p.is_favorite ? 'opacity-100 text-amber-400' : 'text-stone-600 hover:text-stone-400'}`}
+                          >
+                            <svg width="14" height="14" fill={p.is_favorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                            </svg>
+                          </button>
                         </Link>
                       ))}
                     </div>
@@ -433,11 +469,19 @@ export default function Sidebar({
               ) : (
                 sortedProjects.map(p => (
                   <Link key={p.id} href={`/projects/${p.id}`}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all group/item ${pathname === `/projects/${p.id}` ? 'bg-stone-800 text-orange-400' : 'text-stone-400 hover:text-stone-200 hover:bg-stone-800/50'}`}>
                     <div className="w-5 h-5 rounded-md bg-stone-800 flex items-center justify-center text-[8px] font-bold text-stone-500 overflow-hidden shrink-0 border border-stone-700/50">
                        {p.avatar ? <img src={p.avatar} alt="" className="w-full h-full object-cover" /> : p.title[0].toUpperCase()}
                     </div>
-                    <span className="truncate">{p.title}</span>
+                    <span className="truncate flex-1">{p.title}</span>
+                    <button 
+                      onClick={(e) => handleToggleFavorite(e, p.id)}
+                      className={`opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5 hover:scale-110 active:scale-95 ${p.is_favorite ? 'opacity-100 text-amber-400' : 'text-stone-600 hover:text-stone-400'}`}
+                    >
+                      <svg width="14" height="14" fill={p.is_favorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                      </svg>
+                    </button>
                   </Link>
                 ))
               )}

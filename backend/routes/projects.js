@@ -13,14 +13,15 @@ router.get('/', authMiddleware, (req, res) => {
     SELECT DISTINCT p.*, u.name as owner_name,
       (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count,
       pm_me.role_id as my_role_id,
-      r_me.name as my_role_name
+      r_me.name as my_role_name,
+      pm_me.is_favorite as is_favorite
     FROM projects p
     LEFT JOIN users u ON p.owner_id = u.id
     LEFT JOIN project_members pm ON pm.project_id = p.id
     LEFT JOIN project_members pm_me ON pm_me.project_id = p.id AND pm_me.user_id = ?
     LEFT JOIN roles r_me ON r_me.id = pm_me.role_id
     WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'active'
-    ORDER BY p.created_at DESC
+    ORDER BY pm_me.is_favorite DESC, p.created_at DESC
   `, [userId, userId, userId], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
@@ -356,7 +357,7 @@ router.patch('/:id/restore', authMiddleware, (req, res) => {
 router.get('/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   db.get(`
-    SELECT p.*, u.name as owner_name, pm.role_id as my_role_id
+    SELECT p.*, u.name as owner_name, pm.role_id as my_role_id, pm.is_favorite as is_favorite
     FROM projects p
     LEFT JOIN users u ON p.owner_id = u.id 
     LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ?
@@ -859,6 +860,23 @@ router.patch('/:id/ai-settings', authMiddleware, (req, res) => {
     `, [projectId, allow_create, allow_modify, allow_members, allow_delete], (errRun) => {
       if (errRun) return res.status(500).json({ error: errRun.message });
       res.json({ message: "Réglages de l'IA mis à jour." });
+    });
+  });
+});
+
+// POST /projects/:id/toggle-favorite — Ajouter/Retirer des favoris
+router.post('/:id/toggle-favorite', authMiddleware, (req, res) => {
+  const projectId = req.params.id;
+  const userId = req.user.id;
+
+  db.get('SELECT is_favorite FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, userId], (err, pm) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!pm) return res.status(404).json({ error: "Session non membre" });
+
+    const nextVal = pm.is_favorite ? 0 : 1;
+    db.run('UPDATE project_members SET is_favorite = ? WHERE project_id = ? AND user_id = ?', [nextVal, projectId, userId], (errRun) => {
+      if (errRun) return res.status(500).json({ error: errRun.message });
+      res.json({ is_favorite: nextVal });
     });
   });
 });
