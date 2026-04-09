@@ -405,14 +405,16 @@ const toolConfig = [
 // ─── Historique ──────────────────────────────────────────────────────────────
 router.get('/history/:projectId', authMiddleware, async (req, res) => {
   const { projectId } = req.params;
+  const userId = req.user.id;
   try {
+    const isWizard = projectId === 'wizard';
     const rows = await dbAll(
       `SELECT m.role, m.content, m.created_at, u.name as user_name, u.avatar as user_avatar 
        FROM ai_messages m 
        LEFT JOIN users u ON u.id = m.user_id 
-       WHERE m.project_id = ? 
+       WHERE ${isWizard ? 'm.project_id IS NULL AND m.user_id = ?' : 'm.project_id = ?'} 
        ORDER BY m.id ASC`,
-      [projectId]
+      isWizard ? [userId] : [projectId]
     );
     res.json({ history: rows });
   } catch (err) {
@@ -474,13 +476,11 @@ router.post('/chat', authMiddleware, async (req, res) => {
       if (p) projectTitle = p.title;
     }
 
-    // Sauvegarde immédiate du message utilisateur (si mode projet)
-    if (projectId && mode === 'project') {
-      await dbRun(
-        `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'user', ?)`,
-        [projectId, userId, userText]
-      );
-    }
+    // Sauvegarde immédiate du message utilisateur (si mode projet ou wizard)
+    await dbRun(
+      `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'user', ?)`,
+      [projectId || null, userId, userText]
+    );
   } catch (err) {
     console.error('Initial DB ops error', err);
   }
@@ -627,10 +627,11 @@ router.post('/chat', authMiddleware, async (req, res) => {
             text = actions.length > 0 ? "C'est fait ! Les modifications ont été appliquées." : "Désolé, je rencontre une difficulté.";
           }
 
-          // Sauvegarde de la réponse de l'IA (si projet existant ou nouvellement créé)
-          if (currentProjectIdTask) {
-            await dbRun(`INSERT INTO ai_messages (project_id, role, content) VALUES (?, 'model', ?)`, [currentProjectIdTask, text]);
-          }
+          // Sauvegarde de la réponse de l'IA (si projet existant ou nouvellement créé ou wizard)
+          await dbRun(
+            `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'model', ?)`, 
+            [currentProjectIdTask || null, userId, text]
+          );
 
           // Notification finale
           await dbRun(

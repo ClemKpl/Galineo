@@ -131,6 +131,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
   useEffect(() => {
     if (view === 'wizard') {
       checkActiveTask();
+      loadHistory();
     }
   }, [view]);
 
@@ -141,11 +142,25 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
         setWizardLoading(true);
       } else if (wizardLoading) {
         setWizardLoading(false);
-        // Ici on ne peut pas vraiment recharger l'historique car non sauvegardé,
-        // mais on arrête au moins l'animation.
+        // La tâche est finie ! On récupère les derniers messages (dont la réponse de l'IA)
+        loadHistory();
       }
     } catch (err) {
       console.error('Failed to check wizard task', err);
+    }
+  }
+
+  async function loadHistory() {
+    try {
+      const data = await api.get('/ai/history/wizard');
+      if (data && data.history) {
+        setWizardMessages(data.history.map((h: any) => ({
+          role: h.role === 'model' ? 'assistant' : 'user',
+          content: h.content
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to load wizard history', err);
     }
   }
 

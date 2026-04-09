@@ -83,6 +83,11 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   }, [projectId]);
 
   useEffect(() => {
+    // Scroll auto lors de nouveaux messages ou changement d'état
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
+  useEffect(() => {
     let interval: NodeJS.Timeout;
     if (loading) {
       interval = setInterval(() => {
