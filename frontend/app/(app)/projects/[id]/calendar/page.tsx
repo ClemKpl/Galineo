@@ -617,7 +617,6 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                         const { task } = segment;
                         const isDone = task.status === 'done';
                         const isDragging = draggingTaskId === task.id;
-
                         const isFeature = !task.parent_id;
 
                         return (
@@ -626,30 +625,21 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                             draggable
                             onDragStart={(e) => handleDragStart(e, task.id)}
                             onClick={() => setEditingTask(task)}
-                            className={`absolute flex items-center shadow-sm cursor-grab active:cursor-grabbing transition-all hover:brightness-110 group ${isDone ? 'opacity-40 grayscale-[0.5]' : ''} ${isDragging ? 'opacity-20 scale-95' : ''} ${isFeature ? 'h-3 z-10' : 'h-7 px-3 rounded-lg'}`}
+                            className={`absolute flex items-center px-3 h-7 rounded-lg text-[11px] font-bold text-white shadow-sm cursor-grab active:cursor-grabbing transition-all hover:brightness-110 group ${isDone ? 'opacity-40 grayscale-[0.5]' : ''} ${isDragging ? 'opacity-20 scale-95' : ''}`}
                             style={{
                               left: `${((segment.startCol - 1) * 100) / 7}%`,
                               width: `${((segment.endCol - segment.startCol + 1) * 100) / 7}%`,
                               top: `${segment.lane * 32 + 8}px`,
                               marginLeft: segment.isStart ? '4px' : '0',
                               marginRight: segment.isEnd ? '4px' : '0',
-                              borderTopLeftRadius: isFeature ? '0' : (segment.isStart ? '8px' : '0'),
-                              borderBottomLeftRadius: isFeature ? '0' : (segment.isStart ? '8px' : '0'),
-                              borderTopRightRadius: isFeature ? '0' : (segment.isEnd ? '8px' : '0'),
-                              borderBottomRightRadius: isFeature ? '0' : (segment.isEnd ? '8px' : '0'),
-                              backgroundColor: isFeature ? '#1c1917' : (task.color || '#f97316'),
-                              clipPath: isFeature ? (
-                                `polygon(
-                                  0% 0%, 100% 0%, 
-                                  100% 100%, 
-                                  ${segment.isEnd ? 'calc(100% - 6px) 60%' : '100% 60%'}, 
-                                  ${segment.isStart ? '6px 60%' : '0% 60%'}, 
-                                  0% 100%
-                                )`
-                              ) : undefined
+                              borderTopLeftRadius: segment.isStart ? '8px' : '0',
+                              borderBottomLeftRadius: segment.isStart ? '8px' : '0',
+                              borderTopRightRadius: segment.isEnd ? '8px' : '0',
+                              borderBottomRightRadius: segment.isEnd ? '8px' : '0',
+                              backgroundColor: task.color || '#f97316'
                             }}
                           >
-                            <span className={`truncate leading-none uppercase tracking-widest relative z-10 ${isFeature ? 'text-[9px] font-black text-stone-400 absolute -top-4 left-0 w-max pr-4' : 'text-[11px] font-bold text-white w-full'}`}>
+                            <span className="truncate">
                               {task.title}
                             </span>
                             <button type="button" onClick={(e) => { e.stopPropagation(); setEditingTask(task); }} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 hover:bg-white/40 p-0.5 rounded">
