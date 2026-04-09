@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function JoinProjectPage() {
   const { token } = useParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading');
   const [error, setError] = useState<string | null>(null);
 
