@@ -1,13 +1,19 @@
 const nodemailer = require('nodemailer');
 
-// Configuration SMTP Ionos validée en test (port 465 avec SSL)
+// Configuration SMTP Ionos optimisée pour Render (Port 587, Timeouts, TLS flexible)
 const transporter = nodemailer.createTransport({
   host: 'smtp.ionos.fr',
-  port: 465,
-  secure: true, // true pour 465 (SSL), false pour 587 (STARTTLS)
+  port: 587,
+  secure: false, // false pour 587 (STARTTLS)
   auth: {
     user: 'contact@flavien-gherardi.fr',
     pass: 'Ionos74380!'
+  },
+  connectionTimeout: 10000, 
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
+  tls: {
+    rejectUnauthorized: false // Permet d'éviter les blocages de certificat sur certains serveurs cloud
   }
 });
 
