@@ -49,6 +49,18 @@ export default function ProjectSettingsPage() {
     }
   }
 
+  async function handleCompleteProject() {
+    const confirmation = confirm('Voulez-vous marquer ce projet comme TERMINÉ ? Il sera déplacé dans l\'historique et ne sera plus modifiable.');
+    if (confirmation) {
+      try {
+        await api.patch(`/projects/${project.id}/complete`);
+        router.push('/dashboard');
+      } catch (err) {
+        alert((err as Error).message);
+      }
+    }
+  }
+
   const isOwner = project.my_role_id === 1 || project.owner_id === user?.id;
 
   return (
@@ -149,7 +161,28 @@ export default function ProjectSettingsPage() {
       </section>
 
       {isOwner && (
-        <section className="bg-red-50/30 rounded-2xl border border-red-100 shadow-sm overflow-hidden">
+        <>
+          <section className="bg-orange-50/30 rounded-2xl border border-orange-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-orange-50 bg-orange-50/50">
+              <h2 className="text-lg font-bold text-orange-900">Statut du projet</h2>
+              <p className="text-xs text-orange-600 uppercase tracking-wider font-semibold mt-1">Actions de fin de vie</p>
+            </div>
+            <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-stone-900">Terminer & Archiver</p>
+                <p className="text-xs text-stone-500 mt-1">Marquer le projet comme fini et le placer dans votre historique.</p>
+              </div>
+              <button 
+                onClick={handleCompleteProject}
+                className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
+              >
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                Terminer le projet
+              </button>
+            </div>
+          </section>
+
+          <section className="bg-red-50/30 rounded-2xl border border-red-100 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-red-50 bg-red-50/50">
             <h2 className="text-lg font-bold text-red-900">Zone de danger</h2>
             <p className="text-xs text-red-600 uppercase tracking-wider font-semibold mt-1">Actions irréversibles</p>
