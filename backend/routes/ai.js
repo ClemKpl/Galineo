@@ -440,13 +440,11 @@ router.get('/active-task/:projectId', authMiddleware, async (req, res) => {
   try {
     const isWizard = rawId === 'wizard';
     const projectId = isWizard ? null : parseInt(rawId);
-    // On ignore les tâches de plus de 5 minutes (zombie tasks)
     const task = await dbGet(
-      `SELECT * FROM ai_active_tasks 
-       WHERE user_id = ? 
-       AND ${isWizard ? 'project_id IS NULL' : 'project_id = ?'} 
-       AND status = 'running' 
-       AND created_at > datetime('now', '-5 minutes')
+      `SELECT * FROM ai_active_tasks
+       WHERE user_id = ?
+       AND ${isWizard ? 'project_id IS NULL' : 'project_id = ?'}
+       AND status = 'running'
        LIMIT 1`,
       isWizard ? [userId] : [userId, projectId]
     );
