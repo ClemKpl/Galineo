@@ -1,16 +1,24 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Pre-fill email or handle join redirects
+  const inviteToken = searchParams.get('invite');
+  const joinToken = searchParams.get('join');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,6 +26,10 @@ export default function RegisterPage() {
     try {
       const data = await api.post('/auth/register', { name, email, password });
       login(data.token, data.user);
+      
+      if (joinToken) {
+        router.push(`/join/${joinToken}`);
+      }
     } catch (err: unknown) {
       setError((err as Error).message);
     } finally {

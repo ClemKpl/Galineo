@@ -300,9 +300,27 @@ const initDb = async () => {
     )`,
     `CREATE TABLE IF NOT EXISTS chat_group_messages (
       id ${autoInc},
-      group_id INTEGER NOT NULL REFERENCES chat_groups(id),
-      user_id INTEGER NOT NULL REFERENCES users(id),
+      group_id INTEGER NOT NULL REFERENCES chat_groups (id),
+      user_id INTEGER NOT NULL REFERENCES users (id),
       content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS invitations (
+      id ${autoInc},
+      project_id INTEGER NOT NULL REFERENCES projects(id),
+      email TEXT NOT NULL,
+      role_id INTEGER NOT NULL REFERENCES roles(id),
+      inviter_id INTEGER NOT NULL REFERENCES users(id),
+      token TEXT UNIQUE NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS project_share_links (
+      id ${autoInc},
+      project_id INTEGER NOT NULL REFERENCES projects(id),
+      role_id INTEGER NOT NULL DEFAULT 3,
+      token TEXT UNIQUE NOT NULL,
+      expires_at TIMESTAMP,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`
   ];

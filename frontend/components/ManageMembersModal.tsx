@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 type Role = { id: number; name: string };
 type UserLite = { id: number; name: string; email: string };
 type Member = { id: number; name: string; email: string; role_id: number; role_name: string; last_login_at?: string | null };
+type Invitation = { id: number; email: string; role_id: number; role_name: string; status: 'pending' };
 
 export default function ManageMembersModal({
   projectId,
@@ -18,10 +19,12 @@ export default function ManageMembersModal({
 }) {
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<Member[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [search, setSearch] = useState('');
   const [searchResults, setSearchResults] = useState<UserLite[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserLite | null>(null);
+  const [manualEmail, setManualEmail] = useState('');
   const [selectedRoleId, setSelectedRoleId] = useState<number>(3);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +47,7 @@ export default function ManageMembersModal({
         const [project, rolesList] = await Promise.all([api.get(`/projects/${projectId}`), api.get('/roles')]);
         if (cancelled) return;
         setMembers(Array.isArray(project?.members) ? project.members : []);
+        setInvitations(Array.isArray(project?.invitations) ? project.invitations : []);
         setRoles(Array.isArray(rolesList) ? rolesList : []);
       } catch (e: unknown) {
         if (!cancelled) setError(getErrorMessage(e));
@@ -94,19 +98,39 @@ export default function ManageMembersModal({
   async function refreshMembers() {
     const project = await api.get(`/projects/${projectId}`);
     setMembers(Array.isArray(project?.members) ? project.members : []);
+    setInvitations(Array.isArray(project?.invitations) ? project.invitations : []);
   }
 
   async function addMember() {
-    if (!selectedUser) return;
+    if (!selectedUser && !manualEmail) return;
     setSaving(true);
     setError(null);
     try {
-      await api.post(`/projects/${projectId}/members`, { userId: selectedUser.id, roleId: selectedRoleId });
+      const payload = selectedUser 
+        ? { userId: selectedUser.id, roleId: selectedRoleId }
+        : { email: manualEmail, roleId: selectedRoleId };
+        
+      await api.post(`/projects/${projectId}/members`, payload);
       setSelectedUser(null);
+      setManualEmail('');
       setSearch('');
       setSearchResults([]);
       await refreshMembers();
       onChanged?.();
+    } catch (e: unknown) {
+      setError(getErrorMessage(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeInvitation(invitationId: number) {
+    if (!confirm('Révoquer cette invitation ?')) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api.delete(`/projects/${projectId}/invitations/${invitationId}`);
+      await refreshMembers();
     } catch (e: unknown) {
       setError(getErrorMessage(e));
     } finally {
@@ -183,6 +207,19 @@ export default function ManageMembersModal({
                     Changer
                   </button>
                 </div>
+              ) : manualEmail ? (
+                <div className="rounded-xl border border-stone-200 p-3 flex items-center justify-between gap-3 bg-orange-50/50">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-stone-900 truncate">{manualEmail}</p>
+                    <p className="text-[10px] text-orange-600 font-bold uppercase">Nouvelle invitation</p>
+                  </div>
+                  <button
+                    onClick={() => setManualEmail('')}
+                    className="text-xs font-semibold text-stone-500 hover:text-stone-800"
+                  >
+                    Changer
+                  </button>
+                </div>
               ) : searchResults.length > 0 ? (
                 <div className="rounded-xl border border-stone-200 overflow-hidden max-h-56 overflow-y-auto">
                   {searchResults.map((u) => (
@@ -196,6 +233,17 @@ export default function ManageMembersModal({
                     </button>
                   ))}
                 </div>
+              ) : search.includes('@') ? (
+                <button
+                   onClick={() => {
+                     setManualEmail(search);
+                     setSearch('');
+                   }}
+                   className="w-full text-left px-4 py-3 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors"
+                >
+                  <p className="text-sm font-semibold text-stone-900">Inviter "{search}" par email</p>
+                  <p className="text-xs text-stone-400">Cet utilisateur ne semble pas avoir de compte Galineo.</p>
+                </button>
               ) : null}
 
               <div className="flex items-center gap-2">
@@ -212,10 +260,10 @@ export default function ManageMembersModal({
                 </select>
                 <button
                   onClick={addMember}
-                  disabled={!selectedUser || saving}
+                  disabled={(!selectedUser && !manualEmail) || saving}
                   className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-300 text-white rounded-xl text-sm font-semibold"
                 >
-                  {saving ? '...' : 'Ajouter'}
+                  {saving ? '...' : manualEmail ? 'Inviter' : 'Ajouter'}
                 </button>
               </div>
             </div>
@@ -237,17 +285,18 @@ export default function ManageMembersModal({
                 <div className="h-16 rounded-2xl bg-stone-100 animate-pulse" />
                 <div className="h-16 rounded-2xl bg-stone-100 animate-pulse" />
               </div>
-            ) : members.length === 0 ? (
+            ) : members.length === 0 && invitations.length === 0 ? (
               <div className="py-12 text-center text-stone-400 text-sm">Aucun membre.</div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                {/* Membres actifs */}
                 {members.map((m) => (
                   <div key={m.id} className="rounded-2xl border border-stone-200 bg-white p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-stone-900 truncate">{m.name}</p>
                         <p className="text-xs text-stone-400 truncate">{m.email}</p>
-                        <p className="text-xs text-stone-500 mt-1">Dernière connexion : {formatLastLogin(m.last_login_at)}</p>
+                        <p className="text-xs text-stone-500 mt-1 uppercase tracking-tighter font-bold">Dernière connexion : {formatLastLogin(m.last_login_at)}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <select
@@ -268,6 +317,33 @@ export default function ManageMembersModal({
                           className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:text-stone-300 disabled:border-stone-100"
                         >
                           Retirer
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Invitations en attente */}
+                {invitations.map((inv) => (
+                  <div key={inv.id} className="rounded-2xl border border-orange-100 bg-orange-50/20 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                           <p className="text-sm font-semibold text-stone-900 truncate">{inv.email}</p>
+                           <span className="px-1.5 py-0.5 bg-orange-100 text-orange-600 text-[9px] font-black uppercase rounded tracking-wider">En attente</span>
+                        </div>
+                        <p className="text-xs text-stone-500 mt-1 uppercase tracking-tighter font-bold font-mono">Invitation envoyée</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="px-3 py-1.5 border border-orange-100 rounded-xl bg-white text-xs font-bold text-stone-500">
+                          {inv.role_name}
+                        </div>
+                        <button
+                          onClick={() => removeInvitation(inv.id)}
+                          disabled={saving}
+                          className="px-3 py-1.5 rounded-xl border border-red-100 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          Révoquer
                         </button>
                       </div>
                     </div>

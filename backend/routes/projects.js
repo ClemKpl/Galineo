@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
+const { sendMemberAdded, sendProjectInvitation } = require('../utils/mailer');
+const crypto = require('crypto');
 
 // GET /projects — mes projets (propriétaire ou membre)
 router.get('/', authMiddleware, (req, res) => {
@@ -343,7 +345,17 @@ router.get('/:id', authMiddleware, (req, res) => {
       WHERE pm.project_id = ?
     `, [id], (err2, members) => {
       if (err2) return res.status(500).json({ error: err2.message });
-      res.json({ ...project, members });
+      
+      // Récupérer aussi les invitations en attente
+      db.all(`
+        SELECT i.id, i.email, r.name as role_name, r.id as role_id, 'pending' as status
+        FROM invitations i
+        JOIN roles r ON i.role_id = r.id
+        WHERE i.project_id = ? AND i.status = 'pending'
+      `, [id], (err3, invitations) => {
+        if (err3) return res.status(500).json({ error: err3.message });
+        res.json({ ...project, members, invitations });
+      });
     });
   });
 });
@@ -368,27 +380,105 @@ function canManageMembers(userId, projectId, cb) {
   });
 }
 
-// POST /projects/:id/members â€” ajouter un membre (admin/proprio)
+// POST /projects/:id/members — ajouter un membre (admin/proprio) ou inviter par email
 router.post('/:id/members', authMiddleware, (req, res) => {
   const projectId = Number(req.params.id);
   const currentUserId = req.user.id;
-  const { userId, roleId } = req.body || {};
+  const { userId, roleId, email } = req.body || {};
 
-  if (!userId) return res.status(400).json({ error: 'userId requis' });
+  if (!userId && !email) return res.status(400).json({ error: 'userId ou email requis' });
 
   canManageMembers(currentUserId, projectId, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
-    if (!perm.allowed) return res.status(403).json({ error: 'AccÃ¨s refusÃ©' });
+    if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
-    db.run(
-      'INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
-      [projectId, userId, roleId || 3],
-      async function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        await logActivity(projectId, currentUserId, 'member', userId, 'added_or_updated', { roleId: roleId || 3 });
-        res.json({ message: 'Membre ajouté' });
+    db.get('SELECT title FROM projects WHERE id = ?', [projectId], async (projErr, project) => {
+      if (projErr || !project) return res.status(404).json({ error: 'Projet non trouvé' });
+
+      // CAS 1 : On a un userId (l'utilisateur existe déjà et a été sélectionné)
+      if (userId) {
+        db.run(
+          'INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
+          [projectId, userId, roleId || 3],
+          async function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            
+            // Envoyer email de notification
+            db.get('SELECT email FROM users WHERE id = ?', [userId], async (uErr, user) => {
+              if (user) {
+                try {
+                  await sendMemberAdded({
+                    email: user.email,
+                    projectName: project.title,
+                    inviterName: req.user.name,
+                    projectId: projectId
+                  });
+                } catch (mailErr) {
+                  console.error('❌ Erreur email addition:', mailErr.message);
+                }
+              }
+            });
+
+            await logActivity(projectId, currentUserId, 'member', userId, 'added_or_updated', { roleId: roleId || 3 });
+            res.json({ message: 'Membre ajouté et notifié.' });
+          }
+        );
+      } 
+      // CAS 2 : On a un email (invitation directe)
+      else if (email) {
+        // Vérifier si l'utilisateur existe déjà
+        db.get('SELECT id FROM users WHERE email = ?', [email], (errSearch, userExists) => {
+          if (userExists) {
+            // L'utilisateur existe, on l'ajoute directement
+            db.run(
+              'INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
+              [projectId, userExists.id, roleId || 3],
+              async function (errAdd) {
+                if (errAdd) return res.status(500).json({ error: errAdd.message });
+                
+                try {
+                  await sendMemberAdded({
+                    email: email,
+                    projectName: project.title,
+                    inviterName: req.user.name,
+                    projectId: projectId
+                  });
+                } catch (mailErr) {
+                  console.error('❌ Erreur email addition:', mailErr.message);
+                }
+
+                await logActivity(projectId, currentUserId, 'member', userExists.id, 'added', { roleId: roleId || 3 });
+                res.json({ message: 'Utilisateur trouvé et ajouté au projet.' });
+              }
+            );
+          } else {
+            // L'utilisateur n'existe pas, on crée une invitation
+            const token = crypto.randomBytes(32).toString('hex');
+            db.run(
+              'INSERT INTO invitations (project_id, email, role_id, inviter_id, token) VALUES (?, ?, ?, ?, ?)',
+              [projectId, email, roleId || 3, currentUserId, token],
+              async function (errInvite) {
+                if (errInvite) return res.status(500).json({ error: errInvite.message });
+                
+                try {
+                  await sendProjectInvitation({
+                    email: email,
+                    projectName: project.title,
+                    inviterName: req.user.name,
+                    token: token
+                  });
+                } catch (mailErr) {
+                  console.error('❌ Erreur email invitation:', mailErr.message);
+                }
+
+                await logActivity(projectId, currentUserId, 'invitation', null, 'sent', { email, roleId: roleId || 3 });
+                res.json({ message: 'Invitation envoyée par email.' });
+              }
+            );
+          }
+        });
       }
-    );
+    });
   });
 });
 
@@ -575,6 +665,110 @@ router.get('/:id/activities', authMiddleware, (req, res) => {
         if (err3) return res.status(500).json({ error: err3.message });
         res.json(activities);
       });
+    });
+  });
+});
+
+// --- SHARE LINKS ---
+
+// POST /projects/:id/share-links — créer un lien de partage
+router.post('/:id/share-links', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const { roleId } = req.body || {};
+
+  canManageMembers(req.user.id, projectId, (permErr, perm) => {
+    if (permErr) return res.status(500).json({ error: permErr.message });
+    if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
+
+    const token = crypto.randomBytes(16).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // Expire dans une semaine
+
+    db.run(
+      'INSERT INTO project_share_links (project_id, role_id, token, expires_at) VALUES (?, ?, ?, ?)',
+      [projectId, roleId || 3, token, expiresAt.toISOString()],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json({ id: this.lastID, token, expires_at: expiresAt });
+      }
+    );
+  });
+});
+
+// GET /projects/:id/share-links — lister les liens de partage
+router.get('/:id/share-links', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+
+  canManageMembers(req.user.id, projectId, (permErr, perm) => {
+    if (permErr) return res.status(500).json({ error: permErr.message });
+    if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
+
+    db.all(
+      'SELECT l.*, r.name as role_name FROM project_share_links l JOIN roles r ON l.role_id = r.id WHERE project_id = ? ORDER BY created_at DESC',
+      [projectId],
+      (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+      }
+    );
+  });
+});
+
+// DELETE /projects/share-links/:linkId — révoquer un lien
+router.delete('/share-links/:linkId', authMiddleware, (req, res) => {
+  const linkId = Number(req.params.linkId);
+  
+  db.get('SELECT project_id FROM project_share_links WHERE id = ?', [linkId], (err, link) => {
+    if (err || !link) return res.status(404).json({ error: 'Lien non trouvé' });
+    
+    canManageMembers(req.user.id, link.project_id, (permErr, perm) => {
+      if (permErr || !perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
+      
+      db.run('DELETE FROM project_share_links WHERE id = ?', [linkId], (errDel) => {
+        if (errDel) return res.status(500).json({ error: errDel.message });
+        res.json({ message: 'Lien révoqué' });
+      });
+    });
+  });
+});
+
+// POST /projects/join/:token (Public) — rejoindre un projet
+router.post('/join/:token', authMiddleware, (req, res) => {
+  const { token } = req.params;
+  const userId = req.user.id;
+
+  db.get('SELECT * FROM project_share_links WHERE token = ?', [token], (err, link) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!link) return res.status(404).json({ error: 'Lien invalide' });
+
+    if (new Date(link.expires_at) < new Date()) {
+      return res.status(410).json({ error: 'Ce lien a expiré.' });
+    }
+
+    // Ajouter le membre
+    db.run(
+      'INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
+      [link.project_id, userId, link.role_id],
+      async function (errJoin) {
+        if (errJoin) return res.status(500).json({ error: errJoin.message });
+        await logActivity(link.project_id, userId, 'member', userId, 'joined_via_link');
+        res.json({ message: 'Bienvenue dans le projet !', projectId: link.project_id });
+      }
+    );
+  });
+});
+
+// DELETE /projects/:id/invitations/:invitationId — révoquer une invitation
+router.delete('/:id/invitations/:invitationId', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const invitationId = Number(req.params.invitationId);
+
+  canManageMembers(req.user.id, projectId, (permErr, perm) => {
+    if (permErr || !perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
+    
+    db.run('DELETE FROM invitations WHERE id = ? AND project_id = ?', [invitationId, projectId], (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'Invitation révoquée' });
     });
   });
 });

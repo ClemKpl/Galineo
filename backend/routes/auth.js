@@ -23,7 +23,24 @@ router.post('/register', async (req, res) => {
           return res.status(500).json({ error: err.message });
         }
         const token = jwt.sign({ id: this.lastID, name, email }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: this.lastID, name, email } });
+        const newUserId = this.lastID;
+
+        // Auto-join projects if invited
+        db.all('SELECT * FROM invitations WHERE email = ? AND status = ?', [email, 'pending'], (invErr, invites) => {
+          if (!invErr && invites && invites.length > 0) {
+            const stmt = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)');
+            const updateStmt = db.prepare('UPDATE invitations SET status = ? WHERE id = ?');
+            
+            invites.forEach(inv => {
+              stmt.run(inv.project_id, newUserId, inv.role_id);
+              updateStmt.run('accepted', inv.id);
+            });
+            
+            stmt.finalize();
+            updateStmt.finalize();
+          }
+          res.json({ token, user: { id: newUserId, name, email } });
+        });
       }
     );
   } catch (err) {
