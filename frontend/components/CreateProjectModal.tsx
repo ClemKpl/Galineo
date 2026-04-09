@@ -273,7 +273,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
               <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
                 {wizardMessages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                    <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm break-words ${
                       m.role === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-white text-stone-700 border border-stone-200 rounded-tl-none font-medium'
                     }`}>
                       {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
