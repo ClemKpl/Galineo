@@ -164,6 +164,8 @@ export default function Sidebar({ onNewProject }: { onNewProject: () => void }) 
         router.push(`/projects/${notif.project_id}/tasks`);
       } else if (notif.type === 'ai_response') {
         router.push(`/projects/${notif.project_id}/ai`);
+      } else if (notif.type === 'project_invite') {
+        router.push(`/projects/${notif.project_id}`);
       }
       setShowNotifs(false);
     }
