@@ -302,9 +302,16 @@ const toolConfig = [
               items: {
                 type: "object",
                 properties: {
-                  type: { type: "string", enum: ["feature", "task"] },
+                  type: { 
+                    type: "string", 
+                    enum: ["feature", "task"],
+                    description: "'feature' = Module Parent. 'task' = Action Enfant rattachée."
+                  },
                   title: { type: "string" },
-                  parent_title: { type: "string" },
+                  parent_title: { 
+                    type: "string", 
+                    description: "OBLIGATOIRE pour les 'task'. Doit correspondre au 'title' d'une 'feature'." 
+                  },
                   priority: { type: "string" },
                   start_date: { type: "string" },
                   due_date: { type: "string" },
@@ -329,9 +336,16 @@ const toolConfig = [
               items: {
                 type: "object",
                 properties: {
-                  type: { type: "string", enum: ["feature", "task"] },
+                  type: { 
+                    type: "string", 
+                    enum: ["feature", "task"],
+                    description: "'feature' = Module Parent. 'task' = Action Enfant rattachée."
+                  },
                   title: { type: "string" },
-                  parent_title: { type: "string" },
+                  parent_title: { 
+                    type: "string", 
+                    description: "OBLIGATOIRE pour les 'task'. Doit correspondre au 'title' d'une 'feature'." 
+                  },
                   priority: { type: "string" },
                   start_date: { type: "string" },
                   due_date: { type: "string" },
