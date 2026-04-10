@@ -1,6 +1,15 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
+import { useTheme } from '@/components/ThemeProvider';
+
+const ACCENT_BG: Record<string, string> = {
+  orange:  'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20 hover:shadow-orange-500/30',
+  blue:    'bg-blue-500 hover:bg-blue-600 shadow-blue-500/20 hover:shadow-blue-500/30',
+  violet:  'bg-violet-500 hover:bg-violet-600 shadow-violet-500/20 hover:shadow-violet-500/30',
+  emerald: 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20 hover:shadow-emerald-500/30',
+  rose:    'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20 hover:shadow-rose-500/30',
+};
 
 interface Role { id: number; name: string; is_default: number; }
 interface User { id: number; name: string; email: string; }
@@ -59,6 +68,7 @@ function formatInline(text: string): React.ReactNode {
 type ModalView = 'choice' | 'manual' | 'wizard';
 
 export default function CreateProjectModal({ onClose, onCreated }: Props) {
+  const { accent } = useTheme();
   const [view, setView] = useState<ModalView>('choice');
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
@@ -335,7 +345,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
               {/* AI Card */}
               <button
                 onClick={() => setView('wizard')}
-                className="w-full group relative p-6 bg-gradient-to-br from-orange-500 to-amber-600 rounded-3xl shadow-xl shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all text-left overflow-hidden border-2 border-transparent hover:border-white/20"
+                className={`w-full group relative p-6 rounded-3xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all text-left overflow-hidden border-2 border-transparent hover:border-white/20 ${ACCENT_BG[accent]}`}
               >
                 <div className="relative z-10 flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white text-2xl animate-pulse">✨</div>
