@@ -88,7 +88,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
         </header>
 
-        <main className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden ${pathname.includes('/ai') || pathname.includes('/messages') || pathname.includes('/chat') ? 'pb-0' : 'pb-24 lg:pb-0'}`}>
+        <main className={`min-h-0 flex-1 overflow-x-hidden ${pathname.includes('/ai') || pathname.includes('/messages') || pathname.includes('/chat') ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-24 lg:pb-0'}`}>
           {children}
         </main>
 

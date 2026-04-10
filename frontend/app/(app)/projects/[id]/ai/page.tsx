@@ -295,7 +295,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-110px)] lg:h-full bg-stone-50 overflow-hidden relative">
+    <div className="flex flex-col h-full bg-stone-50 overflow-hidden relative text-stone-900 font-sans">
       {/* Header Interne - Fixe au sommet sur mobile */}
       <div className="sticky top-0 px-3 lg:px-8 py-2.5 lg:py-4 bg-white/95 backdrop-blur border-b border-stone-200 flex items-center justify-between shrink-0 shadow-sm z-40">
         <div className="flex items-center gap-2 lg:gap-3 min-w-0">
