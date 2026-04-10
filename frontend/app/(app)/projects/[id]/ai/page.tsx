@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import AttachmentBubble from '@/components/AttachmentBubble';
 
 type Role = 'user' | 'assistant' | 'model';
 type Message = { 
@@ -77,6 +78,26 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
   const [fetchingHistory, setFetchingHistory] = useState(true);
   const [aiSettings, setAiSettings] = useState<any>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFile, setPendingFile] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${API_URL}/upload`, { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` }, body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur upload');
+      setPendingFile({ url: data.url, name: data.name, type: data.type });
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Erreur upload');
+    } finally { setUploading(false); }
+  };
 
   // Ref vers le dernier message model affiché — pour détecter une nouvelle réponse IA
   const lastModelContentRef = useRef<string>('');
@@ -242,10 +263,10 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
 
   async function send() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text && !pendingFile || loading) return;
 
-    const userMsg: Message = { 
-      role: 'user', 
+    const userMsg: Message = {
+      role: 'user',
       content: text,
       user_name: user?.name,
       user_avatar: user?.avatar,
@@ -254,18 +275,21 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
     const next = [...messages, userMsg];
     setMessages(next);
     setInput('');
+    const sentFile = pendingFile;
+    setPendingFile(null);
     setLoading(true);
 
     try {
-      const history = next.map(m => ({ 
-        role: m.role === 'assistant' ? 'assistant' : 'user', 
-        content: m.content 
+      const history = next.map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content
       }));
 
-      const res = await api.post('/ai/chat', { 
+      const res = await api.post('/ai/chat', {
         messages: history,
         projectId: projectId,
-        mode: 'project'
+        mode: 'project',
+        ...(sentFile ? { attachment_url: sentFile.url, attachment_name: sentFile.name, attachment_type: sentFile.type } : {}),
       });
 
       if (res.status === 'processing') {
@@ -383,6 +407,9 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
                       : 'bg-white text-stone-800 border border-stone-100 rounded-tl-none'
                   }`}>
                     {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
+                    {m.role === 'user' && (m as any).attachment_url && (
+                      <AttachmentBubble url={(m as any).attachment_url} name={(m as any).attachment_name} type={(m as any).attachment_type} isMe />
+                    )}
                   </div>
                 </div>
               </div>
@@ -412,7 +439,15 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
 
       {/* Input - Fixé et Flottant sur mobile */}
       <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 p-3 lg:p-8 bg-transparent lg:bg-white/95 lg:backdrop-blur border-none lg:border-t lg:border-stone-200 shrink-0 z-10 lg:shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md" onChange={handleFileChange} />
         <div className="max-w-[1000px] mx-auto relative">
+          {pendingFile && (
+            <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-700 font-medium">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+              <span className="truncate max-w-[200px]">{pendingFile.name}</span>
+              <button type="button" onClick={() => setPendingFile(null)} className="ml-auto text-orange-400 hover:text-orange-600">✕</button>
+            </div>
+          )}
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -423,7 +458,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
               }
             }}
             placeholder="Échange avec l'IA..."
-            className="w-full pl-5 pr-14 py-3.5 bg-stone-50 border border-stone-200 rounded-[20px] text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all resize-none min-h-[50px] max-h-[150px] text-stone-800"
+            className="w-full pl-12 pr-14 py-3.5 bg-stone-50 border border-stone-200 rounded-[20px] text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all resize-none min-h-[50px] max-h-[150px] text-stone-800"
             rows={1}
             style={{ height: 'auto' }}
             onInput={(e) => {
@@ -432,9 +467,16 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
               target.style.height = `${target.scrollHeight}px`;
             }}
           />
+          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 text-stone-400 hover:text-orange-500 disabled:opacity-40 flex items-center justify-center transition-colors">
+            {uploading
+              ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+              : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            }
+          </button>
           <button
             onClick={send}
-            disabled={!input.trim() || loading}
+            disabled={(!input.trim() && !pendingFile) || loading}
             className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-orange-500 text-white rounded-xl shadow-lg shadow-orange-500/20 flex items-center justify-center hover:bg-orange-600 disabled:bg-stone-200 disabled:shadow-none transition-all cursor-pointer active:scale-90"
           >
             <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">

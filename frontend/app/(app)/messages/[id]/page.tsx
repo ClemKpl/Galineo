@@ -4,6 +4,9 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import ManageGroupMembersModal from '@/components/ManageGroupMembersModal';
+import AttachmentBubble from '@/components/AttachmentBubble';
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 
 export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -25,6 +28,9 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
   const [editAvatar, setEditAvatar] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFile, setPendingFile] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const fetchGroup = async () => {
     try {
@@ -61,15 +67,36 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const token = typeof window !== 'undefined' ? localStorage.getItem('galineo_token') : null;
+      const res = await fetch(`${API_URL}/upload`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur upload');
+      setPendingFile({ url: data.url, name: data.name, type: data.type });
+    } catch (err) { alert((err as Error).message); }
+    finally { setUploading(false); }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || sending) return;
+    if ((!newMessage.trim() && !pendingFile) || sending) return;
 
     setSending(true);
     try {
-      const resp = await api.post(`/chat-groups/${groupId}/messages`, { content: newMessage });
+      const resp = await api.post(`/chat-groups/${groupId}/messages`, {
+        content: newMessage,
+        ...(pendingFile ? { attachment_url: pendingFile.url, attachment_name: pendingFile.name, attachment_type: pendingFile.type } : {}),
+      });
       setMessages([...messages, resp]);
       setNewMessage('');
+      setPendingFile(null);
     } catch (err) {
       alert((err as Error).message);
     } finally {
@@ -176,11 +203,12 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
                     </div>
                   )}
                   <div className={`px-5 py-3.5 rounded-[1.5rem] shadow-sm text-sm leading-relaxed font-medium ${
-                    isMe 
-                      ? 'bg-orange-500 text-white rounded-br-none' 
+                    isMe
+                      ? 'bg-orange-500 text-white rounded-br-none'
                       : 'bg-white text-stone-800 border border-stone-100 rounded-bl-none'
                   }`}>
                     {msg.content}
+                    {msg.attachment_url && <AttachmentBubble url={msg.attachment_url} name={msg.attachment_name} type={msg.attachment_type} isMe={isMe} />}
                   </div>
                 </div>
                 {idx === messages.length - 1 && (
@@ -198,7 +226,15 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
       {/* Message Input */}
       <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-20 border-t border-stone-100 bg-white/95 px-4 py-4 backdrop-blur md:relative md:bottom-0 md:z-auto md:bg-white md:px-8 md:py-8">
         <form onSubmit={handleSendMessage} className="relative mx-auto max-w-4xl group">
-          <textarea 
+          <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md" onChange={handleFileChange} />
+          {pendingFile && (
+            <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-700 font-medium">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+              <span className="truncate max-w-[200px]">{pendingFile.name}</span>
+              <button type="button" onClick={() => setPendingFile(null)} className="ml-auto text-orange-400 hover:text-orange-600">✕</button>
+            </div>
+          )}
+          <textarea
             rows={1}
             value={newMessage}
             onChange={(e) => {
@@ -214,12 +250,23 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
             }}
             disabled={sending}
             placeholder="Tapez votre message..."
-            className="w-full pl-6 pr-16 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 text-stone-900 transition-all font-medium placeholder:text-stone-300 resize-none leading-relaxed overflow-hidden"
+            className="w-full pl-12 pr-16 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 text-stone-900 transition-all font-medium placeholder:text-stone-300 resize-none leading-relaxed overflow-hidden"
             style={{ minHeight: '56px', maxHeight: '150px' }}
           />
-          <button 
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="absolute left-3 top-1/2 -translate-y-1/2 p-2 text-stone-400 hover:text-orange-500 disabled:opacity-40 transition-colors"
+          >
+            {uploading
+              ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+              : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            }
+          </button>
+          <button
             type="submit"
-            disabled={!newMessage.trim() || sending}
+            disabled={(!newMessage.trim() && !pendingFile) || sending}
             className="absolute right-2 top-2 bottom-2 px-6 bg-orange-500 hover:bg-orange-600 disabled:opacity-30 text-white rounded-xl transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center overflow-hidden"
           >
             {sending ? (

@@ -186,15 +186,15 @@ router.get('/:id/messages', authMiddleware, memberMiddleware, (req, res) => {
 // POST /chat-groups/:id/messages — Poster un message
 router.post('/:id/messages', authMiddleware, memberMiddleware, (req, res) => {
   const groupId = req.params.id;
-  const { content } = req.body;
+  const { content, attachment_url, attachment_name, attachment_type } = req.body;
   const userId = req.user.id;
 
-  if (!content || !content.trim()) return res.status(400).json({ error: 'Message vide' });
+  if ((!content || !content.trim()) && !attachment_url) return res.status(400).json({ error: 'Message vide' });
 
   db.run(`
-    INSERT INTO chat_group_messages (group_id, user_id, content)
-    VALUES (?, ?, ?)
-  `, [groupId, userId, content], function(err) {
+    INSERT INTO chat_group_messages (group_id, user_id, content, attachment_url, attachment_name, attachment_type)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `, [groupId, userId, content || '', attachment_url || null, attachment_name || null, attachment_type || null], function(err) {
     if (err) return res.status(500).json({ error: err.message });
     const messageId = this.lastID;
 
@@ -224,7 +224,10 @@ router.post('/:id/messages', authMiddleware, memberMiddleware, (req, res) => {
       id: messageId,
       group_id: groupId,
       user_id: userId,
-      content,
+      content: content || '',
+      attachment_url: attachment_url || null,
+      attachment_name: attachment_name || null,
+      attachment_type: attachment_type || null,
       author_name: req.user.name,
       author_avatar: req.user.avatar,
       created_at: new Date().toISOString()

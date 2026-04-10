@@ -24,15 +24,15 @@ router.get('/', authMiddleware, (req, res) => {
 // POST /projects/:projectId/messages — Poster un message
 router.post('/', authMiddleware, (req, res) => {
   const { projectId } = req.params;
-  const { content } = req.body;
+  const { content, attachment_url, attachment_name, attachment_type } = req.body;
   const userId = req.user.id;
 
-  if (!content || !content.trim()) return res.status(400).json({ error: 'Message vide' });
+  if ((!content || !content.trim()) && !attachment_url) return res.status(400).json({ error: 'Message vide' });
 
   db.run(`
-    INSERT INTO messages (project_id, user_id, content)
-    VALUES (?, ?, ?)
-  `, [projectId, userId, content], function(err) {
+    INSERT INTO messages (project_id, user_id, content, attachment_url, attachment_name, attachment_type)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `, [projectId, userId, content || '', attachment_url || null, attachment_name || null, attachment_type || null], function(err) {
     if (err) return res.status(500).json({ error: err.message });
     const messageId = this.lastID;
 
@@ -63,11 +63,14 @@ router.post('/', authMiddleware, (req, res) => {
       });
     }
 
-    res.json({ 
-      id: messageId, 
-      project_id: projectId, 
-      user_id: userId, 
-      content, 
+    res.json({
+      id: messageId,
+      project_id: projectId,
+      user_id: userId,
+      content: content || '',
+      attachment_url: attachment_url || null,
+      attachment_name: attachment_name || null,
+      attachment_type: attachment_type || null,
       author_name: req.user.name,
       author_avatar: req.user.avatar,
       created_at: new Date().toISOString()

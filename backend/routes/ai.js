@@ -559,7 +559,7 @@ router.get('/active-task/:projectId', authMiddleware, async (req, res) => {
 
 // ─── Route Chat (Refactorisée pour l'arrière-plan) ───────────────────────────
 router.post('/chat', authMiddleware, checkAiPromptLimit, async (req, res) => {
-  const { messages, projectId, mode = 'project' } = req.body;
+  const { messages, projectId, mode = 'project', attachment_url, attachment_name, attachment_type } = req.body;
   const userId = req.user.id;
 
   const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY;
@@ -597,8 +597,8 @@ router.post('/chat', authMiddleware, checkAiPromptLimit, async (req, res) => {
 
     // Sauvegarde immédiate du message utilisateur (si mode projet ou wizard)
     await dbRun(
-      `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'user', ?)`,
-      [dbProjectId, userId, userText]
+      `INSERT INTO ai_messages (project_id, user_id, role, content, attachment_url, attachment_name, attachment_type) VALUES (?, ?, 'user', ?, ?, ?, ?)`,
+      [dbProjectId, userId, userText, attachment_url || null, attachment_name || null, attachment_type || null]
     );
   } catch (err) {
     console.error('Initial DB ops error', err);
@@ -751,7 +751,27 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
             }
           };
 
-          const result = await sendMessageWithRetry(identifiedUserText);
+          // Construction du payload : texte + fichier éventuel
+          let geminiPayload;
+          if (attachment_url && attachment_type) {
+            const fs = require('fs');
+            const path = require('path');
+            const filePath = path.join(__dirname, '../uploads', path.basename(attachment_url));
+            try {
+              const fileData = fs.readFileSync(filePath);
+              const base64Data = fileData.toString('base64');
+              geminiPayload = [
+                { text: identifiedUserText },
+                { inlineData: { mimeType: attachment_type, data: base64Data } }
+              ];
+            } catch {
+              // Fichier introuvable, on envoie juste le texte
+              geminiPayload = identifiedUserText;
+            }
+          } else {
+            geminiPayload = identifiedUserText;
+          }
+          const result = await sendMessageWithRetry(geminiPayload);
           let response = result.response;
           let text = "";
           currentProjectIdTask = projectId || dbProjectId;

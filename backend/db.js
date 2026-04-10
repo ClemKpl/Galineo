@@ -282,6 +282,15 @@ const initDb = async () => {
     await ensureColumn('users', 'login_attempts', 'INTEGER DEFAULT 0');
     await ensureColumn('users', 'locked_until', 'TIMESTAMP');
     await ensureColumn('users', 'banned', 'INTEGER DEFAULT 0');
+    await ensureColumn('messages', 'attachment_url', 'TEXT');
+    await ensureColumn('messages', 'attachment_name', 'TEXT');
+    await ensureColumn('messages', 'attachment_type', 'TEXT');
+    await ensureColumn('chat_group_messages', 'attachment_url', 'TEXT');
+    await ensureColumn('chat_group_messages', 'attachment_name', 'TEXT');
+    await ensureColumn('chat_group_messages', 'attachment_type', 'TEXT');
+    await ensureColumn('ai_messages', 'attachment_url', 'TEXT');
+    await ensureColumn('ai_messages', 'attachment_name', 'TEXT');
+    await ensureColumn('ai_messages', 'attachment_type', 'TEXT');
 
     await ensureColumn('projects', 'status', "TEXT DEFAULT 'active'");
     await ensureColumn('projects', 'avatar', 'TEXT');

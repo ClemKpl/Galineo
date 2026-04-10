@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import AttachmentBubble from '@/components/AttachmentBubble';
 
 type Role = 'user' | 'assistant';
-type Message = { role: Role; content: string };
+type Message = { role: Role; content: string; attachment_url?: string; attachment_name?: string; attachment_type?: string };
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 
@@ -67,6 +68,9 @@ export default function AiChat() {
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFile, setPendingFile] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -75,31 +79,48 @@ export default function AiChat() {
     }
   }, [open, messages]);
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${API_URL}/upload`, { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` }, body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur upload');
+      setPendingFile({ url: data.url, name: data.name, type: data.type });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erreur upload';
+      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ ${msg}` }]);
+    } finally { setUploading(false); }
+  };
+
   async function send() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text && !pendingFile || loading) return;
 
-    const userMsg: Message = { role: 'user', content: text };
+    const userMsg: Message = { role: 'user', content: text, ...(pendingFile ?? {}) };
     const next = [...messages, userMsg];
     setMessages(next);
     setInput('');
+    const sentFile = pendingFile;
+    setPendingFile(null);
     setLoading(true);
 
     try {
-      // On envoie uniquement les messages user/assistant (pas le message d'accueil statique)
       const history = next
-        .slice(1) // retire le message de bienvenue statique
+        .slice(1)
         .map(m => ({ role: m.role, content: m.content }));
 
       const res = await fetch(`${API_URL}/ai/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${getToken()}`,
-        },
-        body: JSON.stringify({ 
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify({
           messages: history,
-          mode: 'global'
+          mode: 'global',
+          ...(sentFile ? { attachment_url: sentFile.url, attachment_name: sentFile.name, attachment_type: sentFile.type } : {}),
         }),
       });
 
@@ -186,7 +207,10 @@ export default function AiChat() {
                   {m.role === 'assistant' ? (
                     <div className="space-y-1">{renderMarkdown(m.content)}</div>
                   ) : (
-                    <p className="whitespace-pre-wrap">{m.content}</p>
+                    <>
+                      {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
+                      {m.attachment_url && <AttachmentBubble url={m.attachment_url} name={m.attachment_name!} type={m.attachment_type!} isMe />}
+                    </>
                   )}
                 </div>
                 {m.role === 'user' && (
@@ -220,7 +244,22 @@ export default function AiChat() {
 
           {/* Input - Fixé au dessus de la nav mobile */}
           <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 mx-auto w-full lg:w-auto px-4 py-4 lg:py-5 border-t border-stone-100 bg-white/95 backdrop-blur shrink-0 z-[70] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md" onChange={handleFileChange} />
+            {pendingFile && (
+              <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-700 font-medium">
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                <span className="truncate max-w-[180px]">{pendingFile.name}</span>
+                <button type="button" onClick={() => setPendingFile(null)} className="ml-auto text-orange-400 hover:text-orange-600">✕</button>
+              </div>
+            )}
             <div className="flex items-end gap-3 max-w-full">
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                className="w-10 h-10 rounded-xl bg-stone-100 hover:bg-stone-200 disabled:opacity-40 text-stone-500 flex items-center justify-center transition-all shrink-0">
+                {uploading
+                  ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+                  : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                }
+              </button>
               <textarea
                 ref={inputRef}
                 rows={1}
@@ -238,7 +277,7 @@ export default function AiChat() {
               />
               <button
                 onClick={send}
-                disabled={!input.trim() || loading}
+                disabled={(!input.trim() && !pendingFile) || loading}
                 className="w-10 h-10 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:bg-stone-100 disabled:text-stone-400 text-white flex items-center justify-center transition-all shrink-0 active:scale-90 shadow-lg shadow-stone-900/10"
               >
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">

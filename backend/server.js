@@ -31,6 +31,7 @@ const chatGroupRoutes   = require('./routes/chat_groups');
 const billingRoutes     = require('./routes/billing');
 const adminRoutes       = require('./routes/admin');
 const supportRoutes     = require('./routes/support');
+const uploadRoutes      = require('./routes/upload');
 
 const app = express();
 
@@ -106,6 +107,8 @@ app.use('/chat-groups', chatGroupRoutes);
 app.use('/billing', billingRoutes);
 app.use('/admin', adminRoutes);
 app.use('/support', supportRoutes);
+app.use('/upload', uploadRoutes);
+app.use('/uploads', express.static(require('path').join(__dirname, 'uploads')));
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {

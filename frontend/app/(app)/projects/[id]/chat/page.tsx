@@ -4,6 +4,9 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import AttachmentBubble from '@/components/AttachmentBubble';
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -20,6 +23,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [editContent, setEditContent] = useState('');
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFile, setPendingFile] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
   
   // Scroller en bas au chargement
   useEffect(() => {
@@ -48,13 +54,35 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     }
   }
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!fileInputRef.current) return;
+    fileInputRef.current.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const token = typeof window !== 'undefined' ? localStorage.getItem('galineo_token') : null;
+      const res = await fetch(`${API_URL}/upload`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur upload');
+      setPendingFile({ url: data.url, name: data.name, type: data.type });
+    } catch (err) { console.error(err); }
+    finally { setUploading(false); }
+  };
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && !pendingFile) return;
     try {
-      await api.post(`/projects/${projectId}/messages`, { content: newMessage });
+      await api.post(`/projects/${projectId}/messages`, {
+        content: newMessage,
+        ...(pendingFile ? { attachment_url: pendingFile.url, attachment_name: pendingFile.name, attachment_type: pendingFile.type } : {}),
+      });
       setNewMessage('');
-      fetchData(); // Rafraîchir tout de suite
+      setPendingFile(null);
+      fetchData();
       setMentionListVisible(false);
     } catch (err) {
       console.error(err);
@@ -215,11 +243,14 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                         )}
                         
                         <div className={`px-5 py-3.5 rounded-[22px] text-sm leading-relaxed shadow-sm ${
-                          isMe 
-                            ? 'bg-orange-500 text-white rounded-tr-none shadow-orange-200/50' 
+                          isMe
+                            ? 'bg-orange-500 text-white rounded-tr-none shadow-orange-200/50'
                             : 'bg-white border border-stone-100 text-stone-800 rounded-tl-none'
                         }`} style={{ whiteSpace: 'pre-wrap' }}>
-                          {renderMessageContent(msg.content)}
+                          {msg.content && renderMessageContent(msg.content)}
+                          {msg.attachment_url && (
+                            <AttachmentBubble url={msg.attachment_url} name={msg.attachment_name} type={msg.attachment_type} isMe={isMe} />
+                          )}
                         </div>
                       </div>
                     )}
@@ -247,7 +278,22 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             </div>
           )}
           
+          {pendingFile && (
+            <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-700 font-medium">
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+              <span className="truncate max-w-[200px]">{pendingFile.name}</span>
+              <button type="button" onClick={() => setPendingFile(null)} className="ml-auto text-orange-400 hover:text-orange-600">✕</button>
+            </div>
+          )}
           <div className="flex gap-2.5">
+            <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md" onChange={handleFileChange} />
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+              className="w-10 h-10 bg-stone-100 hover:bg-stone-200 disabled:opacity-50 text-stone-500 rounded-xl flex items-center justify-center transition-all shrink-0">
+              {uploading
+                ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+                : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+              }
+            </button>
             <input id="chat-input" type="text"
               className="flex-1 bg-stone-50 border border-stone-200 rounded-2xl px-5 py-2.5 shadow-inner focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm text-stone-900 placeholder:text-stone-400"
               placeholder="Message..."
@@ -255,7 +301,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               onChange={handleInputChange}
               autoComplete="off"
             />
-            <button type="submit" disabled={!newMessage.trim()} className="w-10 h-10 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-orange-500/20 shrink-0 active:scale-90">
+            <button type="submit" disabled={!newMessage.trim() && !pendingFile} className="w-10 h-10 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-orange-500/20 shrink-0 active:scale-90">
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
             </button>
           </div>
