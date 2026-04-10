@@ -203,7 +203,7 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             disabled={sending}
-            placeholder="Écrivez votre message... (utilisez @ pour mentionner)"
+            placeholder="Bonjour !"
             className="w-full pl-6 pr-16 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 text-stone-900 transition-all font-medium placeholder:text-stone-300"
           />
           <button 
