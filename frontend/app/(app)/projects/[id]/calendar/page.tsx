@@ -589,15 +589,14 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                           key={dayIndex}
                           onDragOver={(e) => handleDragOver(e, dateKey)}
                           onDrop={(e) => handleDrop(e, dateKey)}
-                          className={`min-h-[100px] md:min-h-[140px] bg-white border-r border-stone-100 last:border-r-0 p-1 md:p-2 transition-colors relative ${!dayInfo.currentMonth ? 'bg-stone-50/30' : ''} ${isDragOver ? 'bg-orange-50' : ''}`}
+                          onClick={() => openDayPanel(dateKey)}
+                          className={`min-h-[100px] md:min-h-[140px] bg-white border-r border-stone-100 last:border-r-0 p-1 md:p-2 transition-all relative cursor-pointer group/day ${!dayInfo.currentMonth ? 'bg-stone-50/30' : 'hover:bg-orange-50/30'} ${isDragOver ? 'bg-orange-50' : ''}`}
                         >
-                          <button
-                            type="button"
-                            onClick={() => openDayPanel(dateKey)}
-                            className={`w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-lg text-[10px] md:text-xs font-black transition-all ${isTodayDate ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' : 'text-stone-400 hover:bg-stone-100 hover:text-stone-900'}`}
+                          <div
+                            className={`w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-lg text-[10px] md:text-xs font-black transition-all ${isTodayDate ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' : 'text-stone-400 group-hover/day:text-stone-900 group-hover/day:bg-stone-100'}`}
                           >
                             {dayInfo.day}
-                          </button>
+                          </div>
                         </div>
                       );
                     })}
