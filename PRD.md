@@ -1,269 +1,269 @@
-# PRD — Galineo
+# PRD - Galineo
 ## Product Requirements Document
 
-**Version:** 1.0  
-**Date:** 8 avril 2026  
-**Statut:** Draft
+**Version:** 1.1  
+**Date:** 10 avril 2026  
+**Statut:** Working Draft
 
 ---
 
 ## 1. Vision produit
 
-Galineo est une plateforme de gestion de projets collaborative destinée aux équipes de petite et moyenne taille. Elle centralise la planification des tâches, la communication, la coordination calendaire et le suivi de l'avancement au sein d'un seul et même outil — en français, conçu pour les équipes francophones.
+Galineo est une plateforme de gestion de projets collaborative pour equipes francophones. Le produit centralise la planification, l'execution, la communication, le calendrier, les notifications et l'assistance IA dans une interface unique, simple a deployer et utilisable sur desktop comme sur mobile.
 
 ---
 
 ## 2. Objectifs
 
-| Objectif | Indicateur de succès |
+| Objectif | Indicateur de succes |
 |---|---|
-| Permettre à une équipe de suivre l'avancement d'un projet | Taux de tâches complétées visible en temps réel sur le dashboard |
-| Réduire la friction de communication | Utilisation régulière du chat projet et des @mentions |
-| Centraliser la coordination des événements | Événements créés et attendus consultés via le calendrier projet |
-| Faciliter l'onboarding de nouveaux membres | Ajout d'un membre et premier accès en moins de 2 minutes |
+| Suivre l'avancement d'un projet sans outil externe | Progression des taches visible en temps reel sur dashboard et vues taches |
+| Reduire la friction de communication interne | Usage regulier du chat projet, des groupes prives et des mentions |
+| Donner une vision operationnelle claire au proprietaire | Dashboard projet avec stats, urgences, charge par membre |
+| Accelérer l'execution | IA projet capable d'aider a creer, modifier et organiser selon permissions |
+| Monetiser les usages avances | Conversion vers Premium et gestion de facturation Stripe |
 
 ---
 
-## 3. Périmètre
+## 3. Perimetre
 
-### 3.1 Dans le périmètre (v1)
+### 3.1 Dans le perimetre
 
-- Gestion de projets (création, édition, archivage, corbeille)
-- Gestion de tâches hiérarchiques (fonctionnalités + sous-tâches)
-- Vue Kanban et vue liste des tâches
-- Dashboard projet (statistiques, charge membre, tâches urgentes)
-- Dashboard global (toutes mes tâches, mes projets)
-- Gestion d'équipe avec rôles et permissions
-- Chat projet avec @mentions
-- Calendrier projet avec événements et notes par date
-- Système de notifications (assignation, mention, invitation, rappel)
-- Gestion de compte utilisateur
-- Import/export CSV des tâches
+- Gestion de projets: creation, edition, completion, corbeille, restauration, suppression definitive
+- Vider completement la corbeille
+- Gestion de taches hierarchiques: fonctionnalites + sous-taches
+- Vue liste et vue Kanban
+- Dashboard global et dashboard projet
+- Gestion des membres, roles et permissions
+- Chat projet avec mentions
+- Groupes de discussion prives hors projet
+- Calendrier projet et evenements
+- Notifications internes
+- Parametres utilisateur
+- Import/export CSV des taches
+- Assistant IA global
+- Assistant IA projet avec historique partage
+- Reglages d'autorisations IA par projet
+- Invitations et liens de partage projet
+- Abonnement Premium via Stripe
+- Portail de facturation Stripe
 
-### 3.2 Hors périmètre (v1)
+### 3.2 Hors perimetre
 
 - Application mobile native
-- Intégrations tierces (Slack, GitHub, Jira…)
-- Sous-domaines ou espaces de travail multi-organisations
-- WebSockets / temps réel strict
-- Paiement / modèle freemium
-- Internationalisation (multi-langues)
+- Temps reel strict par WebSocket
+- Integrations Slack, GitHub, Jira, Notion
+- Multi-workspace / multi-organisation
+- API publique
+- Multi-langue
 
 ---
 
 ## 4. Utilisateurs cibles
 
-### Chef de projet / Propriétaire
-Crée les projets, invite les membres, supervise l'avancement, gère les rôles.
-
-### Membre d'équipe
-Consulte les tâches qui lui sont assignées, met à jour leur statut, communique via le chat, participe aux événements.
+### Proprietaire
+Cree les projets, gere les membres, pilote les permissions et suit l'avancement global.
 
 ### Admin
-Peut gérer les membres et éditer le projet sans en être propriétaire. Délégation de responsabilité opérationnelle.
+Peut administrer un projet sans en etre proprietaire.
+
+### Membre
+Execute les taches, participe au chat, au calendrier et aux groupes prives.
 
 ### Observateur
-Accès en lecture seule. Idéal pour un client ou un stakeholder externe.
+Acces majoritairement en lecture.
+
+### Utilisateur Premium
+Debloque les usages avances selon le plan defini par le produit.
 
 ---
 
-## 5. Fonctionnalités
+## 5. Fonctionnalites
 
-### 5.1 Authentification
+### 5.1 Authentification et compte
 
-| ID | Fonctionnalité | Priorité |
+| ID | Fonctionnalite | Priorite |
 |---|---|---|
-| AUTH-01 | Création de compte (nom, email, mot de passe) | P0 |
-| AUTH-02 | Connexion par email + mot de passe, retour d'un JWT | P0 |
-| AUTH-03 | Déconnexion (suppression du token local) | P0 |
-| AUTH-04 | Modification du profil (nom, email) | P1 |
-| AUTH-05 | Changement de mot de passe | P1 |
-| AUTH-06 | Suppression de compte | P2 |
-
-**Règles métier**
-- Le token JWT expire après 7 jours.
-- L'email doit être unique sur la plateforme.
-- Le mot de passe n'est jamais stocké en clair (bcrypt).
-
----
+| AUTH-01 | Creer un compte | P0 |
+| AUTH-02 | Se connecter par email et mot de passe | P0 |
+| AUTH-03 | Se deconnecter | P0 |
+| AUTH-04 | Modifier profil, email et avatar | P1 |
+| AUTH-05 | Changer son mot de passe | P1 |
+| AUTH-06 | Supprimer son compte | P2 |
+| AUTH-07 | Reinitialiser son espace utilisateur | P2 |
 
 ### 5.2 Gestion de projets
 
-| ID | Fonctionnalité | Priorité |
+| ID | Fonctionnalite | Priorite |
 |---|---|---|
-| PROJ-01 | Créer un projet (titre, description, deadline optionnelle) | P0 |
-| PROJ-02 | Lister les projets dont je suis membre ou propriétaire | P0 |
-| PROJ-03 | Modifier les informations d'un projet | P1 |
-| PROJ-04 | Marquer un projet comme terminé → déplacement dans l'historique | P1 |
-| PROJ-05 | Supprimer un projet (soft delete → corbeille) | P1 |
-| PROJ-06 | Restaurer un projet depuis la corbeille | P2 |
-| PROJ-07 | Supprimer définitivement un projet depuis la corbeille | P2 |
-| PROJ-08 | Consulter l'historique des projets terminés | P2 |
+| PROJ-01 | Creer un projet | P0 |
+| PROJ-02 | Lister mes projets actifs | P0 |
+| PROJ-03 | Modifier un projet | P1 |
+| PROJ-04 | Marquer un projet comme termine | P1 |
+| PROJ-05 | Envoyer un projet dans la corbeille | P1 |
+| PROJ-06 | Restaurer un projet depuis la corbeille | P1 |
+| PROJ-07 | Supprimer definitivement un projet | P2 |
+| PROJ-08 | Vider toute la corbeille | P2 |
+| PROJ-09 | Voir l'historique des projets termines | P2 |
+| PROJ-10 | Mettre un projet en favori | P2 |
+| PROJ-11 | Generer et revoquer des liens de partage | P2 |
 
-**Statuts d'un projet**
+**Regles metier**
+- Un projet a un statut: `active`, `completed`, `deleted`.
+- Une suppression normale est un soft delete.
+- Une suppression definitive doit supprimer les dependances liees avant d'effacer le projet.
 
-```
-active → completed → (historique)
-active → deleted   → (corbeille) → active (restauré)
-                               → supprimé définitivement
-```
+### 5.3 Membres et permissions
 
----
-
-### 5.3 Gestion des membres et des rôles
-
-| ID | Fonctionnalité | Priorité |
+| ID | Fonctionnalite | Priorite |
 |---|---|---|
-| TEAM-01 | Ajouter un membre à un projet (recherche par nom/email) | P0 |
-| TEAM-02 | Retirer un membre d'un projet | P1 |
-| TEAM-03 | Changer le rôle d'un membre | P1 |
-| TEAM-04 | Consulter la liste des membres avec leur rôle | P0 |
+| TEAM-01 | Ajouter un membre a un projet | P0 |
+| TEAM-02 | Inviter par email | P1 |
+| TEAM-03 | Modifier le role d'un membre | P1 |
+| TEAM-04 | Retirer un membre | P1 |
+| TEAM-05 | Quitter un projet | P2 |
+| TEAM-06 | Transferer la propriete lors d'un depart | P2 |
 
-**Rôles par défaut**
+**Roles**
 
-| Rôle | Permissions |
+| Role | Capacites |
 |---|---|
-| Propriétaire | Toutes (manage_members, manage_roles, edit_project, view_project, delete_project) |
-| Admin | manage_members, edit_project, view_project |
-| Membre | edit_project, view_project |
-| Observateur | view_project |
+| Proprietaire | Toutes |
+| Admin | Administration operationnelle |
+| Membre | Participation standard |
+| Observateur | Lecture principalement |
 
-**Règles métier**
-- Un projet doit toujours avoir au moins un Propriétaire.
-- Seul un Propriétaire ou Admin peut ajouter/retirer des membres.
-- Le Propriétaire ne peut pas être retiré par un Admin.
+### 5.4 Taches et fonctionnalites
 
----
-
-### 5.4 Gestion des tâches
-
-| ID | Fonctionnalité | Priorité |
+| ID | Fonctionnalite | Priorite |
 |---|---|---|
-| TASK-01 | Créer une fonctionnalité (tâche parent) | P0 |
-| TASK-02 | Créer une sous-tâche rattachée à une fonctionnalité | P0 |
-| TASK-03 | Éditer une tâche (titre, description, statut, priorité, dates, assigné) | P0 |
-| TASK-04 | Supprimer une tâche | P1 |
-| TASK-05 | Changer le statut par glisser-déposer (vue Kanban) | P1 |
-| TASK-06 | Filtrer/trier les tâches | P2 |
-| TASK-07 | Ajouter un commentaire sur une tâche | P1 |
-| TASK-08 | Consulter l'historique de commentaires d'une tâche | P1 |
-| TASK-09 | Importer des tâches via CSV | P2 |
-| TASK-10 | Exporter les tâches en CSV | P2 |
-| TASK-11 | Voir mes tâches assignées sur toutes mes projets (dashboard global) | P0 |
+| TASK-01 | Creer une fonctionnalite parent | P0 |
+| TASK-02 | Creer une sous-tache | P0 |
+| TASK-03 | Modifier une tache | P0 |
+| TASK-04 | Supprimer une tache | P1 |
+| TASK-05 | Changer le statut d'une tache | P0 |
+| TASK-06 | Changer le statut en Kanban | P1 |
+| TASK-07 | Ajouter des commentaires | P1 |
+| TASK-08 | Voir l'historique de commentaires | P1 |
+| TASK-09 | Importer un CSV | P2 |
+| TASK-10 | Exporter un CSV | P2 |
+| TASK-11 | Voir mes taches assignees tous projets confondus | P0 |
 
 **Statuts**
 
-`todo` → `in_progress` → `done`
+`todo` -> `in_progress` -> `done`
 
-**Priorités**
+**Regles metier**
+- Une fonctionnalite est une tache parent.
+- Une sous-tache ne peut pas avoir d'enfant.
+- Si toutes les sous-taches sont terminees, la fonctionnalite passe automatiquement a `done`.
+- Si une fonctionnalite est forcee en `done` ou `todo`, le statut est propage a ses sous-taches.
+- La suppression d'un parent supprime ses sous-taches.
 
-| Valeur | Libellé |
-|---|---|
-| `normal` | Normal |
-| `urgent_important` | Urgent & Important |
-| `urgent_not_important` | Urgent, non important |
-| `not_urgent_important` | Important, non urgent |
+### 5.5 Dashboard global
 
-**Règles métier**
-- Une sous-tâche ne peut pas avoir de sous-tâches (profondeur max = 2).
-- L'assignation d'une tâche déclenche une notification de type `task_assigned`.
-- La suppression d'une tâche parent supprime en cascade ses sous-tâches.
-
----
-
-### 5.5 Dashboard projet
-
-| ID | Fonctionnalité | Priorité |
+| ID | Fonctionnalite | Priorite |
 |---|---|---|
-| DASH-01 | Taux de complétion global du projet (% tâches done) | P0 |
-| DASH-02 | Statistiques tâches : total / done / en cours / à faire / en retard | P0 |
-| DASH-03 | Liste des 5 tâches les plus urgentes (deadline la plus proche) | P1 |
-| DASH-04 | Charge par membre (tâches assignées / ouvertes / en retard) | P1 |
-| DASH-05 | Prochaine deadline du projet | P1 |
+| GLOB-01 | Voir mes projets | P0 |
+| GLOB-02 | Voir mes taches assignees | P0 |
+| GLOB-03 | Voir mes prochains evenements | P0 |
+| GLOB-04 | Creer un projet depuis le dashboard | P0 |
 
----
+### 5.6 Dashboard projet
 
-### 5.6 Dashboard global (page d'accueil)
-
-| ID | Fonctionnalité | Priorité |
+| ID | Fonctionnalite | Priorite |
 |---|---|---|
-| GLOB-01 | Mes tâches assignées (tous projets confondus) | P0 |
-| GLOB-02 | Mes prochains événements | P0 |
-| GLOB-03 | Projets dont je suis propriétaire | P0 |
-| GLOB-04 | Projets dont je suis membre | P0 |
-| GLOB-05 | Créer un nouveau projet depuis le dashboard | P0 |
-
----
+| DASH-01 | Voir les stats du projet | P0 |
+| DASH-02 | Voir les urgences | P1 |
+| DASH-03 | Voir la charge par membre | P1 |
+| DASH-04 | Voir les prochaines echeances | P1 |
 
 ### 5.7 Chat projet
 
-| ID | Fonctionnalité | Priorité |
+| ID | Fonctionnalite | Priorite |
 |---|---|---|
-| CHAT-01 | Envoyer un message dans le fil du projet | P0 |
-| CHAT-02 | @mentionner un membre du projet | P1 |
-| CHAT-03 | Modifier son propre message | P2 |
-| CHAT-04 | Supprimer son propre message | P2 |
-| CHAT-05 | Rafraîchissement automatique du fil (polling 5s) | P1 |
+| CHAT-01 | Envoyer un message | P0 |
+| CHAT-02 | Mentionner un membre | P1 |
+| CHAT-03 | Modifier un message | P2 |
+| CHAT-04 | Supprimer un message | P2 |
+| CHAT-05 | Rafraichissement automatique | P1 |
 
-**Règles métier**
-- Une @mention déclenche une notification de type `mention` pour l'utilisateur ciblé.
-- Un Observateur peut lire les messages mais ne peut pas en envoyer.
+### 5.8 Groupes prives hors projet
 
----
-
-### 5.8 Calendrier projet
-
-| ID | Fonctionnalité | Priorité |
+| ID | Fonctionnalite | Priorite |
 |---|---|---|
-| CAL-01 | Afficher le calendrier mensuel du projet | P0 |
-| CAL-02 | Créer un événement (titre, description, début, fin, lieu) | P0 |
-| CAL-03 | Modifier un événement | P1 |
-| CAL-04 | Supprimer un événement | P1 |
-| CAL-05 | Gérer les participants d'un événement | P1 |
-| CAL-06 | Ajouter une note sur une date spécifique | P2 |
-| CAL-07 | Supprimer une note de date | P2 |
-| CAL-08 | Afficher les événements à venir dans le dashboard global | P1 |
+| DM-01 | Lister mes groupes prives | P1 |
+| DM-02 | Creer un groupe prive | P1 |
+| DM-03 | Envoyer des messages dans un groupe | P1 |
+| DM-04 | Modifier le groupe et ses membres | P2 |
+| DM-05 | Supprimer definitivement un groupe | P2 |
 
-**Règles métier**
-- L'invitation à un événement génère une notification de type `event_invite`.
-- Un rappel automatique de type `event_reminder` est envoyé 24h avant l'événement.
+**Regles metier**
+- Les discussions privees sont independantes des projets.
+- Sur mobile, la zone de saisie doit rester visible au-dessus de la navigation systeme/app.
 
----
+### 5.9 Calendrier projet
 
-### 5.9 Notifications
-
-| ID | Fonctionnalité | Priorité |
+| ID | Fonctionnalite | Priorite |
 |---|---|---|
-| NOTIF-01 | Consulter la liste de mes notifications | P0 |
-| NOTIF-02 | Compteur de notifications non lues (badge) | P0 |
-| NOTIF-03 | Marquer une notification comme lue | P1 |
-| NOTIF-04 | Marquer toutes les notifications comme lues | P1 |
+| CAL-01 | Voir le calendrier du projet | P0 |
+| CAL-02 | Creer un evenement | P0 |
+| CAL-03 | Modifier un evenement | P1 |
+| CAL-04 | Supprimer un evenement | P1 |
+| CAL-05 | Gerer les participants | P1 |
+
+### 5.10 Notifications
+
+| ID | Fonctionnalite | Priorite |
+|---|---|---|
+| NOTIF-01 | Lister les notifications | P0 |
+| NOTIF-02 | Afficher le badge non lu | P0 |
+| NOTIF-03 | Marquer comme lu | P1 |
+| NOTIF-04 | Tout marquer lu | P1 |
 | NOTIF-05 | Supprimer une notification | P2 |
 
-**Types de notifications**
+### 5.11 IA
 
-| Type | Déclencheur |
-|---|---|
-| `task_assigned` | Une tâche m'est assignée |
-| `mention` | Je suis @mentionné dans un message |
-| `event_invite` | Je suis invité à un événement |
-| `event_reminder` | Un événement auquel je participe commence dans 24h |
+| ID | Fonctionnalite | Priorite |
+|---|---|---|
+| AI-01 | Assistant IA global | P1 |
+| AI-02 | Assistant IA projet | P0 |
+| AI-03 | Historique IA projet partage | P1 |
+| AI-04 | Permissions IA par projet | P1 |
+| AI-05 | Reinitialiser l'historique IA projet | P2 |
+| AI-06 | Regler la duree d'historique IA utilisateur | P2 |
+
+### 5.12 Facturation et plans
+
+| ID | Fonctionnalite | Priorite |
+|---|---|---|
+| BILL-01 | Ouvrir Stripe Checkout pour Premium | P1 |
+| BILL-02 | Mettre a jour le plan via webhook Stripe | P1 |
+| BILL-03 | Ouvrir le portail Stripe | P1 |
+| BILL-04 | Afficher le plan actuel | P0 |
+| BILL-05 | Afficher un message de remerciement apres upgrade | P1 |
+| BILL-06 | Bouton experimental Premium -> Free pour test | P2 |
 
 ---
 
-## 6. Modèle de données
+## 6. Modele de donnees
 
-### Entités principales
+### Entites principales
 
-```
+```txt
 users
-  id, name, email, password_hash, avatar, last_login_at, created_at
+  id, name, email, password_hash, avatar, plan,
+  stripe_customer_id, stripe_subscription_id,
+  ai_prompts_count, ai_history_duration,
+  notif_project_updates, notif_added_to_project, notif_deadlines,
+  last_login_at, created_at
 
 projects
-  id, title, description, deadline, status, owner_id, created_at
+  id, title, description, deadline, start_date,
+  status, owner_id, avatar, created_at
 
 project_members
-  project_id, user_id, role_id
+  project_id, user_id, role_id, is_favorite
 
 roles
   id, name, is_default
@@ -277,13 +277,19 @@ role_permissions
 tasks
   id, project_id, parent_id, title, description,
   status, priority, phase, start_date, due_date,
-  created_by, assigned_to, created_at
+  created_by, assigned_to, color, created_at
 
 task_comments
   id, task_id, user_id, content, created_at
 
 messages
   id, project_id, user_id, content, created_at
+
+chat_groups
+  id, title, description, avatar, created_at
+
+chat_group_members
+  group_id, user_id
 
 calendar_events
   id, project_id, title, description,
@@ -293,13 +299,19 @@ calendar_events
 event_attendees
   event_id, user_id, notified
 
-calendar_date_notes
-  id, project_id, date, content, user_id, created_at
-
 notifications
   id, user_id, type, title, message,
   project_id, task_id, from_user_id,
   is_read, created_at
+
+project_ai_settings
+  project_id, allow_create, allow_modify, allow_members, allow_delete
+
+project_share_links
+  id, project_id, role_id, token, expires_at, created_at
+
+invitations
+  id, project_id, email, role_id, inviter_id, token, status, created_at
 ```
 
 ---
@@ -310,78 +322,95 @@ notifications
 
 | Couche | Technologie |
 |---|---|
-| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4 |
-| Backend | Node.js, Express.js 5 |
-| Base de données | SQLite (dev) / PostgreSQL (prod) |
-| Auth | JWT (7 jours), bcrypt |
-| Email | Nodemailer (configuré, non activé v1) |
+| Frontend | Next.js App Router, React, TypeScript, Tailwind CSS |
+| Backend | Node.js, Express |
+| Base de donnees | SQLite en dev, PostgreSQL en prod |
+| Auth | JWT + bcrypt |
+| Paiement | Stripe Checkout, Billing Portal, Webhooks |
+| Email | Nodemailer |
 
-### Principes clés
+### Principes clefs
 
-- **Séparation frontend/backend** : le frontend Next.js appelle une API REST Express sur un port séparé.
-- **Couche d'abstraction DB** : un fichier `db.js` traduit le SQL SQLite en PostgreSQL au runtime, permettant un dev local léger et un déploiement prod robuste.
-- **RBAC par projet** : les rôles et permissions sont scoped au projet, pas globaux.
-- **Polling HTTP** : pas de WebSockets en v1 ; le chat rafraîchit toutes les 5 secondes, les rappels sont calculés à chaque appel `/events/upcoming`.
-- **Soft delete** : les projets ne sont jamais supprimés immédiatement — ils passent par une corbeille.
-- **Requêtes préparées** : toutes les requêtes SQL utilisent des paramètres liés pour prévenir les injections SQL.
+- Frontend et backend separes
+- SQL compatible SQLite/PostgreSQL via couche d'abstraction
+- Permissions scopees au projet
+- Polling HTTP pour plusieurs flux de donnees
+- Soft delete pour les projets
+- Suppression definitive avec nettoyage explicite des dependances
 
-### Routes API (résumé)
+### Routes API principales
 
-```
-POST   /auth/register          Créer un compte
-POST   /auth/login             Se connecter
+```txt
+POST   /auth/register
+POST   /auth/login
 
-GET    /projects               Lister mes projets
-POST   /projects               Créer un projet
-GET    /projects/:id           Détail d'un projet
-PATCH  /projects/:id           Modifier un projet
-DELETE /projects/:id           Soft delete
-PATCH  /projects/:id/complete  Terminer un projet
-PATCH  /projects/:id/restore   Restaurer depuis la corbeille
-DELETE /projects/:id/hard      Supprimer définitivement
+GET    /projects
+POST   /projects
+GET    /projects/:id
+PATCH  /projects/:id
+DELETE /projects/:id
+PATCH  /projects/:id/complete
+PATCH  /projects/:id/restore
+DELETE /projects/trash/empty
+DELETE /projects/:id/hard
 
-POST   /projects/:id/members         Ajouter un membre
-PATCH  /projects/:id/members/:uid    Changer le rôle
-DELETE /projects/:id/members/:uid    Retirer un membre
+POST   /projects/:id/members
+PATCH  /projects/:id/members/:uid
+DELETE /projects/:id/members/:uid
 
-GET    /projects/:id/tasks           Lister les tâches
-POST   /projects/:id/tasks           Créer une tâche
-PATCH  /projects/:id/tasks/:tid      Modifier une tâche
-DELETE /projects/:id/tasks/:tid      Supprimer une tâche
-GET    /projects/:id/tasks/export    Export CSV
-POST   /projects/:id/tasks/import    Import CSV
-GET    /projects/:id/tasks/:tid/comments   Commentaires
-POST   /projects/:id/tasks/:tid/comments   Ajouter commentaire
+GET    /projects/:projectId/tasks
+POST   /projects/:projectId/tasks
+PATCH  /projects/:projectId/tasks/:tid
+DELETE /projects/:projectId/tasks/:tid
+GET    /projects/:projectId/tasks/export
+POST   /projects/:projectId/tasks/import
+GET    /projects/:projectId/tasks/:tid/comments
+POST   /projects/:projectId/tasks/:tid/comments
 
-GET    /tasks/assigned           Mes tâches (tous projets)
+GET    /tasks/assigned
 
-GET    /projects/:id/messages    Messages du chat
-POST   /projects/:id/messages    Envoyer un message
-PATCH  /projects/:id/messages/:mid  Modifier
-DELETE /projects/:id/messages/:mid  Supprimer
+GET    /projects/:projectId/messages
+POST   /projects/:projectId/messages
 
-GET    /projects/:id/events      Événements (filtre mois)
-POST   /projects/:id/events      Créer un événement
-PATCH  /projects/:id/events/:eid  Modifier
-DELETE /projects/:id/events/:eid  Supprimer
-GET    /events/upcoming           Mes prochains événements
+GET    /chat-groups
+POST   /chat-groups
+GET    /chat-groups/:id
+PATCH  /chat-groups/:id
+DELETE /chat-groups/:id
+GET    /chat-groups/:id/messages
+POST   /chat-groups/:id/messages
 
-GET    /notifications             Mes notifications
-GET    /notifications/unread-count  Compteur non lues
-PATCH  /notifications/:id/read    Marquer lue
-PATCH  /notifications/read-all    Tout marquer lu
-DELETE /notifications/:id         Supprimer
+GET    /projects/:projectId/events
+POST   /projects/:projectId/events
+PATCH  /projects/:projectId/events/:eid
+DELETE /projects/:projectId/events/:eid
+GET    /events/upcoming
 
-GET    /users/me                 Mon profil
-PATCH  /users/me                 Modifier profil
-PATCH  /users/me/password        Changer mot de passe
-DELETE /users/me                 Supprimer compte
-GET    /users/search?q=          Rechercher un utilisateur
+GET    /notifications
+GET    /notifications/unread-count
+PATCH  /notifications/:id/read
+PATCH  /notifications/read-all
+DELETE /notifications/:id
+
+GET    /users/me
+PATCH  /users/me
+PATCH  /users/me/password
+PATCH  /users/me/ai-settings
+DELETE /users/me
+
+POST   /billing/checkout
+POST   /billing/portal
+GET    /billing/status
+POST   /billing/test/downgrade
+
+POST   /ai/chat
+GET    /ai/history/:projectId
+GET    /ai/active-task/:projectId
 ```
 
 ---
 
-## 8. Expérience utilisateur
+## 8. Experience utilisateur
 
 ### Pages principales
 
@@ -391,66 +420,67 @@ GET    /users/search?q=          Rechercher un utilisateur
 | `/register` | Inscription |
 | `/dashboard` | Dashboard global |
 | `/projects/[id]` | Dashboard projet |
-| `/projects/[id]/tasks` | Gestion des tâches (Kanban + liste) |
+| `/projects/[id]/tasks` | Taches |
 | `/projects/[id]/chat` | Chat projet |
 | `/projects/[id]/calendar` | Calendrier projet |
-| `/projects/[id]/members` | Gestion des membres |
-| `/notifications` | Centre de notifications |
-| `/history` | Projets terminés |
-| `/trash` | Projets supprimés |
-| `/settings` | Paramètres du compte |
+| `/projects/[id]/ai` | Assistant IA projet |
+| `/messages` | Groupes prives |
+| `/messages/[id]` | Discussion privee |
+| `/notifications` | Notifications |
+| `/history` | Projets termines |
+| `/trash` | Corbeille |
+| `/settings` | Parametres utilisateur |
 
 ### Principes UX
 
-- Interface entièrement en français (fr-FR).
-- Dates formatées en locale française (`toLocaleDateString('fr-FR')`).
-- Feedback visuel immédiat sur chaque action (modales, erreurs inline).
-- Accès rapide aux projets depuis la sidebar et le dashboard.
-- Badge de notification en temps quasi-réel (polling).
+- Interface en francais
+- Navigation mobile persistante
+- Zone de saisie mobile protegee des overlays de navigation
+- Feedback immediat apres actions critiques
+- Cohabitation claire entre projet, messagerie et IA
 
 ---
 
-## 9. Sécurité
+## 9. Securite
 
 | Risque | Mitigation |
 |---|---|
-| Injection SQL | Requêtes préparées systématiques |
-| Accès non autorisé à un projet | Vérification d'appartenance sur chaque route protégée |
-| Élévation de privilèges | Vérification du rôle + permission avant chaque action sensible |
-| Exposition des mots de passe | Hachage bcrypt, jamais renvoyés dans les réponses API |
-| Tokens compromis | Expiration 7 jours, stockage localStorage (à migrer vers httpOnly cookie en v2) |
-| CSRF | Pas de session serveur en v1 (JWT stateless) |
+| Injection SQL | Requetes preparees |
+| Acces projet non autorise | Verification d'appartenance et de role |
+| Elevation de privilege | Verification des permissions avant action sensible |
+| Fuite mot de passe | bcrypt + jamais renvoye dans les reponses |
+| Mauvaise suppression definitive | Nettoyage des dependances avant suppression du projet |
+| Usage non maitrise des outils de test billing | Marquage experimental et usage reserve aux tests |
 
 ---
 
-## 10. Critères d'acceptation globaux
+## 10. Criteres d'acceptation globaux
 
-- [ ] Un utilisateur peut créer un compte, se connecter et accéder à son dashboard en moins de 60 secondes.
-- [ ] Un projet peut être créé, peuplé de tâches et d'une équipe sans rechargement de page complet.
-- [ ] Les tâches peuvent être déplacées entre colonnes Kanban et le statut est persisté immédiatement.
-- [ ] Une @mention dans le chat génère une notification visible dans les 10 secondes pour le destinataire.
-- [ ] Un rappel d'événement apparaît dans les notifications 24h avant l'heure de début.
-- [ ] Un Observateur ne peut pas créer, modifier ou supprimer de tâches, messages ou événements.
-- [ ] La corbeille permet de restaurer un projet supprimé par erreur.
-- [ ] L'export CSV produit un fichier lisible et l'import CSV crée les tâches correspondantes.
+- [ ] Un utilisateur peut creer un compte et acceder au dashboard.
+- [ ] Un projet peut etre cree, rempli en taches et partager avec des membres.
+- [ ] Une tache change de statut sans rechargement complet.
+- [ ] Une fonctionnalite peut propager son statut a ses sous-taches.
+- [ ] La corbeille peut restaurer et vider definitivement les projets supprimes.
+- [ ] Les groupes prives hors projet fonctionnent aussi sur mobile.
+- [ ] Le passage Premium est reflechi dans l'application apres retour Stripe.
+- [ ] Le bouton experimental de downgrade Premium -> Free fonctionne pour les tests.
+- [ ] L'assistant IA projet respecte les permissions du projet.
 
 ---
 
-## 11. Roadmap (post-v1)
+## 11. Roadmap post-v1
 
-| Priorité | Fonctionnalité |
+| Priorite | Fonctionnalite |
 |---|---|
-| P1 | WebSockets pour le chat (remplacement du polling) |
-| P1 | Notifications email (Nodemailer) |
-| P1 | Pièces jointes sur les tâches et messages |
-| P2 | Vue Gantt des tâches |
-| P2 | Sous-tâches multi-niveaux (depth > 2) |
+| P1 | Temps reel WebSocket |
+| P1 | Pieces jointes |
+| P1 | Gantt |
+| P2 | Sous-taches multi-niveaux |
 | P2 | Tableaux de bord personnalisables |
-| P3 | Intégration GitHub (lier commits à des tâches) |
-| P3 | API publique + webhooks |
-| P3 | Application mobile (React Native) |
-| P3 | Modèle de projet (templates) |
+| P2 | Integrations externes |
+| P3 | API publique |
+| P3 | Application mobile native |
 
 ---
 
-*Document maintenu par l'équipe Galineo. Toute modification majeure doit être versionnée.*
+*Document maintenu pour reflet produit et cadrage fonctionnel. Toute evolution majeure doit mettre a jour ce PRD.*
