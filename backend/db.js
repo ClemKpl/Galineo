@@ -28,10 +28,22 @@ if (isProd) {
         }
         return `STRING_AGG(${p1.trim()}::text, ',')`;
       })
-      .replace(/datetime\('now',\s*'(.*?)'\)/gi, (_, p1) => {
-        // SQLite: datetime('now', '-5 minutes')
-        // PG: NOW() + INTERVAL '-5 minutes'
-        return `NOW() + INTERVAL '${p1}'`;
+      .replace(/datetime\('now'(.*?)\)/gi, (match, p1) => {
+        // SQLite: datetime('now', '-5 minutes', '+1 second')
+        // PG: NOW() + INTERVAL '-5 minutes' + INTERVAL '+1 second'
+        // Handle cases with expressions like , '-' || ? || ' minute'
+        const args = p1.split(',').map(a => a.trim()).filter(a => a !== '');
+        let pgResult = 'NOW()';
+        for (const arg of args) {
+          // If it's a literal string like '-5 minutes'
+          if ((arg.startsWith("'") && arg.endsWith("'")) || (arg.startsWith('"') && arg.endsWith('"'))) {
+             pgResult += ` + INTERVAL ${arg}`;
+          } else {
+             // It's an expression, cast to interval
+             pgResult += ` + (${arg})::interval`;
+          }
+        }
+        return pgResult;
       });
 
     // Add ON CONFLICT DO NOTHING for pseudo-IGNORE or DO UPDATE for REPLACE
