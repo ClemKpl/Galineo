@@ -12,6 +12,10 @@ const ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp',
   'application/pdf',
   'text/plain', 'text/csv', 'text/markdown',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',       // .xlsx
+  'application/msword',                                                       // .doc (ancien)
+  'application/vnd.ms-excel',                                                 // .xls (ancien)
 ];
 const MAX_SIZE_MB = 5;
 
@@ -29,7 +33,7 @@ const upload = multer({
   limits: { fileSize: MAX_SIZE_MB * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (ALLOWED_TYPES.includes(file.mimetype)) return cb(null, true);
-    cb(new Error(`Type de fichier non supporté. Formats acceptés : images, PDF, texte.`));
+    cb(new Error(`Type de fichier non supporté. Formats acceptés : images, PDF, Word, Excel, texte.`));
   },
 });
 

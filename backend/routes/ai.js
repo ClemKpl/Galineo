@@ -758,14 +758,46 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
             const path = require('path');
             const filePath = path.join(__dirname, '../uploads', path.basename(attachment_url));
             try {
-              const fileData = fs.readFileSync(filePath);
-              const base64Data = fileData.toString('base64');
-              geminiPayload = [
-                { text: identifiedUserText },
-                { inlineData: { mimeType: attachment_type, data: base64Data } }
+              const WORD_TYPES = [
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/msword',
               ];
+              const EXCEL_TYPES = [
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-excel',
+              ];
+
+              if (WORD_TYPES.includes(attachment_type)) {
+                // Word → extraction texte via mammoth
+                const mammoth = require('mammoth');
+                const result = await mammoth.extractRawText({ path: filePath });
+                const extractedText = result.value.trim();
+                geminiPayload = [
+                  { text: identifiedUserText },
+                  { text: `\n\n[Contenu du fichier Word "${attachment_name || 'document'}"]\n${extractedText}` }
+                ];
+              } else if (EXCEL_TYPES.includes(attachment_type)) {
+                // Excel → conversion en CSV via xlsx
+                const XLSX = require('xlsx');
+                const workbook = XLSX.readFile(filePath);
+                const csvParts = workbook.SheetNames.map(name => {
+                  const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[name]);
+                  return `[Feuille "${name}"]\n${csv}`;
+                });
+                geminiPayload = [
+                  { text: identifiedUserText },
+                  { text: `\n\n[Contenu du fichier Excel "${attachment_name || 'classeur'}"]\n${csvParts.join('\n\n')}` }
+                ];
+              } else {
+                // Images, PDF, texte → inlineData base64
+                const fileData = fs.readFileSync(filePath);
+                const base64Data = fileData.toString('base64');
+                geminiPayload = [
+                  { text: identifiedUserText },
+                  { inlineData: { mimeType: attachment_type, data: base64Data } }
+                ];
+              }
             } catch {
-              // Fichier introuvable, on envoie juste le texte
               geminiPayload = identifiedUserText;
             }
           } else {
