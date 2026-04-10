@@ -229,8 +229,8 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
             priority: task.priority || 'normal'
           }));
 
-        // Stats should include EVERYTHING the user sees as a task
-        const taskCounts = normalizedTasks.reduce((acc, task) => {
+        // Stats should only include sub-tasks (not features/parent items)
+        const taskCounts = actionableTasks.reduce((acc, task) => {
           const status = task.status || 'todo';
           acc.total += 1;
           if (status === 'done') acc.done += 1;
