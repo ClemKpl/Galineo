@@ -4,13 +4,18 @@ const Stripe = require('stripe');
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 const PRICE_ID = process.env.STRIPE_PRICE_ID;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://galineo.vercel.app';
+
+if (!stripe) {
+  console.warn('⚠️ [Stripe] STRIPE_SECRET_KEY manquante. Les fonctionnalités de paiement sont désactivées.');
+}
 
 // POST /billing/checkout — crée une session Stripe Checkout
 router.post('/checkout', authMiddleware, async (req, res) => {
   const userId = req.user.id;
+  if (!stripe) return res.status(500).json({ error: "Configuration Stripe manquante sur le serveur." });
 
   db.get('SELECT email, stripe_customer_id, plan FROM users WHERE id = ?', [userId], async (err, user) => {
     if (err || !user) return res.status(404).json({ error: 'Utilisateur introuvable' });
@@ -45,6 +50,7 @@ router.post('/checkout', authMiddleware, async (req, res) => {
 // POST /billing/portal — portail Stripe pour gérer/annuler
 router.post('/portal', authMiddleware, async (req, res) => {
   const userId = req.user.id;
+  if (!stripe) return res.status(500).json({ error: "Configuration Stripe manquante sur le serveur." });
 
   db.get('SELECT stripe_customer_id FROM users WHERE id = ?', [userId], async (err, user) => {
     if (err || !user || !user.stripe_customer_id) {
@@ -74,6 +80,7 @@ router.get('/status', authMiddleware, (req, res) => {
 
 // POST /billing/webhook — événements Stripe (raw body requis)
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe) return res.status(500).send("Configuration Stripe manquante.");
   const sig = req.headers['stripe-signature'];
   let event;
 
