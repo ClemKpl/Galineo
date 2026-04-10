@@ -315,6 +315,16 @@ router.patch('/:id', authMiddleware, (req, res) => {
   }
 });
 
+// DELETE /clear — Vider toutes les tâches d'un projet
+router.delete('/clear', authMiddleware, (req, res) => {
+  const { projectId } = req.params;
+  db.run('DELETE FROM tasks WHERE project_id = ?', [projectId], async (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    await logActivity(projectId, req.user.id, 'project', projectId, 'cleared_all_tasks');
+    res.json({ message: 'Toutes les tâches ont été supprimées' });
+  });
+});
+
 // DELETE /:id — Supprimer une tâche
 router.delete('/:id', authMiddleware, (req, res) => {
   const { id, projectId } = req.params;
@@ -333,16 +343,6 @@ router.delete('/:id', authMiddleware, (req, res) => {
       await logActivity(projectId, req.user.id, 'task', id, 'deleted');
       res.json({ message: 'Supprimé' });
     });
-  });
-});
-
-// DELETE /clear — Vider toutes les tâches d'un projet
-router.delete('/clear', authMiddleware, (req, res) => {
-  const { projectId } = req.params;
-  db.run('DELETE FROM tasks WHERE project_id = ?', [projectId], async (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    await logActivity(projectId, req.user.id, 'project', projectId, 'cleared_all_tasks');
-    res.json({ message: 'Toutes les tâches ont été supprimées' });
   });
 });
 
