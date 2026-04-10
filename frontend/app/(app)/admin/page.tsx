@@ -58,7 +58,7 @@ export default function AdminPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('users');
-  const [projectFilter, setProjectFilter] = useState<'active' | 'deleted'>('active');
+  const [projectFilter, setProjectFilter] = useState<'active' | 'completed' | 'deleted'>('active');
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -170,7 +170,7 @@ export default function AdminPage() {
   );
   const filteredProjects = projects.filter((p) => {
     const matchesSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.owner_name?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = projectFilter === 'deleted' ? p.status === 'deleted' : p.status !== 'deleted';
+    const matchesStatus = p.status === projectFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -246,7 +246,8 @@ export default function AdminPage() {
           </div>
           {tab === 'projects' && (
             <div className="flex gap-4 ml-1">
-              <button onClick={() => setProjectFilter('active')} className={`text-xs font-semibold pb-1 border-b-2 transition-all ${projectFilter === 'active' ? 'border-purple-600 text-purple-600' : 'border-transparent text-stone-400 hover:text-stone-600'}`}>Actifs ({projects.filter(p => p.status !== 'deleted').length})</button>
+              <button onClick={() => setProjectFilter('active')} className={`text-xs font-semibold pb-1 border-b-2 transition-all ${projectFilter === 'active' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-stone-400 hover:text-stone-600'}`}>Actifs ({projects.filter(p => p.status === 'active').length})</button>
+              <button onClick={() => setProjectFilter('completed')} className={`text-xs font-semibold pb-1 border-b-2 transition-all ${projectFilter === 'completed' ? 'border-blue-600 text-blue-600' : 'border-transparent text-stone-400 hover:text-stone-600'}`}>Archivés ({projects.filter(p => p.status === 'completed').length})</button>
               <button onClick={() => setProjectFilter('deleted')} className={`text-xs font-semibold pb-1 border-b-2 transition-all ${projectFilter === 'deleted' ? 'border-red-600 text-red-600' : 'border-transparent text-stone-400 hover:text-stone-600'}`}>Corbeille ({projects.filter(p => p.status === 'deleted').length})</button>
             </div>
           )}
@@ -336,9 +337,11 @@ export default function AdminPage() {
                   <td className="px-5 py-3.5">
                     <div className="font-medium text-stone-900">{p.title}</div>
                     <div className={`text-[10px] font-bold uppercase tracking-widest mt-1 inline-block px-2 py-0.5 rounded-md ${
-                      p.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                      p.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 
+                      p.status === 'completed' ? 'bg-blue-50 text-blue-600' : 
+                      'bg-red-50 text-red-600'
                     }`}>
-                      {p.status === 'active' ? 'Actif' : 'Dans la corbeille'}
+                      {p.status === 'active' ? 'Actif' : p.status === 'completed' ? 'Archivé' : 'Dans la corbeille'}
                     </div>
                   </td>
                   <td className="px-5 py-3.5 hidden sm:table-cell">
