@@ -24,6 +24,7 @@ export type Project = {
   my_role_id?: number;
   avatar?: string | null;
   is_favorite?: number;
+  status: 'active' | 'completed' | 'deleted';
 };
 
 const ProjectContext = createContext<Project | null>(null);

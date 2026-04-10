@@ -114,6 +114,7 @@ export default function ProjectDashboardPage() {
   const [eventSaving, setEventSaving] = useState(false);
 
   const canManageProject = project.my_role_id === 1 || project.my_role_id === 2 || project.owner_id === user?.id;
+  const isReadOnly = project.status !== 'active';
 
   useEffect(() => {
     fetchDashboard();
@@ -168,6 +169,7 @@ export default function ProjectDashboardPage() {
   }
 
   async function deleteEvent(id: number) {
+    if (isReadOnly) return;
     if (!confirm('Supprimer cet événement ?')) return;
     try {
       await api.delete(`/projects/${project.id}/events/${id}`);
@@ -272,9 +274,11 @@ export default function ProjectDashboardPage() {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => setShowEventModal(true)} className="rounded-2xl bg-stone-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-stone-800 shadow-lg shadow-stone-200">
-                Nouvel Événement
-              </button>
+              {!isReadOnly && (
+                <button onClick={() => setShowEventModal(true)} className="rounded-2xl bg-stone-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-stone-800 shadow-lg shadow-stone-200">
+                  Nouvel Événement
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => fetchDashboard(true)}
@@ -332,9 +336,11 @@ export default function ProjectDashboardPage() {
           <article className="rounded-[28px] border border-stone-200 bg-white/90 p-8 shadow-sm flex flex-col">
             <div className="flex items-center justify-between mb-6">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-500">Événements</p>
-              <button onClick={() => setShowEventModal(true)} className="text-orange-500 hover:text-orange-600 transition-colors">
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M12 4v16m8-8H4"/></svg>
-              </button>
+              {!isReadOnly && (
+                <button onClick={() => setShowEventModal(true)} className="text-orange-500 hover:text-orange-600 transition-colors">
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M12 4v16m8-8H4"/></svg>
+                </button>
+              )}
             </div>
             
             <div className="space-y-3 overflow-y-auto max-h-[320px] pr-1 custom-scrollbar">
@@ -540,7 +546,7 @@ export default function ProjectDashboardPage() {
                     <p className="text-[10px] text-stone-400 font-bold uppercase mt-1">En attente de tâches</p>
                   </div>
                   <div className="w-8 h-8 rounded-lg bg-stone-50 group-hover:bg-orange-50 flex items-center justify-center text-stone-400 group-hover:text-orange-500 transition-all">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14"/></svg>
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={isReadOnly ? "1.5" : "3"}><path d="M12 5v14M5 12h14"/></svg>
                   </div>
                 </div>
               ))}

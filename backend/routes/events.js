@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router({ mergeParams: true });
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { ensureProjectActive } = require('../middleware/projectStatus');
 const { sendNotificationEmail } = require('../utils/mailer');
 
 // GET /projects/:projectId/events?month=YYYY-MM
@@ -65,7 +66,7 @@ router.get('/', authMiddleware, (req, res) => {
 });
 
 // POST /projects/:projectId/events
-router.post('/', authMiddleware, (req, res) => {
+router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId } = req.params;
   const userId = req.user.id;
   const { title, description, start_datetime, end_datetime, location, attendee_ids } = req.body;
@@ -126,7 +127,7 @@ router.post('/', authMiddleware, (req, res) => {
 });
 
 // PATCH /projects/:projectId/events/:id
-router.patch('/:id', authMiddleware, (req, res) => {
+router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId, id } = req.params;
   const { title, description, start_datetime, end_datetime, location, attendee_ids } = req.body;
 
@@ -181,7 +182,7 @@ router.patch('/:id', authMiddleware, (req, res) => {
 });
 
 // DELETE /projects/:projectId/events/:id
-router.delete('/:id', authMiddleware, (req, res) => {
+router.delete('/:id', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId, id } = req.params;
 
   db.run(`DELETE FROM event_attendees WHERE event_id = ?`, [id], () => {
@@ -215,7 +216,7 @@ router.get('/date-notes/:date', authMiddleware, (req, res) => {
 });
 
 // POST /projects/:projectId/date-notes/:date
-router.post('/date-notes/:date', authMiddleware, (req, res) => {
+router.post('/date-notes/:date', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId, date } = req.params;
   const userId = req.user.id;
   const { content } = req.body;
@@ -235,7 +236,7 @@ router.post('/date-notes/:date', authMiddleware, (req, res) => {
 });
 
 // DELETE /projects/:projectId/date-notes/:noteId
-router.delete('/date-notes/:noteId', authMiddleware, (req, res) => {
+router.delete('/date-notes/:noteId', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId, noteId } = req.params;
   const userId = req.user.id;
 

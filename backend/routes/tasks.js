@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router({ mergeParams: true });
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { ensureProjectActive } = require('../middleware/projectStatus');
 const { logActivity } = require('../utils/activityLogger');
 const { sendNotificationEmail } = require('../utils/mailer');
  
@@ -142,7 +143,7 @@ router.get('/export', authMiddleware, (req, res) => {
 });
 
 // POST /projects/:projectId/tasks/import
-router.post('/import', authMiddleware, (req, res) => {
+router.post('/import', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId } = req.params;
   const { csv } = req.body || {};
   const createdBy = req.user.id;
@@ -202,7 +203,7 @@ router.get('/:id/comments', authMiddleware, (req, res) => {
 });
 
 // POST /projects/:projectId/tasks/:id/comments
-router.post('/:id/comments', authMiddleware, (req, res) => {
+router.post('/:id/comments', authMiddleware, ensureProjectActive, (req, res) => {
   const { id } = req.params;
   const { content } = req.body;
   const userId = req.user.id;
@@ -223,7 +224,7 @@ router.post('/:id/comments', authMiddleware, (req, res) => {
 });
 
 // POST / — Créer une tâche
-router.post('/', authMiddleware, (req, res) => {
+router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId } = req.params;
   const { title, description, parent_id, phase, priority, start_date, due_date, assigned_to, color } = req.body;
   const createdBy = req.user.id;
@@ -260,7 +261,7 @@ router.post('/', authMiddleware, (req, res) => {
 });
 
 // PATCH /:id — Modifier une tâche
-router.patch('/:id', authMiddleware, (req, res) => {
+router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
   const { id, projectId } = req.params;
   const userId = req.user.id;
   const updates = [];
@@ -316,7 +317,7 @@ router.patch('/:id', authMiddleware, (req, res) => {
 });
 
 // DELETE /clear — Vider toutes les tâches d'un projet
-router.delete('/clear', authMiddleware, (req, res) => {
+router.delete('/clear', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId } = req.params;
   db.run('DELETE FROM tasks WHERE project_id = ?', [projectId], async (err) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -326,7 +327,7 @@ router.delete('/clear', authMiddleware, (req, res) => {
 });
 
 // DELETE /:id — Supprimer une tâche
-router.delete('/:id', authMiddleware, (req, res) => {
+router.delete('/:id', authMiddleware, ensureProjectActive, (req, res) => {
   const { id, projectId } = req.params;
   
   // Get parent_id before deleting

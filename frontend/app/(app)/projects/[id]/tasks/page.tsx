@@ -2,6 +2,7 @@
 import { useState, useEffect, use } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProject } from '../ProjectContext';
 
 const KANBAN_COLUMNS = [
   { key: 'todo', label: 'À faire', accent: 'bg-stone-700', soft: 'bg-stone-100 text-stone-700' },
@@ -16,6 +17,8 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
   const { user } = useAuth();
+  const project = useProject();
+  const isReadOnly = project.status !== 'active';
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
@@ -148,6 +151,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (isReadOnly) return;
     setSaving(true);
     try {
       const payload: any = {
@@ -182,6 +186,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   }
 
   async function handleDelete(id: number) {
+    if (isReadOnly) return;
     if (!confirm('Supprimer cette tâche ? (Les sous-tâches seront supprimées)')) return;
     try {
       await api.delete(`/projects/${projectId}/tasks/${id}`);
@@ -193,7 +198,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
   async function handleCommentSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedTask || !newComment.trim()) return;
+    if (isReadOnly || !selectedTask || !newComment.trim()) return;
 
     setCommentSaving(true);
     try {
@@ -222,6 +227,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   };
 
   async function handleClearProject() {
+    if (isReadOnly) return;
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer TOUTES les tâches et fonctionnalités de ce projet ? Cette action est irréversible.')) {
       return;
     }
@@ -237,6 +243,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   
 
   async function toggleStatus(task: any) {
+    if (isReadOnly) return;
     const newStatus = task.status === 'done' ? 'todo' : 'done';
     try {
       await api.patch(`/projects/${projectId}/tasks/${task.id}`, { status: newStatus });
@@ -247,6 +254,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   }
 
   async function moveTaskToStatus(taskId: number, newStatus: string) {
+    if (isReadOnly) return;
     const currentTask = tasks.find((task) => task.id === taskId);
     if (!currentTask || currentTask.status === newStatus) return;
 
@@ -367,22 +375,24 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
               </span>
             )}
             
-            <div className="flex items-center gap-3 lg:opacity-0 lg:group-hover:opacity-100 transition-all ml-auto lg:ml-0">
-              {isFeature && (
-                <button onClick={(e) => { e.stopPropagation(); openCreateTask(task.id); }} className="text-orange-600 hover:text-orange-700 active:scale-95 transition-transform" title="Ajouter une tâche">
-                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            {!isReadOnly && (
+              <div className="flex items-center gap-3 lg:opacity-0 lg:group-hover:opacity-100 transition-all ml-auto lg:ml-0">
+                {isFeature && (
+                  <button onClick={(e) => { e.stopPropagation(); openCreateTask(task.id); }} className="text-orange-600 hover:text-orange-700 active:scale-95 transition-transform" title="Ajouter une tâche">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                  </button>
+                )}
+                <button onClick={(e) => { e.stopPropagation(); openEditModal(task); }} className="text-stone-400 hover:text-blue-500 active:scale-95 transition-transform" title="Modifier">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 </button>
-              )}
-              <button onClick={(e) => { e.stopPropagation(); openHistoryModal(task); }} className="text-stone-400 hover:text-stone-900 active:scale-95 transition-transform" title="Historique">
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); openEditModal(task); }} className="text-stone-400 hover:text-blue-500 active:scale-95 transition-transform" title="Modifier">
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              </button>
-              <button onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }} className="text-stone-400 hover:text-red-500 active:scale-95 transition-transform" title="Supprimer">
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-              </button>
-            </div>
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(task.id); }} className="text-stone-400 hover:text-red-500 active:scale-95 transition-transform" title="Supprimer">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
+              </div>
+            )}
+            <button onClick={(e) => { e.stopPropagation(); openHistoryModal(task); }} className={`text-stone-400 hover:text-stone-900 active:scale-95 transition-transform ${isReadOnly ? 'ml-auto' : ''}`} title="Historique">
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -445,12 +455,16 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             <button onClick={() => openHistoryModal(task)} className="rounded-lg px-2 py-1 text-xs font-semibold text-stone-600 transition-colors hover:bg-stone-200 bg-stone-100" title="Historique d'avancement">
               Historique
             </button>
-            <button onClick={() => openEditModal(task)} className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-blue-50 hover:text-blue-500" title="Modifier">
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            </button>
-            <button onClick={() => handleDelete(task.id)} className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500" title="Supprimer">
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-            </button>
+            {!isReadOnly && (
+              <>
+                <button onClick={() => openEditModal(task)} className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-blue-50 hover:text-blue-500" title="Modifier">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </button>
+                <button onClick={() => handleDelete(task.id)} className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-red-50 hover:text-red-500" title="Supprimer">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -492,17 +506,21 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
            </div>
            
            <div className="flex items-center gap-2 w-full sm:w-auto">
-             <button onClick={() => openCreateTask()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-stone-200 hover:border-stone-300 text-stone-700 font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-sm">
-                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                Tâche
-             </button>
-             <button onClick={() => openCreateFeature()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-orange-500/20">
-                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                 <span>Fonc.</span>
-              </button>
-              <button onClick={handleClearProject} className="flex h-10 w-10 shrink-0 items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-xl transition-all active:scale-95 shadow-sm" title="Vider le projet">
-                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-              </button>
+             {!isReadOnly && (
+               <>
+                 <button onClick={() => openCreateTask()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-stone-200 hover:border-stone-300 text-stone-700 font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-sm">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                    Tâche
+                 </button>
+                 <button onClick={() => openCreateFeature()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-orange-500/20">
+                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                     <span>Fonc.</span>
+                  </button>
+                  <button onClick={handleClearProject} className="flex h-10 w-10 shrink-0 items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-xl transition-all active:scale-95 shadow-sm" title="Vider le projet">
+                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                  </button>
+               </>
+             )}
            </div>
         </div>
       </div>

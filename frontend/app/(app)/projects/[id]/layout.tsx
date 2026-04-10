@@ -43,8 +43,21 @@ export default function ProjectLayout({ children, params }: { children: React.Re
     }
   }
 
+  async function handleRestore() {
+    try {
+      await api.patch(`/projects/${projectId}/restore`, {});
+      // Re-fetch project to update status
+      const p = await api.get(`/projects/${projectId}`);
+      setProject(p);
+    } catch (err) {
+      console.error('Failed to restore project', err);
+    }
+  }
+
   if (loading) return <div className="p-8"><div className="animate-pulse h-10 bg-stone-200 rounded-xl w-64 mb-6"></div></div>;
   if (!project) return null;
+
+  const isReadOnly = project.status !== 'active';
 
   const tabs = [
     { name: 'Dashboard', path: `/projects/${projectId}` },
@@ -88,7 +101,15 @@ export default function ProjectLayout({ children, params }: { children: React.Re
                     </svg>
                   </button>
                 </div>
-                <p className="hidden lg:block text-[10px] lg:text-xs text-stone-400 font-bold uppercase tracking-widest mt-1 truncate max-w-xl">{project.description || 'Projet sans description'}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  {project.status === 'completed' && (
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-wider rounded-md border border-amber-200">Archivé</span>
+                  )}
+                  {project.status === 'deleted' && (
+                    <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-black uppercase tracking-wider rounded-md border border-red-200">Corbeille</span>
+                  )}
+                  <p className="hidden lg:block text-[10px] lg:text-xs text-stone-400 font-bold uppercase tracking-widest truncate max-w-xl">{project.description || 'Projet sans description'}</p>
+                </div>
               </div>
             </div>
             
@@ -129,6 +150,30 @@ export default function ProjectLayout({ children, params }: { children: React.Re
             })}
           </nav>
         </header>
+
+        {/* Status Warning Banner */}
+        {isReadOnly && (
+          <div className={`px-4 lg:px-8 py-3 flex items-center justify-between gap-4 animate-slideDown ${project.status === 'completed' ? 'bg-amber-500' : 'bg-red-600'} text-white shadow-inner`}>
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm shrink-0">
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <p className="text-sm font-bold tracking-tight">
+                {project.status === 'completed' 
+                  ? "Ce projet est archivé. Les modifications sont désactivées." 
+                  : "Ce projet est dans la corbeille. Restaurez-le pour effectuer des modifications."}
+              </p>
+            </div>
+            <button 
+              onClick={handleRestore}
+              className="px-4 py-1.5 bg-white text-stone-900 rounded-lg text-xs font-black uppercase tracking-wider hover:bg-stone-100 transition-all active:scale-95 shadow-sm"
+            >
+              Restaurer
+            </button>
+          </div>
+        )}
 
         {/* Pages content */}
         <div className="flex-1 overflow-auto">

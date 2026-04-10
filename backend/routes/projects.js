@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const { ensureProjectActive } = require('../middleware/projectStatus');
 const { logActivity } = require('../utils/activityLogger');
 const { sendMemberAdded, sendProjectInvitation, sendOwnershipTransferred } = require('../utils/mailer');
 const { checkProjectLimit, checkCollaboratorLimit } = require('../middleware/planLimits');
@@ -412,7 +413,7 @@ function canManageMembers(userId, projectId, cb) {
 }
 
 // POST /projects/:id/members — ajouter un membre (admin/proprio) ou inviter par email
-router.post('/:id/members', authMiddleware, checkCollaboratorLimit, (req, res) => {
+router.post('/:id/members', authMiddleware, ensureProjectActive, checkCollaboratorLimit, (req, res) => {
   const projectId = Number(req.params.id);
   const currentUserId = req.user.id;
   const { userId, roleId, email } = req.body || {};
@@ -529,8 +530,8 @@ router.post('/:id/members', authMiddleware, checkCollaboratorLimit, (req, res) =
   });
 });
 
-// PATCH /projects/:id/members/:userId â€” changer le rÃ´le (admin/proprio)
-router.patch('/:id/members/:userId', authMiddleware, (req, res) => {
+// PATCH /projects/:id/members/:userId — changer le rôle (admin/proprio)
+router.patch('/:id/members/:userId', authMiddleware, ensureProjectActive, (req, res) => {
   const projectId = Number(req.params.id);
   const targetUserId = Number(req.params.userId);
   const currentUserId = req.user.id;
@@ -540,7 +541,7 @@ router.patch('/:id/members/:userId', authMiddleware, (req, res) => {
 
   canManageMembers(currentUserId, projectId, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
-    if (!perm.allowed) return res.status(403).json({ error: 'AccÃ¨s refusÃ©' });
+    if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
     db.run(
       'UPDATE project_members SET role_id = ? WHERE project_id = ? AND user_id = ?',
@@ -554,20 +555,20 @@ router.patch('/:id/members/:userId', authMiddleware, (req, res) => {
   });
 });
 
-// DELETE /projects/:id/members/:userId â€” retirer un membre (admin/proprio)
-router.delete('/:id/members/:userId', authMiddleware, (req, res) => {
+// DELETE /projects/:id/members/:userId — retirer un membre (admin/proprio)
+router.delete('/:id/members/:userId', authMiddleware, ensureProjectActive, (req, res) => {
   const projectId = Number(req.params.id);
   const targetUserId = Number(req.params.userId);
   const currentUserId = req.user.id;
 
   canManageMembers(currentUserId, projectId, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
-    if (!perm.allowed) return res.status(403).json({ error: 'AccÃ¨s refusÃ©' });
+    if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
     db.get('SELECT owner_id FROM projects WHERE id = ?', [projectId], (pErr, project) => {
       if (pErr) return res.status(500).json({ error: pErr.message });
-      if (!project) return res.status(404).json({ error: 'Projet non trouvÃ©' });
-      if (project.owner_id === targetUserId) return res.status(400).json({ error: 'Impossible de retirer le propriÃ©taire' });
+      if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
+      if (project.owner_id === targetUserId) return res.status(400).json({ error: 'Impossible de retirer le propriétaire' });
 
       db.run(
         'DELETE FROM project_members WHERE project_id = ? AND user_id = ?',
@@ -585,7 +586,7 @@ router.delete('/:id/members/:userId', authMiddleware, (req, res) => {
 
 
 // PATCH /projects/:id/complete — terminer un projet
-router.patch('/:id/complete', authMiddleware, (req, res) => {
+router.patch('/:id/complete', authMiddleware, ensureProjectActive, (req, res) => {
   const projectId = Number(req.params.id);
   const userId = req.user.id;
 
@@ -606,7 +607,7 @@ router.patch('/:id/complete', authMiddleware, (req, res) => {
 });
 
 // PATCH /projects/:id — modifier les informations du projet
-router.patch('/:id', authMiddleware, (req, res) => {
+router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
   const projectId = Number(req.params.id);
   const userId = req.user.id;
   const { title, description, deadline, avatar } = req.body;
@@ -634,7 +635,7 @@ router.patch('/:id', authMiddleware, (req, res) => {
 });
 
 // DELETE /projects/:id — supprimer un projet SOFT DELETE (Propriétaire uniquement)
-router.delete('/:id', authMiddleware, (req, res) => {
+router.delete('/:id', authMiddleware, ensureProjectActive, (req, res) => {
   const projectId = Number(req.params.id);
   const userId = req.user.id;
 
@@ -719,7 +720,7 @@ router.get('/:id/activities', authMiddleware, (req, res) => {
 // --- SHARE LINKS ---
 
 // POST /projects/:id/share-links — créer un lien de partage
-router.post('/:id/share-links', authMiddleware, (req, res) => {
+router.post('/:id/share-links', authMiddleware, ensureProjectActive, (req, res) => {
   const projectId = Number(req.params.id);
   const { roleId } = req.body || {};
 
