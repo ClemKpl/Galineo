@@ -49,7 +49,7 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
             </svg>
           </button>
           <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 rounded-full px-4 py-1.5 mb-4">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#f97316"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" className="fill-orange-500"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span className="text-orange-400 text-xs font-bold uppercase tracking-wider">Choisissez votre forfait</span>
           </div>
           <h2 className="text-white text-2xl font-bold mb-2">Passez à la vitesse supérieure</h2>
@@ -141,7 +141,7 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
                     <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                       Passer à Premium
                     </>
                   )}

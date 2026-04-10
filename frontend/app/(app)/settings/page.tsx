@@ -385,7 +385,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => window.dispatchEvent(new Event('open-pricing'))}
-                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg shadow-orange-100 transition-all active:scale-95 text-sm"
+                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg shadow-orange-100 transition-all active:scale-95 text-sm"
               >
                 Passer à Premium
               </button>

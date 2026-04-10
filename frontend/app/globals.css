@@ -58,6 +58,16 @@ html, body {
 [data-accent="blue"] .from-orange-400 { --tw-gradient-from: #60a5fa var(--tw-gradient-from-position) !important; }
 [data-accent="blue"] .to-orange-600   { --tw-gradient-to:   #2563eb var(--tw-gradient-to-position)   !important; }
 [data-accent="blue"] .bg-orange-500\/20 { background-color: rgb(59 130 246 / 0.2) !important; }
+[data-accent="blue"] .shadow-orange-100 { --tw-shadow-color: rgb(59 130 246 / 0.1) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent="blue"] .shadow-orange-200 { --tw-shadow-color: rgb(59 130 246 / 0.2) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent="blue"] .from-orange-500 { --tw-gradient-from: #3b82f6 var(--tw-gradient-from-position) !important; }
+[data-accent="blue"] .to-orange-500   { --tw-gradient-to:   #3b82f6 var(--tw-gradient-to-position) !important; }
+[data-accent="blue"] .from-orange-500\/20 { --tw-gradient-from: rgb(59 130 246 / 0.2) var(--tw-gradient-from-position) !important; }
+[data-accent="blue"] .to-orange-500\/10   { --tw-gradient-to:   rgb(59 130 246 / 0.1) var(--tw-gradient-to-position) !important; }
+[data-accent="blue"] .border-orange-500\/20 { border-color: rgb(59 130 246 / 0.2) !important; }
+[data-accent="blue"] .border-orange-500\/30 { border-color: rgb(59 130 246 / 0.3) !important; }
+[data-accent="blue"] .text-orange-300 { color: #93c5fd !important; }
+[data-accent="blue"] .hover\:text-orange-300:hover { color: #93c5fd !important; }
 [data-accent="blue"] .accent-orange-500 { accent-color: #3b82f6 !important; }
 
 /* ── Violet ── */
@@ -83,6 +93,16 @@ html, body {
 [data-accent="violet"] .from-orange-400 { --tw-gradient-from: #a78bfa var(--tw-gradient-from-position) !important; }
 [data-accent="violet"] .to-orange-600   { --tw-gradient-to:   #7c3aed var(--tw-gradient-to-position)   !important; }
 [data-accent="violet"] .bg-orange-500\/20 { background-color: rgb(139 92 246 / 0.2) !important; }
+[data-accent="violet"] .shadow-orange-100 { --tw-shadow-color: rgb(139 92 246 / 0.1) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent="violet"] .shadow-orange-200 { --tw-shadow-color: rgb(139 92 246 / 0.2) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent="violet"] .from-orange-500 { --tw-gradient-from: #8b5cf6 var(--tw-gradient-from-position) !important; }
+[data-accent="violet"] .to-orange-500   { --tw-gradient-to:   #8b5cf6 var(--tw-gradient-to-position) !important; }
+[data-accent="violet"] .from-orange-500\/20 { --tw-gradient-from: rgb(139 92 246 / 0.2) var(--tw-gradient-from-position) !important; }
+[data-accent="violet"] .to-orange-500\/10   { --tw-gradient-to:   rgb(139 92 246 / 0.1) var(--tw-gradient-to-position) !important; }
+[data-accent="violet"] .border-orange-500\/20 { border-color: rgb(139 92 246 / 0.2) !important; }
+[data-accent="violet"] .border-orange-500\/30 { border-color: rgb(139 92 246 / 0.3) !important; }
+[data-accent="violet"] .text-orange-300 { color: #c4b5fd !important; }
+[data-accent="violet"] .hover\:text-orange-300:hover { color: #c4b5fd !important; }
 [data-accent="violet"] .accent-orange-500 { accent-color: #8b5cf6 !important; }
 
 /* ── Emerald ── */
@@ -108,6 +128,16 @@ html, body {
 [data-accent="emerald"] .from-orange-400 { --tw-gradient-from: #34d399 var(--tw-gradient-from-position) !important; }
 [data-accent="emerald"] .to-orange-600   { --tw-gradient-to:   #059669 var(--tw-gradient-to-position)   !important; }
 [data-accent="emerald"] .bg-orange-500\/20 { background-color: rgb(16 185 129 / 0.2) !important; }
+[data-accent="emerald"] .shadow-orange-100 { --tw-shadow-color: rgb(16 185 129 / 0.1) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent="emerald"] .shadow-orange-200 { --tw-shadow-color: rgb(16 185 129 / 0.2) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent="emerald"] .from-orange-500 { --tw-gradient-from: #10b981 var(--tw-gradient-from-position) !important; }
+[data-accent="emerald"] .to-orange-500   { --tw-gradient-to:   #10b981 var(--tw-gradient-to-position) !important; }
+[data-accent="emerald"] .from-orange-500\/20 { --tw-gradient-from: rgb(16 185 129 / 0.2) var(--tw-gradient-from-position) !important; }
+[data-accent="emerald"] .to-orange-500\/10   { --tw-gradient-to:   rgb(16 185 129 / 0.1) var(--tw-gradient-to-position) !important; }
+[data-accent="emerald"] .border-orange-500\/20 { border-color: rgb(16 185 129 / 0.2) !important; }
+[data-accent="emerald"] .border-orange-500\/30 { border-color: rgb(16 185 129 / 0.3) !important; }
+[data-accent="emerald"] .text-orange-300 { color: #6ee7b7 !important; }
+[data-accent="emerald"] .hover\:text-orange-300:hover { color: #6ee7b7 !important; }
 [data-accent="emerald"] .accent-orange-500 { accent-color: #10b981 !important; }
 
 /* ── Rose ── */
@@ -133,6 +163,16 @@ html, body {
 [data-accent="rose"] .from-orange-400 { --tw-gradient-from: #fb7185 var(--tw-gradient-from-position) !important; }
 [data-accent="rose"] .to-orange-600   { --tw-gradient-to:   #e11d48 var(--tw-gradient-to-position)   !important; }
 [data-accent="rose"] .bg-orange-500\/20 { background-color: rgb(244 63 94 / 0.2) !important; }
+[data-accent="rose"] .shadow-orange-100 { --tw-shadow-color: rgb(244 63 94 / 0.1) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent="rose"] .shadow-orange-200 { --tw-shadow-color: rgb(244 63 94 / 0.2) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent="rose"] .from-orange-500 { --tw-gradient-from: #f43f5e var(--tw-gradient-from-position) !important; }
+[data-accent="rose"] .to-orange-500   { --tw-gradient-to:   #f43f5e var(--tw-gradient-to-position) !important; }
+[data-accent="rose"] .from-orange-500\/20 { --tw-gradient-from: rgb(244 63 94 / 0.2) var(--tw-gradient-from-position) !important; }
+[data-accent="rose"] .to-orange-500\/10   { --tw-gradient-to:   rgb(244 63 94 / 0.1) var(--tw-gradient-to-position) !important; }
+[data-accent="rose"] .border-orange-500\/20 { border-color: rgb(244 63 94 / 0.2) !important; }
+[data-accent="rose"] .border-orange-500\/30 { border-color: rgb(244 63 94 / 0.3) !important; }
+[data-accent="rose"] .text-orange-300 { color: #fda4af !important; }
+[data-accent="rose"] .hover\:text-orange-300:hover { color: #fda4af !important; }
 [data-accent="rose"] .accent-orange-500 { accent-color: #f43f5e !important; }
 
 
