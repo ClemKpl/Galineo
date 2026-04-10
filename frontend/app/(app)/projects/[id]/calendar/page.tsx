@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, use } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import { startOfDay } from 'date-fns';
 
 type CalendarTask = {
@@ -102,6 +103,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   const [assignedTo, setAssignedTo] = useState('');
   const [parentId, setParentId] = useState('');
   const [color, setColor] = useState('#f97316');
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchData();
@@ -164,8 +166,9 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
       const notesData = await api.get(`/projects/${projectId}/events/date-notes/${dayPanelDate}`);
       setDayNotes(Array.isArray(notesData) ? notesData : []);
       setNoteInput('');
+      showToast("Note ajoutée", "success");
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     } finally {
       setNoteLoading(false);
     }
@@ -176,8 +179,9 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     try {
       await api.delete(`/projects/${projectId}/events/date-notes/${noteId}`);
       setDayNotes((prev) => prev.filter((n) => n.id !== noteId));
+      showToast("Note supprimée", "info");
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     }
   }
 
@@ -343,9 +347,10 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     });
 
     if (!response.ok) {
-      alert('Erreur lors de l’export');
+      showToast('Erreur lors de l’export', 'error');
       return;
     }
+    showToast('Export CSV réussi', 'success');
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -368,9 +373,10 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
       if (typeof csv !== 'string') return;
       try {
         await api.post(`/projects/${projectId}/tasks/import`, { csv });
+        showToast('Import réussi', 'success');
         fetchData(true);
       } catch (err) {
-        alert((err as Error).message);
+        showToast((err as Error).message, 'error');
       }
     };
     reader.readAsText(file);
@@ -401,9 +407,10 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
 
       await api.patch(`/projects/${projectId}/tasks/${editingTask.id}`, payload);
       setEditingTask(null);
+      showToast("Tâche mise à jour", "success");
       fetchData(true);
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     }
   }
 
@@ -439,9 +446,10 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
         start_date: formatDateInput(newStart),
         due_date: formatDateInput(newDue),
       });
+      showToast("Tâche replanifiée", "success");
       fetchData(true);
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     } finally {
       setDraggingTaskId(null);
     }

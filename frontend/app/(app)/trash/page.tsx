@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/contexts/ToastContext';
 
 interface Project {
   id: number;
@@ -19,6 +20,7 @@ export default function TrashPage() {
   const [loading, setLoading] = useState(true);
   const [emptyingTrash, setEmptyingTrash] = useState(false);
   const router = useRouter();
+  const { showToast } = useToast();
 
   const fetchTrash = useCallback(async () => {
     try {
@@ -40,10 +42,11 @@ export default function TrashPage() {
     if (!confirm('Voulez-vous restaurer ce projet et le rendre actif ?')) return;
     try {
       await api.patch(`/projects/${id}/restore`, {});
+      showToast("Projet restauré", "success");
       window.dispatchEvent(new Event('project-updated'));
       fetchTrash();
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     }
   };
 
@@ -52,9 +55,10 @@ export default function TrashPage() {
     if (!confirm('ATTENTION : Voulez-vous supprimer ce projet de façon DÉFINITIVE ? Cette action est irréversible.')) return;
     try {
       await api.delete(`/projects/${id}/hard`);
+      showToast("Projet définitivement supprimé", "info");
       fetchTrash();
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     }
   };
 
@@ -65,9 +69,10 @@ export default function TrashPage() {
     setEmptyingTrash(true);
     try {
       await api.delete('/projects/trash/empty');
+      showToast("La corbeille a été vidée", "success");
       fetchTrash();
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     } finally {
       setEmptyingTrash(false);
     }

@@ -22,7 +22,7 @@ export default function Toast({ message, type = 'success', onClose, duration = 3
 
   return (
     <div className={`fixed z-[999] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium animate-[fadeUp_0.3s_ease-out] ${bgClass}
-      bottom-20 left-4 right-4 sm:right-auto sm:max-w-md
+      bottom-24 left-4 right-4 sm:right-auto sm:max-w-md
       lg:left-[calc(16rem+1.5rem)] lg:bottom-6
     `}>
       {type === 'success' && (

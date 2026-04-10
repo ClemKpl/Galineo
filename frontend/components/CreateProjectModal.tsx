@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useTheme } from '@/components/ThemeProvider';
+import { useToast } from '@/contexts/ToastContext';
 
 const ACCENT_BG: Record<string, string> = {
   orange:  'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20 hover:shadow-orange-500/30',
@@ -96,6 +97,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
   const [wizardLoading, setWizardLoading] = useState(false);
   const wizardEndRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     api.get('/roles').then(setRoles).catch(console.error);
@@ -158,6 +160,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
         // Redirection automatique si le projet vient d'être créé par l'IA en arrière-plan
         if (res.task && res.task.status === 'completed' && res.task.project_id && wizardLoading) {
            setWizardLoading(false);
+           showToast(`Projet créé avec succès par l'Assistant ✨`, 'success');
            setTimeout(() => onCreated(res.task.project_id), 1500);
         }
 
@@ -233,6 +236,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
         avatar: avatar || null,
         members: members.map((m) => ({ userId: m.user.id, roleId: m.roleId })),
       });
+      showToast(`Le projet « ${title.trim()} » a été créé !`, 'success');
       onCreated(res.id);
     } catch (err: unknown) {
       setError((err as Error).message);

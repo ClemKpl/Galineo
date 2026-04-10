@@ -3,6 +3,7 @@ import { useState, useEffect, use } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProject } from '../ProjectContext';
+import { useToast } from '@/contexts/ToastContext';
 
 const KANBAN_COLUMNS = [
   { key: 'todo', label: 'À faire', accent: 'bg-stone-700', soft: 'bg-stone-100 text-stone-700' },
@@ -57,6 +58,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const [commentSaving, setCommentSaving] = useState(false);
   
   const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchData();
@@ -176,10 +178,11 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
       } else {
         await api.post(`/projects/${projectId}/tasks`, payload);
       }
+      showToast(editingTask ? "Modifications enregistrées" : (parentId ? "Tâche ajoutée !" : "Fonctionnalité créée !"), "success");
       setShowModal(false);
       fetchData();
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     } finally {
       setSaving(false);
     }
@@ -190,9 +193,10 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     if (!confirm('Supprimer cette tâche ? (Les sous-tâches seront supprimées)')) return;
     try {
       await api.delete(`/projects/${projectId}/tasks/${id}`);
+      showToast("Élément supprimé", "success");
       fetchData();
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     }
   }
 
@@ -207,8 +211,9 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
       });
       setTaskComments((current) => [createdComment, ...current]);
       setNewComment('');
+      showToast("Commentaire ajouté", "success");
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     } finally {
       setCommentSaving(false);
     }
@@ -234,9 +239,10 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     
     try {
       await api.delete(`/projects/${projectId}/tasks/clear`);
+      showToast("Le projet a été vidé", "success");
       fetchData();
     } catch (err) {
-      alert("Erreur lors de la suppression");
+      showToast("Erreur lors de la suppression", "error");
       console.error(err);
     }
   }
@@ -247,8 +253,10 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
     const newStatus = task.status === 'done' ? 'todo' : 'done';
     try {
       await api.patch(`/projects/${projectId}/tasks/${task.id}`, { status: newStatus });
+      showToast(`Statut : ${KANBAN_COLUMNS.find(c => c.key === newStatus)?.label}`, "success");
       fetchData();
     } catch (err) {
+      showToast("Erreur lors du changement de statut", "error");
       console.error(err);
     }
   }
@@ -267,8 +275,10 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
 
     try {
       await api.patch(`/projects/${projectId}/tasks/${taskId}`, { status: newStatus });
+      showToast(`Tâche déplacée : ${KANBAN_COLUMNS.find(c => c.key === newStatus)?.label}`, "success");
     } catch (err) {
       setTasks(previousTasks);
+      showToast("Erreur lors du déplacement", "error");
       console.error(err);
     }
   }

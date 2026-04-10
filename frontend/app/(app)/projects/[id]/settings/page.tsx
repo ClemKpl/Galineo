@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import ManageMembersModal from '@/components/ManageMembersModal';
 import LeaveProjectModal from '@/components/LeaveProjectModal';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -25,6 +26,7 @@ export default function ProjectSettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [aiSettings, setAiSettings] = useState({ allow_create: 1, allow_modify: 1, allow_members: 1, allow_delete: 0 });
   const [aiLoading, setAiLoading] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     async function loadAiSettings() {
@@ -41,8 +43,9 @@ export default function ProjectSettingsPage() {
     setAiSettings(newSettings);
     try {
       await api.patch(`/projects/${project.id}/ai-settings`, newSettings);
+      showToast("Permissions IA mises à jour", "success");
     } catch (err) {
-      alert("Erreur lors de la mise à jour des permissions IA");
+      showToast("Erreur lors de la mise à jour des permissions IA", "error");
     }
   }
 
@@ -51,11 +54,11 @@ export default function ProjectSettingsPage() {
     setSaving(true);
     try {
       await api.patch(`/projects/${project.id}`, { title, description, deadline: deadline || null, avatar: projectAvatar || null });
-      alert('Projet mis à jour avec succès !');
+      showToast('Paramètres mis à jour !', 'success');
       // On rafraîchit la page pour mettre à jour le context
-      window.location.reload();
+      setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, 'error');
     } finally {
       setSaving(false);
     }
@@ -68,11 +71,12 @@ export default function ProjectSettingsPage() {
       setIsDeleting(true);
       try {
         await api.delete(`/projects/${project.id}`);
+        showToast("Projet supprimé", "info");
         // Déclencher le rafraîchissement global de la sidebar
         window.dispatchEvent(new Event('projects-refresh'));
         router.push('/dashboard');
       } catch (err) {
-        alert((err as Error).message);
+        showToast((err as Error).message, "error");
         setIsDeleting(false);
       }
     }
@@ -83,11 +87,12 @@ export default function ProjectSettingsPage() {
     if (confirmation) {
       try {
         await api.patch(`/projects/${project.id}/complete`, {});
+        showToast("Projet archivé", "info");
         // Déclencher le rafraîchissement global de la sidebar
         window.dispatchEvent(new Event('projects-refresh'));
         router.push('/dashboard');
       } catch (err) {
-        alert((err as Error).message);
+        showToast((err as Error).message, "error");
       }
     }
   }
@@ -308,14 +313,6 @@ export default function ProjectSettingsPage() {
           onChanged={() => {}}
         />
       )}
-
-      {showMembersModal && (
-        <ManageMembersModal 
-          projectId={project.id} 
-          onClose={() => setShowMembersModal(false)}
-          onChanged={() => {}}
-        />
-      )}
     </div>
   );
 }
@@ -349,6 +346,9 @@ function ShareLinksSection({ projectId }: { projectId: number }) {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
+  const [saving, setSaving] = useState(false);
+  const { showToast } = useToast();
+ 
   useEffect(() => {
     fetchLinks();
   }, [projectId]);
@@ -368,9 +368,10 @@ function ShareLinksSection({ projectId }: { projectId: number }) {
     setCreating(true);
     try {
       await api.post(`/projects/${projectId}/share-links`, { roleId: 3 });
+      showToast("Lien de partage généré", "success");
       await fetchLinks();
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     } finally {
       setCreating(false);
     }
@@ -380,16 +381,17 @@ function ShareLinksSection({ projectId }: { projectId: number }) {
     if (!confirm('Révoquer ce lien ? Il ne sera plus utilisable.')) return;
     try {
       await api.delete(`/projects/share-links/${id}`);
+      showToast("Lien révoqué", "info");
       await fetchLinks();
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, "error");
     }
   }
 
   function copyToClipboard(token: string) {
     const url = `${window.location.origin}/join/${token}`;
     navigator.clipboard.writeText(url);
-    alert('Lien copié dans le presse-papiers !');
+    showToast('Lien copié !', 'success');
   }
 
   return (

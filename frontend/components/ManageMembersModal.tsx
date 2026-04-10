@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
+import { useToast } from '@/contexts/ToastContext';
 
 type Role = { id: number; name: string };
 type UserLite = { id: number; name: string; email: string };
@@ -28,6 +29,7 @@ export default function ManageMembersModal({
   const [selectedRoleId, setSelectedRoleId] = useState<number>(3);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const getErrorMessage = (e: unknown) => {
     if (e instanceof Error) return e.message;
@@ -116,6 +118,7 @@ export default function ManageMembersModal({
       setSearch('');
       setSearchResults([]);
       await refreshMembers();
+      showToast(selectedUser ? `${selectedUser.name} ajouté !` : "Invitation envoyée par email", "success");
       onChanged?.();
     } catch (e: unknown) {
       setError(getErrorMessage(e));
@@ -130,6 +133,7 @@ export default function ManageMembersModal({
     setError(null);
     try {
       await api.delete(`/projects/${projectId}/invitations/${invitationId}`);
+      showToast("Invitation révoquée", "info");
       await refreshMembers();
     } catch (e: unknown) {
       setError(getErrorMessage(e));
@@ -144,6 +148,7 @@ export default function ManageMembersModal({
     setError(null);
     try {
       await api.delete(`/projects/${projectId}/members/${userId}`);
+      showToast("Membre retiré du projet", "info");
       await refreshMembers();
       onChanged?.();
       // Notifier la sidebar car si l'utilisateur se retire lui-même, il faut actualiser la liste
@@ -160,6 +165,7 @@ export default function ManageMembersModal({
     setError(null);
     try {
       await api.patch(`/projects/${projectId}/members/${userId}`, { roleId });
+      showToast("Rôle mis à jour", "success");
       await refreshMembers();
       onChanged?.();
     } catch (e: unknown) {

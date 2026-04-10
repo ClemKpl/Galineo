@@ -533,9 +533,12 @@ export default function DashboardPage() {
               e.preventDefault();
               try {
                 await api.patch(`/projects/${draggingProjectId}/complete`, {});
+                showToast("Projet archivé", "info");
                 setDraggingProjectId(null);
                 fetchProjects();
-              } catch (err) { alert("Erreur lors de l'archivage"); }
+              } catch (err) { 
+                showToast("Erreur lors de l'archivage", "error"); 
+              }
             }}
             className="w-40 h-40 rounded-3xl bg-white/80 backdrop-blur-xl border-2 border-dashed border-stone-200 flex flex-col items-center justify-center gap-3 group/zone hover:border-emerald-500 hover:bg-emerald-50/50 transition-all shadow-xl shadow-stone-200/50"
           >
@@ -551,9 +554,13 @@ export default function DashboardPage() {
               if (window.confirm("Voulez-vous vraiment mettre ce projet à la corbeille ?")) {
                 try {
                   await api.delete(`/projects/${draggingProjectId}`);
+                  showToast("Projet mis à la corbeille", "info");
                   setDraggingProjectId(null);
                   fetchProjects();
-                } catch (err) { alert("Action réservée au propriétaire"); setDraggingProjectId(null); }
+                } catch (err) { 
+                  showToast("Action réservée au propriétaire", "error"); 
+                  setDraggingProjectId(null); 
+                }
               }
             }}
             className="w-40 h-40 rounded-3xl bg-white/80 backdrop-blur-xl border-2 border-dashed border-stone-200 flex flex-col items-center justify-center gap-3 group/zone hover:border-red-500 hover:bg-red-50/50 transition-all shadow-xl shadow-stone-200/50"
