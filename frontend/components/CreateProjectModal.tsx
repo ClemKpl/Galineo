@@ -264,6 +264,18 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
     }
   };
 
+  const handleResetWizard = async () => {
+    if (wizardLoading || !confirm("Réinitialiser la conversation avec l'Assistant ?")) return;
+    try {
+      await api.delete('/ai/history/wizard');
+      setWizardMessages([
+        { role: 'assistant', content: "D'accord, repartons sur de nouvelles bases ! ✨\n\nQuel est le **nom** de ce nouveau projet ?" }
+      ]);
+    } catch (err) {
+      console.error('Failed to reset wizard', err);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-end">
       <div className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
@@ -290,11 +302,24 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 hover:bg-stone-50 p-2 rounded-xl transition-colors">
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            {view === 'wizard' && (
+              <button
+                onClick={handleResetWizard}
+                title="Réinitialiser l'Assistant"
+                className="text-stone-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-all"
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            )}
+            <button onClick={onClose} className="text-stone-400 hover:text-stone-600 hover:bg-stone-50 p-2 rounded-xl transition-colors">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* View Content */}
