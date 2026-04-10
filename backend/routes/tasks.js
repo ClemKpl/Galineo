@@ -295,6 +295,7 @@ router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
     }
 
     res.json({ id: taskId, ...req.body, project_id: projectId });
+    });
   });
 });
 
