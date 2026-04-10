@@ -404,6 +404,7 @@ const initDb = async () => {
         id ${autoInc},
         email TEXT NOT NULL,
         code TEXT NOT NULL,
+        attempts INTEGER DEFAULT 0,
         expires_at TIMESTAMP NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`

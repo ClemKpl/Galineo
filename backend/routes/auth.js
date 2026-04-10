@@ -101,9 +101,9 @@ router.post('/register', async (req, res) => {
   }
 
   // 2. Vérifier le code OTP
-  const isValidCode = await verifyCode(email, code);
-  if (!isValidCode) {
-    return res.status(400).json({ error: 'Code de confirmation invalide ou expiré.' });
+  const otpCheck = await verifyCode(email, code);
+  if (!otpCheck.valid) {
+    return res.status(400).json({ error: otpCheck.error });
   }
 
   try {

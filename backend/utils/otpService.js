@@ -34,20 +34,37 @@ async function createVerificationCode(email) {
 }
 
 /**
- * Vérifie si le code est valide pour l'email donné
+ * Vérifie si le code est valide pour l'email donné avec limite de tentatives
  */
 async function verifyCode(email, code) {
+  const MAX_ATTEMPTS = 5;
+
   return new Promise((resolve, reject) => {
     db.get(
-      'SELECT * FROM email_verifications WHERE email = ? AND code = ? AND expires_at > CURRENT_TIMESTAMP',
-      [email.toLowerCase(), code],
+      'SELECT id, code, attempts FROM email_verifications WHERE email = ? AND expires_at > CURRENT_TIMESTAMP',
+      [email.toLowerCase()],
       (err, row) => {
         if (err) return reject(err);
-        if (row) {
-          // Code valide
-          resolve(true);
+        if (!row) return resolve({ valid: false, error: 'Code inexistant ou expiré.' });
+
+        // Vérifier si trop de tentatives
+        if (row.attempts >= MAX_ATTEMPTS) {
+          db.run('DELETE FROM email_verifications WHERE id = ?', [row.id]);
+          return resolve({ valid: false, error: 'Trop de tentatives infructueuses. Le code a été invalidé par sécurité.' });
+        }
+
+        if (row.code === code) {
+          resolve({ valid: true });
         } else {
-          resolve(false);
+          // Incrémenter les tentatives
+          db.run('UPDATE email_verifications SET attempts = attempts + 1 WHERE id = ?', [row.id], () => {
+            if (row.attempts + 1 >= MAX_ATTEMPTS) {
+              db.run('DELETE FROM email_verifications WHERE id = ?', [row.id]);
+              resolve({ valid: false, error: 'Code erroné. Trop de tentatives, veuillez redemander un nouveau code.' });
+            } else {
+              resolve({ valid: false, error: `Code incorrect (${MAX_ATTEMPTS - (row.attempts + 1)} tentatives restantes).` });
+            }
+          });
         }
       }
     );
