@@ -32,7 +32,7 @@ function checkProjectLimit(req, res, next) {
     if (isUnlimited(req, user.plan)) return next();
 
     db.get(
-      'SELECT COUNT(*) as count FROM projects WHERE owner_id = ? AND (status IS NULL OR status != "deleted")',
+      "SELECT COUNT(*) as count FROM projects WHERE owner_id = ? AND (status IS NULL OR status != 'deleted')",
       [Number(req.user.id)],
       (err2, row) => {
         if (err2) return res.status(500).json({ error: `Erreur SQL Count: ${err2.message}` });
