@@ -11,6 +11,7 @@ const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
 
 // --- Google OAuth Strategy ---
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  console.log('✅ [Google OAuth] Strategy activée');
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
