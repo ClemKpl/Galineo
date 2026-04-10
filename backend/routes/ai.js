@@ -459,7 +459,9 @@ router.get('/history/:projectId', authMiddleware, async (req, res) => {
     
     // Filtre sur created_at en fonction de la durée (Gestion SQLite/PG simplifiée via JS ou SQL standard)
     const rows = await dbAll(
-      `SELECT m.role, m.content, m.created_at, u.name as user_name, u.avatar as user_avatar 
+      `SELECT m.role, m.content, m.created_at, 
+              CASE WHEN m.role = 'model' THEN 'Galineo Room' ELSE u.name END as user_name, 
+              CASE WHEN m.role = 'model' THEN NULL ELSE u.avatar END as user_avatar 
        FROM ai_messages m 
        LEFT JOIN users u ON u.id = m.user_id 
        WHERE ${isWizard ? 'm.project_id IS NULL AND m.user_id = ?' : 'm.project_id = ?'}

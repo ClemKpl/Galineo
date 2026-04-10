@@ -349,7 +349,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
 
         {messages.map((m, i) => {
           const isUser = m.role === 'user';
-          const senderName = isUser ? (m.user_name || 'Moi') : (m.user_name || 'Galineo Room');
+          const senderName = isUser ? (m.user_name || 'Moi') : 'Galineo Room';
           const avatar = isUser ? m.user_avatar : null;
 
           return (
