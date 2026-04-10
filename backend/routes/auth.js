@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { JWT_SECRET } = require('../middleware/auth');
+const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
 
 // POST /auth/register
 router.post('/register', async (req, res) => {
@@ -48,7 +49,8 @@ router.post('/register', async (req, res) => {
                 updateStmt.finalize();
                // note: notifStmt is async and might finish after response, but ok for this simple use case
               }
-              res.json({ token, user: { id: newUserId, name, email, avatar: null } });
+              const plan = ADMIN_EMAILS.includes(email.toLowerCase()) ? 'unlimited' : 'free';
+              res.json({ token, user: { id: newUserId, name, email, avatar: null, plan } });
             });
       }
     );
@@ -79,6 +81,7 @@ router.post('/login', (req, res) => {
           name: user.name, 
           email: user.email, 
           avatar: user.avatar,
+          plan: (user.email && ADMIN_EMAILS.includes(user.email.toLowerCase())) ? 'unlimited' : (user.plan || 'free'),
           notif_project_updates: user.notif_project_updates,
           notif_added_to_project: user.notif_added_to_project,
           notif_deadlines: user.notif_deadlines
