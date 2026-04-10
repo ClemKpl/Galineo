@@ -521,7 +521,7 @@ export default function Sidebar({
 
       {/* Upgrade CTA + Logout */}
       <div className="px-3 pb-5 pt-2 border-t border-stone-800 space-y-1">
-        {user?.plan === 'free' && (
+        {(!user?.plan || user?.plan === 'free') && (
           <button
             onClick={() => window.dispatchEvent(new Event('open-pricing'))}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-orange-500/20 to-amber-500/10 hover:from-orange-500/30 hover:to-amber-500/20 border border-orange-500/20 text-orange-400 hover:text-orange-300 transition-all text-sm font-semibold group"
