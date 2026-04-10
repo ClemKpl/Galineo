@@ -3,7 +3,7 @@ const db = require('../db');
 const FREE_LIMITS = {
   projects: 10,
   collaborators: 5,
-  ai_prompts: 50
+  ai_prompts: 10
 };
 
 const { ADMIN_EMAILS } = require('../config/admins');
