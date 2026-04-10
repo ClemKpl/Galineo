@@ -375,7 +375,9 @@ export default function SettingsPage() {
               'bg-stone-50 border-stone-100 text-stone-500'
             }`}>
               {user?.plan === 'unlimited' ? (
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.77 3.77z"/>
+                </svg>
               ) : user?.plan === 'premium' ? (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
               ) : (
@@ -386,7 +388,12 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-stone-900 uppercase tracking-tight">Votre forfait actuel :</span>
                 {user?.plan === 'unlimited' ? (
-                  <span className="text-[10px] font-bold bg-purple-600 text-white px-2 py-0.5 rounded-full uppercase tracking-widest">Admin</span>
+                  <span className="flex items-center gap-1.5 text-[10px] font-bold bg-purple-600 text-white px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                    <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.77 3.77z"/>
+                    </svg>
+                    Admin
+                  </span>
                 ) : user?.plan === 'premium' ? (
                   <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full uppercase tracking-widest">Premium</span>
                 ) : (
