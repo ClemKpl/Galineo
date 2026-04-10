@@ -460,8 +460,14 @@ router.get('/history/:projectId', authMiddleware, async (req, res) => {
 
 router.delete('/history/:projectId', authMiddleware, async (req, res) => {
   const { projectId } = req.params;
+  const userId = req.user.id;
   try {
-    await dbRun(`DELETE FROM ai_messages WHERE project_id = ?`, [projectId]);
+    const isWizard = projectId === 'wizard';
+    await dbRun(
+      `DELETE FROM ai_messages 
+       WHERE ${isWizard ? 'project_id IS NULL AND user_id = ?' : 'project_id = ?'}`,
+      isWizard ? [userId] : [projectId]
+    );
     res.json({ message: 'Historique réinitialisé avec succès.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
