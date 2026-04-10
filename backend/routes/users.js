@@ -121,7 +121,7 @@ router.delete('/me', authMiddleware, (req, res) => {
 });
 
 // POST /users/me/reset — Réinitialiser le compte ( quitter tous les projets )
-router.post('/reset', authMiddleware, (req, res) => {
+router.post('/me/reset', authMiddleware, (req, res) => {
   const userId = req.user.id;
   
   // 1. Trouver tous les projets dont l'utilisateur est membre
