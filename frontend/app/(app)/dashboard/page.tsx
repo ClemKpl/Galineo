@@ -354,14 +354,13 @@ export default function DashboardPage() {
                         <p className="text-[10px] text-stone-400 mt-1.5 uppercase font-black tracking-widest truncate">{t.project_title}</p>
                       </div>
                     </div>
-                  </div>
-                  <div className="mt-5 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] text-stone-400">
-                    <span className="px-2 py-0.5 bg-stone-50 rounded-md border border-stone-100 text-stone-500">{t.status === 'in_progress' ? 'En cours' : 'À faire'}</span>
-                    <span className="flex items-center gap-1 opacity-60">
-                       <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                       {dueText || 'Libre'}
-                    </span>
-                  </div>
+                    <div className="mt-5 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] text-stone-400">
+                      <span className="px-2 py-0.5 bg-stone-50 rounded-md border border-stone-100 text-stone-500">{t.status === 'in_progress' ? 'En cours' : 'À faire'}</span>
+                      <span className="flex items-center gap-1 opacity-60">
+                         <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                         {dueText || 'Libre'}
+                      </span>
+                    </div>
                 </button>
               );
             })}
