@@ -58,6 +58,7 @@ export default function AdminPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('users');
+  const [projectFilter, setProjectFilter] = useState<'active' | 'deleted'>('active');
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -167,9 +168,11 @@ export default function AdminPage() {
   const filteredUsers = users.filter(
     (u) => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
   );
-  const filteredProjects = projects.filter(
-    (p) => p.title.toLowerCase().includes(search.toLowerCase()) || p.owner_name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredProjects = projects.filter((p) => {
+    const matchesSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.owner_name?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = projectFilter === 'deleted' ? p.status === 'deleted' : p.status !== 'deleted';
+    return matchesSearch && matchesStatus;
+  });
 
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString('fr-FR') : '—';
 
@@ -221,24 +224,32 @@ export default function AdminPage() {
       )}
 
       {/* Tabs + Search */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-1 bg-stone-100 p-1 rounded-xl flex-wrap">
-          {(['users', 'projects', 'support'] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => { setTab(t); setSearch(''); }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all relative ${tab === t ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
-            >
-              {t === 'users' ? `Utilisateurs (${users.length})` : t === 'projects' ? `Projets (${projects.length})` : (
-                <span className="flex items-center gap-1.5">
-                  Support
-                  {tickets.filter(tk => tk.status === 'open').length > 0 && (
-                    <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{tickets.filter(tk => tk.status === 'open').length}</span>
-                  )}
-                </span>
-              )}
-            </button>
-          ))}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-1 bg-stone-100 p-1 rounded-xl flex-wrap">
+            {(['users', 'projects', 'support'] as Tab[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => { setTab(t); setSearch(''); }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all relative ${tab === t ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
+              >
+                {t === 'users' ? `Utilisateurs (${users.length})` : t === 'projects' ? `Projets (${projects.length})` : (
+                  <span className="flex items-center gap-1.5">
+                    Support
+                    {tickets.filter(tk => tk.status === 'open').length > 0 && (
+                      <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{tickets.filter(tk => tk.status === 'open').length}</span>
+                    )}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          {tab === 'projects' && (
+            <div className="flex gap-4 ml-1">
+              <button onClick={() => setProjectFilter('active')} className={`text-xs font-semibold pb-1 border-b-2 transition-all ${projectFilter === 'active' ? 'border-purple-600 text-purple-600' : 'border-transparent text-stone-400 hover:text-stone-600'}`}>Actifs ({projects.filter(p => p.status !== 'deleted').length})</button>
+              <button onClick={() => setProjectFilter('deleted')} className={`text-xs font-semibold pb-1 border-b-2 transition-all ${projectFilter === 'deleted' ? 'border-red-600 text-red-600' : 'border-transparent text-stone-400 hover:text-stone-600'}`}>Corbeille ({projects.filter(p => p.status === 'deleted').length})</button>
+            </div>
+          )}
         </div>
         <input
           type="text"
