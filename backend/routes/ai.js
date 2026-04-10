@@ -106,8 +106,11 @@ const functions = {
       details: "Configuration initiale complète du projet par l'IA"
     });
 
+    // Reset history for wizard since project is created
+    await dbRun('DELETE FROM ai_messages WHERE project_id IS NULL AND user_id = ?', [userId]);
+
     return {
-      message: `Projet "${titre}" créé et configuré avec succès !`,
+      message: `Projet "${titre}" créé et configuré avec succès ! La conversation Wizard a été réinitialisée.`,
       projectId: projectId
     };
   },
