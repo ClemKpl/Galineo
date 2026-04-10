@@ -52,7 +52,7 @@ function LoginForm() {
             <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
           </svg>
         </div>
-        <h1 className="text-3xl font-bold text-stone-900">Galineo</h1>
+        <h1 className="text-3xl font-bold text-stone-900" style={{ fontFamily: "'Archivo Black', sans-serif" }}>GALINÉO</h1>
         <p className="text-stone-500 mt-1">Connectez-vous à votre espace</p>
       </div>
 

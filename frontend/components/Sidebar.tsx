@@ -285,7 +285,7 @@ export default function Sidebar({
         {/* Logo & Close Button */}
         <div className="px-5 h-16 flex items-center justify-between border-b border-stone-800">
           <div className="flex items-center gap-2">
-            <span className="text-white font-bold text-lg tracking-tight">Galineo</span>
+            <span className="text-white font-bold text-lg tracking-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>GALINÉO</span>
             {user?.plan === 'unlimited' ? (
               <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
                 <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
