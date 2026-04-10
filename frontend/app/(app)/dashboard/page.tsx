@@ -79,7 +79,7 @@ function ProjectCard({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={`bg-white rounded-2xl border p-5 transition-all duration-300 cursor-grab active:cursor-grabbing group ${
-        isDragging ? 'opacity-40 scale-95 border-orange-300 border-dashed bg-stone-50' : 'border-stone-200 hover:border-stone-300 hover:-translate-y-1'
+        isDragging ? 'opacity-40 scale-95 border-blue-300 border-dashed bg-stone-50' : 'border-stone-200 hover:border-stone-300 hover:-translate-y-1'
       }`}>
       <div className="flex items-center gap-4 mb-4">
         <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center text-stone-500 font-bold overflow-hidden shrink-0">
@@ -90,13 +90,13 @@ function ProjectCard({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-stone-900 text-base group-hover:text-orange-500 transition-colors leading-tight truncate">
+          <h3 className="font-semibold text-stone-900 text-base group-hover:text-blue-500 transition-colors leading-tight truncate">
             {project.title}
           </h3>
           <div className="flex items-center gap-2 mt-1">
             <span className={`inline-block text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md border ${
               isOwner
-                ? 'bg-orange-50 text-orange-600 border-orange-100'
+                ? 'bg-blue-50 text-blue-600 border-blue-100'
                 : 'bg-stone-50 text-stone-500 border-stone-200'
             }`}>
               {isOwner ? 'Propriétaire' : 'Membre'}
@@ -105,7 +105,7 @@ function ProjectCard({
         </div>
         <button 
           onClick={(e) => onToggleFavorite(e, project.id)}
-          className={`p-1.5 rounded-xl transition-all hover:scale-110 active:scale-95 ${project.is_favorite ? 'text-amber-400 bg-amber-50' : 'text-stone-300 hover:text-stone-400 bg-stone-50'}`}
+          className={`p-1.5 rounded-xl transition-all hover:scale-110 active:scale-95 ${project.is_favorite ? 'text-amber-400 bg-blue-50' : 'text-stone-300 hover:text-stone-400 bg-stone-50'}`}
         >
           <svg width="18" height="18" fill={project.is_favorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
@@ -146,7 +146,7 @@ function ProjectCard({
             isOverdue
               ? 'bg-red-50 text-red-500'
               : daysLeft !== null && daysLeft <= 7
-                ? 'bg-amber-50 text-amber-600'
+                ? 'bg-blue-50 text-blue-600'
                 : 'bg-stone-50 text-stone-400'
           }`}>
             {isOverdue ? 'En retard'
@@ -163,15 +163,15 @@ function ProjectCard({
 function EmptyState({ onNew }: { onNew: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center mb-4">
-        <svg width="28" height="28" fill="none" className="stroke-orange-500" strokeWidth="1.8" viewBox="0 0 24 24">
+      <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
+        <svg width="28" height="28" fill="none" className="stroke-blue-500" strokeWidth="1.8" viewBox="0 0 24 24">
           <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
         </svg>
       </div>
       <h3 className="text-stone-900 font-semibold text-lg mb-1">Aucun projet pour l&apos;instant</h3>
       <p className="text-stone-400 text-sm mb-6 max-w-xs">Créez votre premier projet ou attendez d&apos;être ajouté à un projet existant.</p>
       <button onClick={onNew}
-        className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-colors text-sm">
+        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors text-sm">
         <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <button onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all text-sm active:scale-95 shrink-0">
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all text-sm active:scale-95 shrink-0">
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
@@ -317,7 +317,7 @@ export default function DashboardPage() {
           </div>
           <button
             onClick={() => { setAssignedLoading(true); fetchAssignedTasks(); }}
-            className="text-[10px] font-black text-orange-500 hover:text-orange-600 uppercase tracking-widest transition-colors"
+            className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors"
           >
             Rafraîchir
           </button>
@@ -348,11 +348,11 @@ export default function DashboardPage() {
                   <button
                     key={t.id}
                     onClick={() => router.push(`/projects/${t.project_id}/tasks`)}
-                    className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:border-orange-200 transition-all duration-300 group active:scale-[0.98]"
+                    className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:border-stone-300 transition-all duration-300 group active:scale-[0.98]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-stone-900 line-clamp-2 group-hover:text-orange-500 transition-colors leading-snug">{t.title}</p>
+                        <p className="text-sm font-bold text-stone-900 line-clamp-2 group-hover:text-blue-500 transition-colors leading-snug">{t.title}</p>
                         <p className="text-[10px] text-stone-400 mt-1.5 uppercase font-black tracking-widest truncate">{t.project_title}</p>
                       </div>
                     </div>
@@ -377,7 +377,7 @@ export default function DashboardPage() {
           <h2 className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Mes prochains événements</h2>
           <button
             onClick={() => { setEventsLoading(true); fetchUpcomingEvents(); }}
-            className="text-[10px] font-black text-orange-500 hover:text-orange-600 uppercase tracking-widest transition-colors"
+            className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors"
           >
             Rafraîchir
           </button>
@@ -409,7 +409,7 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-start justify-between gap-3 mb-2.5">
                     <p className="text-sm font-bold text-stone-900 line-clamp-1 leading-tight">{ev.title}</p>
-                    <span className={`shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${isToday ? 'bg-orange-100 text-orange-700' : isTomorrow ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'}`}>
+                    <span className={`shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${isToday ? 'bg-blue-100 text-blue-700' : isTomorrow ? 'bg-blue-50 text-blue-600' : 'bg-violet-100 text-violet-700'}`}>
                       {dateLabel}
                     </span>
                   </div>
