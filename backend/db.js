@@ -248,17 +248,21 @@ const initDb = async () => {
 
     // --- MIGRATIONS FORCÉES (POSTGRESQL PRODUCTION) ---
     if (isPostgres) {
-      console.log('🐘 PostgreSQL migration: ensuring created_by columns are nullable...');
-      const migrateNull = async (table) => {
+      console.log('🐘 PostgreSQL migration: ensuring created_by/user_id columns are nullable...');
+      const migrateNull = async (table, column = 'created_by') => {
         return new Promise(res => {
-          db.run(`ALTER TABLE ${table} ALTER COLUMN created_by DROP NOT NULL`, (err) => {
-            if (err) console.log(`ℹ️ [Migration] ${table}.created_by already nullable or table missing.`);
+          db.run(`ALTER TABLE ${table} ALTER COLUMN ${column} DROP NOT NULL`, (err) => {
+            if (err) console.log(`ℹ️ [Migration] ${table}.${column} already nullable or table missing.`);
             res();
           });
         });
       };
-      await migrateNull('tasks');
-      await migrateNull('chat_groups');
+      await migrateNull('tasks', 'created_by');
+      await migrateNull('messages', 'user_id');
+      await migrateNull('chat_groups', 'created_by');
+      await migrateNull('chat_group_messages', 'user_id');
+      await migrateNull('support_tickets', 'user_id');
+      await migrateNull('ai_active_tasks', 'user_id');
     }
 
     // 2. Migrations (Colonnes manquantes)
@@ -362,7 +366,16 @@ const initDb = async () => {
       )`,
       `CREATE TABLE IF NOT EXISTS ai_active_tasks (
         id ${autoInc},
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
         status TEXT DEFAULT 'running',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS messages (
+        id ${autoInc},
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
       `CREATE TABLE IF NOT EXISTS chat_groups (
@@ -383,7 +396,7 @@ const initDb = async () => {
       `CREATE TABLE IF NOT EXISTS chat_group_messages (
         id ${autoInc},
         group_id INTEGER REFERENCES chat_groups(id) ON DELETE CASCADE,
-        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
         content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`

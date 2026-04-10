@@ -42,9 +42,8 @@ router.delete('/users/:id', authMiddleware, adminMiddleware, (req, res) => {
       // 1. Anonymiser les tâches créées / assignées
       await run('UPDATE tasks SET created_by = NULL WHERE created_by = ?', [targetId]);
       await run('UPDATE tasks SET assigned_to = NULL WHERE assigned_to = ?', [targetId]);
-
-      // 2. Remplacer les messages par un placeholder RGPD
       await run("UPDATE messages SET content = '[Message supprimé]', user_id = NULL WHERE user_id = ?", [targetId]);
+      await run("UPDATE chat_group_messages SET content = '[Message supprimé]', user_id = NULL WHERE user_id = ?", [targetId]);
 
       // 3. Supprimer les données liées (Nettoyage SQL & RGPD)
       await run('DELETE FROM activity_logs WHERE user_id = ?', [targetId]);
