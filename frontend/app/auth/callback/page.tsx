@@ -1,11 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 
 export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><p className="text-muted-foreground text-sm">Connexion en cours…</p></div>}>
+      <CallbackHandler />
+    </Suspense>
+  );
+}
+
+function CallbackHandler() {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,3 +45,4 @@ export default function AuthCallbackPage() {
     </div>
   );
 }
+
