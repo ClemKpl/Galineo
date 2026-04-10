@@ -135,11 +135,54 @@ html, body {
 }
 
 /* Opacity variants */
+[data-accent] .bg-orange-500\/15 { background-color: color-mix(in srgb, var(--accent-500), transparent 85%) !important; }
 [data-accent] .bg-orange-500\/20 { background-color: color-mix(in srgb, var(--accent-500), transparent 80%) !important; }
+[data-accent] .bg-orange-50\/40 { background-color: color-mix(in srgb, var(--accent-50), transparent 60%) !important; }
+[data-accent] .bg-orange-50\/70 { background-color: color-mix(in srgb, var(--accent-50), transparent 30%) !important; }
+[data-accent] .hover\:bg-orange-50\/70:hover { background-color: color-mix(in srgb, var(--accent-50), transparent 30%) !important; }
 [data-accent] .border-orange-500\/20 { border-color: color-mix(in srgb, var(--accent-500), transparent 80%) !important; }
 [data-accent] .border-orange-500\/30 { border-color: color-mix(in srgb, var(--accent-500), transparent 70%) !important; }
 [data-accent] .from-orange-500\/20 { --tw-gradient-from: color-mix(in srgb, var(--accent-500), transparent 80%) var(--tw-gradient-from-position) !important; }
 [data-accent] .to-orange-500\/10 { --tw-gradient-to: color-mix(in srgb, var(--accent-500), transparent 90%) var(--tw-gradient-to-position) !important; }
+[data-accent] .from-orange-400\/20 { --tw-gradient-from: color-mix(in srgb, var(--accent-400), transparent 80%) var(--tw-gradient-from-position) !important; }
+
+/* Shadows with opacity */
+[data-accent] .shadow-orange-500\/20 { --tw-shadow-color: color-mix(in srgb, var(--accent-500), transparent 80%) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent] .shadow-orange-200\/50 { --tw-shadow-color: color-mix(in srgb, var(--accent-200), transparent 50%) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent] .hover\:shadow-orange-500\/20:hover { --tw-shadow-color: color-mix(in srgb, var(--accent-500), transparent 80%) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+
+/* Hover backgrounds */
+[data-accent] .hover\:bg-orange-100:hover { background-color: var(--accent-100) !important; }
+[data-accent] .hover\:bg-orange-600:hover { background-color: var(--accent-600) !important; }
+
+/* Background orange-100 */
+[data-accent] .bg-orange-100 { background-color: var(--accent-100) !important; }
+
+/* Text variants */
+[data-accent] .text-orange-100 { color: var(--accent-100) !important; }
+[data-accent] .text-orange-700 { color: var(--accent-700) !important; }
+[data-accent] .hover\:text-orange-400:hover { color: var(--accent-400) !important; }
+[data-accent] .hover\:text-orange-700:hover { color: var(--accent-700) !important; }
+
+/* Border variants */
+[data-accent] .border-orange-300 { border-color: var(--accent-300) !important; }
+[data-accent] .border-t-orange-500 { border-top-color: var(--accent-500) !important; }
+
+/* SVG stroke */
+[data-accent] .stroke-orange-500 { stroke: var(--accent-500) !important; }
+
+/* Focus Rings */
+[data-accent] .focus\:ring-orange-400\/30:focus { --tw-ring-color: color-mix(in srgb, var(--accent-400), transparent 70%) !important; }
+[data-accent] .focus\:ring-orange-500\/10:focus { --tw-ring-color: color-mix(in srgb, var(--accent-500), transparent 90%) !important; }
+[data-accent] .focus\:border-orange-500\/50:focus { border-color: color-mix(in srgb, var(--accent-500), transparent 50%) !important; }
+
+/* Amber → accent (deadlines, premium badge, favorites) */
+[data-accent] .from-amber-500 { --tw-gradient-from: var(--accent-500) var(--tw-gradient-from-position) !important; }
+[data-accent] .bg-amber-50 { background-color: var(--accent-50) !important; }
+[data-accent] .bg-amber-100 { background-color: var(--accent-100) !important; }
+[data-accent] .text-amber-600 { color: var(--accent-600) !important; }
+[data-accent] .text-amber-700 { color: var(--accent-700) !important; }
+[data-accent] .text-amber-400 { color: var(--accent-400) !important; }
 
 /* Group Hover variants */
 [data-accent] .group:hover .group-hover\:bg-orange-50 { background-color: var(--accent-50) !important; }
@@ -148,10 +191,6 @@ html, body {
 
 /* Misc */
 [data-accent] .accent-orange-500 { accent-color: var(--accent-500) !important; }
-
-/* Focus Rings */
-[data-accent] .focus\:ring-orange-500\/10:focus { --tw-ring-color: color-mix(in srgb, var(--accent-500), transparent 90%) !important; }
-[data-accent] .focus\:border-orange-500\/50:focus { border-color: color-mix(in srgb, var(--accent-500), transparent 50%) !important; }
 
 /* ── Special case: Project Avatars & Specific highlights ── */
 [data-accent] .bg-orange-400 { background-color: var(--accent-400) !important; }

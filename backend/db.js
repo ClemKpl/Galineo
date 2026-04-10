@@ -224,6 +224,8 @@ const initDb = async () => {
       title TEXT NOT NULL,
       message TEXT,
       project_id INTEGER REFERENCES projects(id),
+      from_user_id INTEGER REFERENCES users(id),
+      task_id INTEGER REFERENCES tasks(id),
       is_read INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
@@ -259,6 +261,9 @@ const initDb = async () => {
     await ensureColumn('projects', 'avatar', 'TEXT');
     await ensureColumn('projects', 'deadline', 'TIMESTAMP');
     await ensureColumn('projects', 'start_date', 'TEXT');
+
+    await ensureColumn('notifications', 'from_user_id', 'INTEGER');
+    await ensureColumn('notifications', 'task_id', 'INTEGER');
 
     await ensureColumn('project_members', 'is_favorite', 'INTEGER DEFAULT 0');
     await ensureColumn('tasks', 'color', 'TEXT');

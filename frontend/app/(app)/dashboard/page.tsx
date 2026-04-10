@@ -29,7 +29,6 @@ interface AssignedTask {
   due_date: string | null;
   project_id: number;
   project_title: string;
-  parent_id: number | null;
 }
 
 interface UpcomingEvent {
@@ -192,7 +191,6 @@ export default function DashboardPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [draggingProjectId, setDraggingProjectId] = useState<number | null>(null);
-  const [taskView, setTaskView] = useState<'tasks' | 'features'>('tasks');
 
   const handleToggleFavorite = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
@@ -290,7 +288,7 @@ export default function DashboardPage() {
       {/* Invitations */}
       <ProjectInvites onRefresh={fetchProjects} />
 
-      {/* Assigned tasks / features */}
+      {/* Assigned tasks */}
       <section className="mb-10 animate-fadeUp">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 px-1 gap-3">
           <div className="flex items-center gap-3 flex-wrap">
@@ -356,19 +354,19 @@ export default function DashboardPage() {
                         <p className="text-[10px] text-stone-400 mt-1.5 uppercase font-black tracking-widest truncate">{t.project_title}</p>
                       </div>
                     </div>
-                    <div className="mt-5 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] text-stone-400">
-                      <span className="px-2 py-0.5 bg-stone-50 rounded-md border border-stone-100 text-stone-500">{t.status === 'in_progress' ? 'En cours' : 'À faire'}</span>
-                      <span className="flex items-center gap-1 opacity-60">
-                        <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                        {dueText || 'Libre'}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })()}
+                  </div>
+                  <div className="mt-5 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] text-stone-400">
+                    <span className="px-2 py-0.5 bg-stone-50 rounded-md border border-stone-100 text-stone-500">{t.status === 'in_progress' ? 'En cours' : 'À faire'}</span>
+                    <span className="flex items-center gap-1 opacity-60">
+                       <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                       {dueText || 'Libre'}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* Upcoming events */}
