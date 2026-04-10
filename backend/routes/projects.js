@@ -456,10 +456,10 @@ router.get('/:id', authMiddleware, (req, res) => {
   db.get(`
     SELECT p.*, u.name as owner_name, pm.role_id as my_role_id, pm.is_favorite as is_favorite
     FROM projects p
-    LEFT JOIN users u ON p.owner_id = u.id 
+    LEFT JOIN users u ON p.owner_id = u.id
     LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ?
-    WHERE p.id = ?
-  `, [req.user.id, id], (err, project) => {
+    WHERE p.id = ? AND (p.owner_id = ? OR pm.user_id = ?)
+  `, [req.user.id, id, req.user.id, req.user.id], (err, project) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
 

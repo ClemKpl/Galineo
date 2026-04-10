@@ -256,6 +256,8 @@ const initDb = async () => {
     await ensureColumn('users', 'ai_history_duration', 'INTEGER DEFAULT 60');
     await ensureColumn('users', 'stripe_customer_id', 'TEXT');
     await ensureColumn('users', 'stripe_subscription_id', 'TEXT');
+    await ensureColumn('users', 'login_attempts', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'locked_until', 'TIMESTAMP');
 
     await ensureColumn('projects', 'status', "TEXT DEFAULT 'active'");
     await ensureColumn('projects', 'avatar', 'TEXT');

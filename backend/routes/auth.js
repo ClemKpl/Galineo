@@ -4,13 +4,21 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { JWT_SECRET } = require('../middleware/auth');
+const { logActivity } = require('../utils/activityLogger');
 const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
+
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+const MAX_LOGIN_ATTEMPTS = 10;
+const LOCK_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
 // POST /auth/register
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password)
     return res.status(400).json({ error: 'Champs manquants' });
+
+  if (!PASSWORD_REGEX.test(password))
+    return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.' });
 
   try {
     const hash = await bcrypt.hash(password, 10);
@@ -67,25 +75,41 @@ router.post('/login', (req, res) => {
 
   db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (!user) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    if (!user) {
+      logActivity(null, null, 'auth', null, 'login_failed', { email, ip: req.ip, reason: 'user_not_found' }).catch(() => {});
+      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
+
+    // Vérification du verrouillage de compte
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      return res.status(423).json({ error: 'Compte temporairement verrouillé. Réessayez dans 30 minutes.' });
+    }
 
     const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    if (!valid) {
+      const attempts = (user.login_attempts || 0) + 1;
+      const lock = attempts >= MAX_LOGIN_ATTEMPTS
+        ? new Date(Date.now() + LOCK_DURATION_MS).toISOString()
+        : user.locked_until;
+      db.run('UPDATE users SET login_attempts = ?, locked_until = ? WHERE id = ?', [attempts, lock, user.id]);
+      logActivity(null, user.id, 'auth', null, 'login_failed', { ip: req.ip, attempts }).catch(() => {});
+      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
 
-    db.run('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [user.id], () => {
+    db.run('UPDATE users SET last_login_at = CURRENT_TIMESTAMP, login_attempts = 0, locked_until = NULL WHERE id = ?', [user.id], () => {
       const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-      res.json({ 
-        token, 
-        user: { 
-          id: user.id, 
-          name: user.name, 
-          email: user.email, 
+      res.json({
+        token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
           avatar: user.avatar,
           plan: (user.email && ADMIN_EMAILS.includes(user.email.toLowerCase())) ? 'unlimited' : (user.plan || 'free'),
           notif_project_updates: user.notif_project_updates,
           notif_added_to_project: user.notif_added_to_project,
-          notif_deadlines: user.notif_deadlines
-        } 
+          notif_deadlines: user.notif_deadlines,
+        },
       });
     });
   });

@@ -3,7 +3,10 @@ const router = express.Router();
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 const { authMiddleware } = require('../middleware/auth');
+const { logActivity } = require('../utils/activityLogger');
 const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
+
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 // GET /users/search?q= — rechercher des utilisateurs
 router.get('/search', authMiddleware, (req, res) => {
@@ -93,7 +96,8 @@ router.patch('/me', authMiddleware, (req, res) => {
 router.patch('/me/password', authMiddleware, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Champs manquants' });
-  if (newPassword.length < 6) return res.status(400).json({ error: 'Mot de passe trop court (min. 6 caractères)' });
+  if (!PASSWORD_REGEX.test(newPassword))
+    return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.' });
 
   db.get('SELECT * FROM users WHERE id = ?', [req.user.id], async (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -105,19 +109,94 @@ router.patch('/me/password', authMiddleware, async (req, res) => {
     const hash = await bcrypt.hash(newPassword, 10);
     db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, req.user.id], (err2) => {
       if (err2) return res.status(500).json({ error: err2.message });
+      logActivity(null, req.user.id, 'auth', null, 'password_changed', { ip: req.ip }).catch(() => {});
       res.json({ message: 'Mot de passe mis à jour' });
     });
   });
 });
 
-// DELETE /users/me — supprimer son compte
-router.delete('/me', authMiddleware, (req, res) => {
+// GET /users/me/export — Export RGPD (Article 20)
+router.get('/me/export', authMiddleware, (req, res) => {
   const userId = req.user.id;
-  db.run('DELETE FROM project_members WHERE user_id = ?', [userId]);
-  db.run('DELETE FROM users WHERE id = ?', [userId], (err) => {
+
+  db.get('SELECT id, name, email, avatar, plan, created_at FROM users WHERE id = ?', [userId], (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: 'Compte supprimé' });
+    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+
+    const result = { user, projects: [], tasks: [], messages: [], events: [] };
+
+    db.all(`SELECT p.id, p.title, p.description, p.created_at, pm.role_id
+            FROM projects p
+            JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ?`, [userId], (e1, projects) => {
+      if (!e1) result.projects = projects || [];
+
+      db.all('SELECT id, title, description, status, priority, due_date, created_at FROM tasks WHERE assigned_to = ? OR created_by = ?', [userId, userId], (e2, tasks) => {
+        if (!e2) result.tasks = tasks || [];
+
+        db.all('SELECT id, project_id, content, created_at FROM messages WHERE user_id = ?', [userId], (e3, messages) => {
+          if (!e3) result.messages = messages || [];
+
+          db.all('SELECT id, project_id, title, description, start_date, end_date, created_at FROM calendar_events WHERE created_by = ?', [userId], (e4, events) => {
+            if (!e4) result.events = events || [];
+
+            res.setHeader('Content-Disposition', 'attachment; filename="galineo-export.json"');
+            res.setHeader('Content-Type', 'application/json');
+            res.json(result);
+          });
+        });
+      });
+    });
   });
+});
+
+// DELETE /users/me — supprimer son compte (cascade RGPD, Article 17)
+router.delete('/me', authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+
+  const run = (sql, params = []) => new Promise((resolve, reject) =>
+    db.run(sql, params, (err) => err ? reject(err) : resolve())
+  );
+
+  try {
+    // Anonymiser les tâches créées / assignées
+    await run('UPDATE tasks SET created_by = NULL WHERE created_by = ?', [userId]);
+    await run('UPDATE tasks SET assigned_to = NULL WHERE assigned_to = ?', [userId]);
+
+    // Remplacer les messages par un placeholder RGPD
+    await run("UPDATE messages SET content = '[Message supprimé]', user_id = NULL WHERE user_id = ?", [userId]);
+
+    // Supprimer les logs d'activité liés à l'utilisateur
+    await run('DELETE FROM activity_logs WHERE user_id = ?', [userId]);
+
+    // Supprimer les notifications
+    await run('DELETE FROM notifications WHERE user_id = ?', [userId]);
+
+    // Gérer les projets dont l'utilisateur est seul propriétaire
+    const ownedProjects = await new Promise((resolve, reject) =>
+      db.all('SELECT id FROM projects WHERE owner_id = ?', [userId], (err, rows) => err ? reject(err) : resolve(rows || []))
+    );
+    for (const project of ownedProjects) {
+      const successor = await new Promise((resolve, reject) =>
+        db.get('SELECT user_id FROM project_members WHERE project_id = ? AND user_id != ? ORDER BY user_id ASC LIMIT 1',
+          [project.id, userId], (err, row) => err ? reject(err) : resolve(row))
+      );
+      if (successor) {
+        await run('UPDATE projects SET owner_id = ? WHERE id = ?', [successor.user_id, project.id]);
+        await run('UPDATE project_members SET role_id = 1 WHERE project_id = ? AND user_id = ?', [project.id, successor.user_id]);
+      } else {
+        await run("UPDATE projects SET status = 'deleted' WHERE id = ?", [project.id]);
+      }
+    }
+
+    await run('DELETE FROM project_members WHERE user_id = ?', [userId]);
+    await run('DELETE FROM users WHERE id = ?', [userId]);
+
+    logActivity(null, userId, 'auth', null, 'account_deleted', { ip: req.ip }).catch(() => {});
+    res.json({ message: 'Compte et données associées supprimés' });
+  } catch (err) {
+    console.error('❌ Erreur suppression compte:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /users/me/reset — Réinitialiser le compte ( quitter tous les projets )
@@ -183,7 +262,7 @@ router.post('/me/reset', authMiddleware, (req, res) => {
 });
 
 // GET /users — liste de tous les utilisateurs
-router.get('/', authMiddleware, (req, res) => {
+router.get('/', authMiddleware, (_req, res) => {
   db.all('SELECT id, name, email, created_at FROM users', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
