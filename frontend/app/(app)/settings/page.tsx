@@ -6,31 +6,13 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type AccentColor } from '@/components/ThemeProvider';
 import PricingModal from '@/components/PricingModal';
+import Toast from '@/components/Toast';
 
 function initials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-type Toast = { message: string; type: 'success' | 'error' };
-
-function Toast({ toast, onClose }: { toast: Toast; onClose: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3500);
-    return () => clearTimeout(t);
-  }, [onClose]);
-
-  return (
-    <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-lg text-sm font-medium animate-[fadeUp_0.3s_ease-out] ${
-      toast.type === 'success' ? 'bg-stone-900 text-white' : 'bg-red-500 text-white'
-    }`}>
-      {toast.type === 'success'
-        ? <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        : <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      }
-      {toast.message}
-    </div>
-  );
-}
+type ToastState = { message: string; type: 'success' | 'error' };
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
@@ -123,7 +105,7 @@ export default function SettingsPage() {
   const [aiSaving, setAiSaving] = useState(false);
 
   // Toast
-  const [toast, setToast] = useState<Toast | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
   const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
 
   // Retour depuis Stripe : rafraîchir le plan et remercier l'utilisateur
@@ -564,7 +546,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       <style jsx>{`
         @keyframes fadeUp {
