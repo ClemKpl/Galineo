@@ -499,15 +499,29 @@ router.get('/active-task/:projectId', authMiddleware, async (req, res) => {
   try {
     const isWizard = rawId === 'wizard';
     const projectId = isWizard ? null : parseInt(rawId);
-    const task = await dbGet(
+    
+    // On cherche d'abord s'il y a une tâche en cours pour CE contexte précis
+    let task = await dbGet(
       `SELECT * FROM ai_active_tasks
        WHERE user_id = ?
        AND ${isWizard ? 'project_id IS NULL' : 'project_id = ?'}
        AND status = 'running'
-       LIMIT 1`,
+       ORDER BY id DESC LIMIT 1`,
       isWizard ? [userId] : [userId, projectId]
     );
-    res.json({ active: !!task, task });
+    
+    // Si aucune en cours, on regarde la toute dernière tâche (pour capter la complétion et l'ID projet)
+    // On ne filtre pas par project_id IS NULL ici pour permettre de récupérer le projet AVEC son ID
+    if (!task) {
+      task = await dbGet(
+        `SELECT * FROM ai_active_tasks
+         WHERE user_id = ?
+         ORDER BY id DESC LIMIT 1`,
+        [userId]
+      );
+    }
+    
+    res.json({ active: (task && task.status === 'running'), task });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -788,13 +802,13 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
         }
       }
 
-      // Mise à jour finale du statut de la tâche
-      if (taskId) {
-        await dbRun(
-          `UPDATE ai_active_tasks SET status = ? WHERE id = ?`,
-          [success ? 'completed' : 'failed', taskId]
-        );
-      }
+          // Mise à jour finale du statut de la tâche et de l'ID projet
+          if (taskId) {
+            await dbRun(
+              `UPDATE ai_active_tasks SET status = ?, project_id = ? WHERE id = ?`,
+              [success ? 'completed' : 'failed', currentProjectIdTask, taskId]
+            );
+          }
 
     } catch (globalErr) {
       console.error('[AI Global BG Error]', globalErr);
