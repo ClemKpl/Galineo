@@ -261,7 +261,7 @@ export default function Sidebar({
           <div className="flex items-center gap-2">
             <span className="text-white font-bold text-lg tracking-tight">Galineo</span>
             {user?.plan === 'unlimited' ? (
-              <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md animate-pulse">
+              <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
                 <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                 Admin
               </span>
