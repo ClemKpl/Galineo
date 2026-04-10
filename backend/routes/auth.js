@@ -34,10 +34,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         }
         return done(null, user);
       }
-      // Création du compte
+      // Création du compte (password_hash vide = compte Google uniquement)
       db.run(
-        'INSERT INTO users (name, email, avatar, last_login_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
-        [name, email, avatar],
+        'INSERT INTO users (name, email, avatar, password_hash, last_login_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)',
+        [name, email, avatar, ''],
         function (insertErr) {
           if (insertErr) return done(insertErr);
           db.get('SELECT * FROM users WHERE id = ?', [this.lastID], (e2, newUser) => done(e2, newUser));
