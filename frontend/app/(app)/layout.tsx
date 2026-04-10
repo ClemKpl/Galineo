@@ -91,19 +91,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <p className="truncate text-[10px] text-stone-400 uppercase font-bold tracking-wider">{user.name}</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowModal(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-sm active:scale-95 transition-transform shadow-orange-200"
-            aria-label="Creer un projet"
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowSupport(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 text-stone-600 active:scale-95 transition-transform"
+              aria-label="Contacter le support"
+            >
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+                <path d="M3 11c0-4.97 4.03-9 9-9s9 4.03 9 9" />
+                <rect x="2" y="11" width="4" height="7" rx="2" />
+                <rect x="18" y="11" width="4" height="7" rx="2" />
+                <path d="M21 16v2a2 2 0 0 1-2 2h-5" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowModal(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-orange-500 text-white shadow-sm active:scale-95 transition-transform shadow-orange-200"
+              aria-label="Creer un projet"
+            >
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          </div>
         </header>
 
-        <main className={`min-h-0 flex-1 overflow-x-hidden ${pathname.includes('/ai') || pathname.includes('/messages') || pathname.includes('/chat') ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-24 lg:pb-0'}`}>
+        <main className={`min-h-0 flex-1 overflow-x-hidden ${pathname.includes('/ai') || (pathname.includes('/messages') && pathname !== '/messages') || pathname.includes('/chat') ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-24 lg:pb-0'}`}>
           {children}
         </main>
 
@@ -168,12 +183,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* Bouton Support Flottant Discret */}
+      {/* Bouton Support Flottant Discret (Caché sur mobile, remplacé par bouton Header) */}
       <button
         type="button"
         onClick={() => setShowSupport(true)}
         title="Contacter le support"
-        className="fixed bottom-28 right-6 lg:bottom-6 z-40 w-12 h-12 bg-white border border-stone-200 rounded-full shadow-lg flex items-center justify-center text-stone-600 hover:text-orange-500 hover:border-orange-200 transition-all active:scale-90 group"
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-white border border-stone-200 rounded-full shadow-lg items-center justify-center text-stone-600 hover:text-orange-500 hover:border-orange-200 transition-all active:scale-90 group lg:flex hidden"
       >
         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" className="group-hover:scale-110 transition-transform">
           <path d="M3 11c0-4.97 4.03-9 9-9s9 4.03 9 9" />
