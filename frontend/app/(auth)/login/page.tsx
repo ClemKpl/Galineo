@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Logo from '@/components/Logo';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001';
 
@@ -47,10 +48,8 @@ function LoginForm() {
   return (
     <div className="w-full max-w-md">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-500 rounded-2xl mb-4">
-          <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
-          </svg>
+        <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-500 rounded-2xl mb-4 shadow-lg shadow-orange-500/20">
+          <Logo size={28} className="text-white" />
         </div>
         <h1 className="text-3xl font-bold text-stone-900" style={{ fontFamily: "'Archivo Black', sans-serif" }}>GALINÉO</h1>
         <p className="text-stone-500 mt-1">Connectez-vous à votre espace</p>
