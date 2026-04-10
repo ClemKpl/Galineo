@@ -6,6 +6,7 @@ import CreateProjectModal from '@/components/CreateProjectModal';
 import ManageMembersModal from '@/components/ManageMembersModal';
 import ProjectInvites from '@/components/ProjectInvites';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/contexts/ToastContext';
 
 interface Project {
   id: number;
@@ -194,16 +195,29 @@ export default function DashboardPage() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [draggingProjectId, setDraggingProjectId] = useState<number | null>(null);
 
+  const { showToast } = useToast();
   const handleToggleFavorite = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
     e.preventDefault();
     try {
       const res = await api.post(`/projects/${id}/toggle-favorite`, {});
       setProjects(prev => prev.map(p => p.id === id ? { ...p, is_favorite: res.is_favorite } : p));
+      
+      const project = projects.find(p => p.id === id);
+      if (project) {
+        showToast(
+          res.is_favorite 
+            ? `« ${project.title} » ajouté aux favoris` 
+            : `« ${project.title} » retiré des favoris`,
+          'success'
+        );
+      }
+
       // Notifier la sidebar pour synchroniser les favoris
       window.dispatchEvent(new Event('projects-refresh'));
     } catch (err) {
       console.error('Failed to toggle favorite', err);
+      showToast("Erreur lors de la mise à jour des favoris", "error");
     }
   };
   const router = useRouter();
