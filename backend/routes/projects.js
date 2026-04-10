@@ -388,7 +388,6 @@ router.get('/:id', authMiddleware, (req, res) => {
         if (err3) return res.status(500).json({ error: err3.message });
         res.json({ ...project, members, invitations });
       });
-      });
     });
   });
 });
