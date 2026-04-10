@@ -84,7 +84,7 @@ export default function NotificationsPage() {
       } else if (notif.type === 'task_assigned') {
         router.push(`/projects/${notif.project_id}/tasks`);
       } else if (notif.type === 'ai_response') {
-        router.push(`/projects/${notif.project_id}/ai`);
+        router.push(notif.project_id ? `/projects/${notif.project_id}/ai` : '/wizard');
       } else if (notif.type === 'project_invite') {
         router.push(`/projects/${notif.project_id}`);
       }
