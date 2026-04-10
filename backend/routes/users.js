@@ -33,7 +33,7 @@ router.get('/me', authMiddleware, (req, res) => {
       if (!row) return res.status(404).json({ error: 'Utilisateur non trouvé' });
       
       // Override plan for whitelisted admins
-      if (ADMIN_EMAILS.includes(row.email)) {
+      if (row && row.email && ADMIN_EMAILS.includes(row.email.toLowerCase())) {
         row.plan = 'unlimited';
       }
       
@@ -80,7 +80,7 @@ router.patch('/me', authMiddleware, (req, res) => {
       if (err2) return res.status(500).json({ error: err2.message });
       
       // Override plan for whitelisted admins
-      if (row && ADMIN_EMAILS.includes(row.email)) {
+      if (row && row.email && ADMIN_EMAILS.includes(row.email.toLowerCase())) {
         row.plan = 'unlimited';
       }
       
