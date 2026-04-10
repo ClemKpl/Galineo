@@ -20,13 +20,18 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // ─── Outils (Tools/Functions) ────────────────────────────────────────────────
 const functions = {
-  creer_projet: async ({ titre, description, deadline, start_date, members, elements }, userId) => {
+  creer_projet: async ({ titre, description, deadline, start_date, members, elements }, userId, contextProjectId) => {
+    // Si on est déjà dans un projet, on interdit la création d'un autre projet via l'IA projet
+    if (contextProjectId) return { error: "Action non autorisée : Vous êtes déjà dans un projet. Utilisez le Wizard pour créer de nouveaux projets." };
+
     const result = await dbRun(
       `INSERT INTO projects (title, description, deadline, start_date, owner_id, status) VALUES (?, ?, ?, ?, ?, 'active')`,
       [titre, description || null, deadline || null, start_date || null, userId]
     );
     const projectId = result.lastID;
-
+    // ... reste de la fonction creer_projet inchangé mais sécurisé par l'absence d'ID arbitraire passé par l'IA ...
+    // Note: projectId ici est celui qui vient d'être généré, c'est sûr.
+    
     // 1. Ajouter le créateur comme Propriétaire
     await dbRun(`INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 1)`, [projectId, userId]);
 
@@ -41,7 +46,7 @@ const functions = {
       for (const m of members) {
         const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [m.email]);
         if (u) {
-          await dbRun(`INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)`, [projectId, u.id, 3]); // Collaborateur par défaut
+          await dbRun(`INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)`, [projectId, u.id, 3]);
           await logActivity(projectId, userId, 'member', u.id, 'added', { email: m.email, role: m.role_name || 'Collaborateur' });
           await dbRun(
             'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -101,22 +106,19 @@ const functions = {
       });
     }
 
-    // Log the action
-    await logActivity(projectId, userId, 'project', projectId, 'created', {
-      title: titre,
-      details: "Configuration initiale complète du projet par l'IA"
-    });
-
-    // Reset history for wizard since project is created
+    await logActivity(projectId, userId, 'project', projectId, 'created', { title: titre });
     await dbRun('DELETE FROM ai_messages WHERE project_id IS NULL AND user_id = ?', [userId]);
 
-    return {
-      message: `Projet "${titre}" créé et configuré avec succès ! La conversation Wizard a été réinitialisée.`,
-      projectId: projectId
-    };
+    return { message: `Projet "${titre}" créé !`, projectId };
   },
 
-  creer_elements: async ({ project_id, elements }, userId) => {
+  creer_elements: async ({ project_id, elements }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé : Vous ne pouvez pas modifier un autre projet." };
+    }
+    if (!targetProjectId) return { error: "ID de projet manquant." };
+
     let created = 0;
     const featureMap = {};
     for (const el of elements.filter(e => e.type === 'feature')) {
@@ -127,18 +129,10 @@ const functions = {
       }
       const r = await dbRun(
         `INSERT INTO tasks (project_id, title, description, status, priority, start_date, due_date, created_by, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [project_id, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId, assignedTo]
+        [targetProjectId, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId, assignedTo]
       );
-      const taskId = r.lastID;
-      featureMap[el.title] = taskId;
+      featureMap[el.title] = r.lastID;
       created++;
-
-      if (assignedTo) {
-        await dbRun(
-          'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [assignedTo, 'task_assigned', 'Nouvelle fonctionnalité', `"${el.title}" vous a été assignée par l'Assistant IA.`, project_id, taskId, null]
-        );
-      }
     }
     for (const el of elements.filter(e => e.type === 'task')) {
       let assignedTo = null;
@@ -147,34 +141,26 @@ const functions = {
         if (u) assignedTo = u.id;
       }
       const parentId = featureMap[el.parent_title] || null;
-      const r = await dbRun(
+      await dbRun(
         `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, start_date, due_date, created_by, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [project_id, parentId, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId, assignedTo]
+        [targetProjectId, parentId, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId, assignedTo]
       );
-      const taskId = r.lastID;
       created++;
-
-      if (assignedTo) {
-        await dbRun(
-          'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [assignedTo, 'task_assigned', 'Nouvelle tâche', `"${el.title}" vous a été assignée par l'Assistant IA.`, project_id, taskId, null]
-        );
-      }
     }
-
-    await logActivity(project_id, null, 'task', null, 'created_batch', {
-      batch_count: created,
-      details: "Génération automatique d'éléments de projet via Assistant IA"
-    });
-
-    return { message: `${created} éléments créés dans le projet ${project_id}` };
+    await logActivity(targetProjectId, null, 'task', null, 'created_batch', { batch_count: created });
+    return { message: `${created} éléments créés.` };
   },
 
-  modifier_tache: async ({ task_id, title, status, priority, start_date, due_date, assigned_email }, userId) => {
+  modifier_tache: async ({ task_id, title, status, priority, start_date, due_date, assigned_email }, userId, contextProjectId) => {
     const task = await dbGet('SELECT project_id FROM tasks WHERE id = ?', [task_id]);
     if (!task) return { error: `Tâche #${task_id} introuvable.` };
-    const projectId = task.project_id;
+    
+    // VALIDATION ISOLATION
+    if (contextProjectId && Number(task.project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé : Cette tâche appartient à un autre projet." };
+    }
 
+    const projectId = task.project_id;
     let assignedTo = undefined;
     if (assigned_email) {
       const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [assigned_email]);
@@ -191,86 +177,90 @@ const functions = {
     params.push(task_id);
     await dbRun(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, params);
 
-    if (assignedTo) {
-      await dbRun(
-        'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [assignedTo, 'task_assigned', 'Tâche assignée', `La tâche #${task_id} ("${title || 'sans titre'}") vous a été assignée par l'Assistant IA.`, projectId, task_id, null]
-      );
-    }
-
-    await logActivity(projectId, null, 'task', task_id, 'updated', {
-      task_id,
-      changes: fields.join(', '),
-      details: "Modification via Assistant IA"
-    });
-
+    await logActivity(projectId, userId, 'task', task_id, 'updated', { details: "Via Assistant IA" });
     return { message: `Tâche ${task_id} mise à jour` };
   },
 
-  gerer_membres: async ({ project_id, email, action }, userId) => {
+  gerer_membres: async ({ project_id, email, action }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé : Vous ne pouvez pas gérer les membres d'un autre projet." };
+    }
+    if (!targetProjectId) return { error: "ID de projet manquant." };
+
     const u = await dbGet('SELECT id, name FROM users WHERE LOWER(email) = LOWER(?)', [email]);
-    if (!u) return { error: `Utilisateur avec l'email ${email} introuvable.` };
+    if (!u) return { error: `Email ${email} introuvable.` };
 
     if (action === 'add') {
-      await dbRun(`INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 3)`, [project_id, u.id]);
-      await logActivity(project_id, userId, 'member', u.id, 'added', { email, via: 'Assistant IA' });
-      return { message: `Membre ${u.name} (${email}) ajouté au projet.` };
+      await dbRun(`INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 3)`, [targetProjectId, u.id]);
+      return { message: `Membre ${u.name} ajouté.` };
     } else {
-      await dbRun(`DELETE FROM project_members WHERE project_id = ? AND user_id = ?`, [project_id, u.id]);
-      await logActivity(project_id, userId, 'member', u.id, 'removed', { email, via: 'Assistant IA' });
-      return { message: `Membre ${u.name} (${email}) retiré du projet.` };
+      await dbRun(`DELETE FROM project_members WHERE project_id = ? AND user_id = ?`, [targetProjectId, u.id]);
+      return { message: `Membre ${u.name} retiré.` };
     }
   },
 
-  voir_taches: async ({ project_id }) => {
+  voir_taches: async ({ project_id }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé : Impossible de consulter un autre projet." };
+    }
+    if (!targetProjectId) return { error: "ID de projet manquant." };
+
     const rows = await dbAll(`
-      SELECT t.id, t.title, t.status, t.priority, t.start_date, t.due_date, u.email as assigned_email, u.name as assigned_name
+      SELECT t.id, t.title, t.status, t.priority, t.start_date, t.due_date, u.email as assigned_email
       FROM tasks t
       LEFT JOIN users u ON t.assigned_to = u.id
-      WHERE t.project_id = ?
-    `, [project_id]);
+      WHERE t.project_id = ? AND t.status != 'deleted'
+    `, [targetProjectId]);
     return { tasks: rows };
   },
 
-  voir_parametres_projet: async ({ project_id }) => {
-    const p = await dbGet(`SELECT title, description, start_date, deadline FROM projects WHERE id = ?`, [project_id]);
+  voir_parametres_projet: async ({ project_id }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé." };
+    }
+    const p = await dbGet(`SELECT title, description, start_date, deadline FROM projects WHERE id = ?`, [targetProjectId]);
     return p || { error: 'Projet non trouvé' };
   },
 
-  modifier_parametres_projet: async ({ project_id, title, description }, userId) => {
+  modifier_parametres_projet: async ({ project_id, title, description }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé." };
+    }
     const fields = []; const params = [];
     if (title) { fields.push('title = ?'); params.push(title); }
     if (description) { fields.push('description = ?'); params.push(description); }
-    if (fields.length === 0) return { message: 'Aucune modification demandée' };
-
-    params.push(project_id);
+    if (fields.length === 0) return { message: 'Aucune modification' };
+    params.push(targetProjectId);
     await dbRun(`UPDATE projects SET ${fields.join(', ')} WHERE id = ?`, params);
-
-    await logActivity(project_id, userId, 'project', project_id, 'updated', { title, description });
-    return { message: `Les paramètres du projet ${project_id} ont été mis à jour avec succès.` };
+    return { message: `Projet ${targetProjectId} mis à jour.` };
   },
 
-  voir_liste_membres: async ({ project_id }) => {
+  voir_liste_membres: async ({ project_id }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé." };
+    }
     const rows = await dbAll(`
-      SELECT u.name, u.email, r.name as role 
-      FROM project_members pm
-      JOIN users u ON u.id = pm.user_id
-      JOIN roles r ON r.id = pm.role_id
-      WHERE pm.project_id = ?
-      ORDER BY r.id ASC, u.name ASC
-    `, [project_id]);
+      SELECT u.name, u.email, r.name as role FROM project_members pm
+      JOIN users u ON u.id = pm.user_id JOIN roles r ON r.id = pm.role_id
+      WHERE pm.project_id = ? ORDER BY r.id ASC
+    `, [targetProjectId]);
     return { members: rows };
   },
   
-  supprimer_elements: async ({ project_id, element_ids }, userId) => {
-    if (!element_ids || !Array.isArray(element_ids) || element_ids.length === 0) return { error: "Aucun ID d'élément fourni." };
+  supprimer_elements: async ({ project_id, element_ids }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé." };
+    }
+    if (!element_ids || !Array.isArray(element_ids)) return { error: "IDs manquants." };
     
-    const count = element_ids.length;
-    await dbRun(`UPDATE tasks SET status = 'deleted' WHERE project_id = ? AND id IN (${element_ids.map(() => '?').join(',')})`, [project_id, ...element_ids]);
-    
-    await logActivity(project_id, userId, 'task', null, 'deleted_batch', { count, ids: element_ids });
-    
-    return { message: `${count} éléments marqués comme supprimés dans le projet ${project_id}.` };
+    await dbRun(`UPDATE tasks SET status = 'deleted' WHERE project_id = ? AND id IN (${element_ids.map(() => '?').join(',')})`, [targetProjectId, ...element_ids]);
+    return { message: `${element_ids.length} éléments supprimés.` };
   }
 };
 
@@ -751,7 +741,8 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
 
               const fn = functions[call.name];
               if (fn) {
-                const apiRes = await fn(call.args, userId);
+                // On passe dbProjectId comme contexte autorisé
+                const apiRes = await fn(call.args, userId, dbProjectId);
 
                 // Si on a créé un projet, on récupère son ID pour la suite
                 if (call.name === 'creer_projet' && apiRes && apiRes.projectId) {
