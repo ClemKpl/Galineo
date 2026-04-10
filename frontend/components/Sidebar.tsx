@@ -263,7 +263,7 @@ export default function Sidebar({
             {user?.plan === 'unlimited' ? (
               <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md animate-pulse">
                 <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-                Illimité
+                Admin
               </span>
               ) : user?.plan === 'premium' ? (
                 <span className="flex items-center gap-1 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">

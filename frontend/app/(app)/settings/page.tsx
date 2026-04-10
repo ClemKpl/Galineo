@@ -404,7 +404,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-stone-900 uppercase tracking-tight">Votre forfait actuel :</span>
                 {user?.plan === 'unlimited' ? (
-                  <span className="text-[10px] font-bold bg-purple-600 text-white px-2 py-0.5 rounded-full uppercase tracking-widest animate-pulse">Illimité</span>
+                  <span className="text-[10px] font-bold bg-purple-600 text-white px-2 py-0.5 rounded-full uppercase tracking-widest animate-pulse">Admin</span>
                 ) : user?.plan === 'premium' ? (
                   <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded-full uppercase tracking-widest">Premium</span>
                 ) : (

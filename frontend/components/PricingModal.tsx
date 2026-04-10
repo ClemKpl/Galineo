@@ -125,7 +125,7 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
             <div className="mt-6">
               {currentPlan === 'unlimited' ? (
                 <div className="w-full text-center py-2.5 rounded-xl bg-purple-100 text-purple-600 text-sm font-semibold cursor-default">
-                  Accès Illimité Administrateur 👑
+                  Accès Administrateur 👑
                 </div>
               ) : currentPlan === 'premium' ? (
                 <div className="w-full text-center py-2.5 rounded-xl bg-orange-50 text-orange-600 text-sm font-semibold cursor-default">
