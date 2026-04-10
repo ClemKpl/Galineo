@@ -16,7 +16,7 @@ require('./db'); // Initialise la DB et les tables
 const { authMiddleware } = require('./middleware/auth');
 const { projectMemberMiddleware } = require('./middleware/projectMember');
 
-const authRoutes    = require('./routes/auth');
+const { router: authRoutes, passport } = require('./routes/auth');
 const projectRoutes = require('./routes/projects');
 const userRoutes    = require('./routes/users');
 const roleRoutes    = require('./routes/roles');
@@ -85,6 +85,8 @@ app.use((req, res, next) => {
     next();
   }
 });
+
+app.use(passport.initialize());
 
 app.get('/health', (req, res) => res.json({ status: 'OK', version: 'v1' }));
 
