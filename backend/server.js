@@ -17,6 +17,7 @@ const globalEventRoutes = require('./routes/events_global');
 const aiRoutes          = require('./routes/ai');
 const chatGroupRoutes   = require('./routes/chat_groups');
 const billingRoutes     = require('./routes/billing');
+const adminRoutes       = require('./routes/admin');
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use('/events', globalEventRoutes);
 app.use('/ai',    aiRoutes);
 app.use('/chat-groups', chatGroupRoutes);
 app.use('/billing', billingRoutes);
+app.use('/admin', adminRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
