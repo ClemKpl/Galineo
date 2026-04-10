@@ -179,9 +179,10 @@ router.get('/google/callback',
     const user = req.user;
     const plan = ADMIN_EMAILS.includes(user.email.toLowerCase()) ? 'unlimited' : (user.plan || 'free');
     const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    // Redirige vers le frontend avec le token en query param (récupéré côté client puis stocké)
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(`${frontendUrl}/auth/callback?token=${token}&plan=${plan}`);
+    const redirectUrl = `${frontendUrl}/auth/callback?token=${token}&plan=${plan}`;
+    console.log(`✅ [Google OAuth] Redirect → ${frontendUrl}/auth/callback (user: ${user.email})`);
+    res.redirect(redirectUrl);
   }
 );
 
