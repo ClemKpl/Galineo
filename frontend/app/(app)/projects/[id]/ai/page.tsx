@@ -296,8 +296,8 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
 
   return (
     <div className="flex flex-col h-[calc(100dvh-110px)] lg:h-full bg-stone-50 overflow-hidden relative">
-      {/* Header Interne - Ultra Compact sur Mobile */}
-      <div className="px-3 lg:px-8 py-2.5 lg:py-4 bg-white border-b border-stone-200 flex items-center justify-between shrink-0 shadow-sm z-30">
+      {/* Header Interne - Fixe au sommet sur mobile */}
+      <div className="sticky top-0 px-3 lg:px-8 py-2.5 lg:py-4 bg-white/95 backdrop-blur border-b border-stone-200 flex items-center justify-between shrink-0 shadow-sm z-40">
         <div className="flex items-center gap-2 lg:gap-3 min-w-0">
           <div className="hidden lg:flex w-10 h-10 rounded-xl bg-orange-500 items-center justify-center text-white shadow-sm">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -410,8 +410,8 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
         <div ref={bottomRef} className="h-4" />
       </div>
 
-      {/* Input - Fixé au dessus du menu mobile */}
-      <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 p-3 lg:p-8 bg-white/95 backdrop-blur border-t border-stone-200 shrink-0 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+      {/* Input - Fixé et Flottant sur mobile */}
+      <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 p-3 lg:p-8 bg-transparent lg:bg-white/95 lg:backdrop-blur border-none lg:border-t lg:border-stone-200 shrink-0 z-50 lg:shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
         <div className="max-w-[1000px] mx-auto relative">
           <textarea
             value={input}
