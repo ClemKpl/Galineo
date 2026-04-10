@@ -548,13 +548,17 @@ router.post('/chat', authMiddleware, checkAiPromptLimit, async (req, res) => {
   const userText = messages[messages.length - 1].content;
   const dbProjectId = (projectId === 'wizard' || mode === 'wizard') ? null : projectId;
   let projectTitle = 'ce projet';
+  let userName = 'Utilisateur';
+  let userEmail = 'inconnu';
+  let userRoleId = null;
 
   try {
     const user = await dbGet('SELECT name, email FROM users WHERE id = ?', [userId]);
-    const userName = user?.name || 'Utilisateur';
-    const userEmail = user?.email || 'inconnu';
+    if (user) {
+      userName = user.name;
+      userEmail = user.email;
+    }
 
-    let userRoleId = null;
     if (projectId) {
       const p = await dbGet(`SELECT title FROM projects WHERE id = ?`, [projectId]);
       if (p) projectTitle = p.title;
@@ -612,6 +616,7 @@ router.post('/chat', authMiddleware, checkAiPromptLimit, async (req, res) => {
   (async () => {
     let lastError = null;
     let success = false;
+    let currentProjectIdTask = dbProjectId;
 
     try {
       for (let i = 0; i < apiKeys.length; i++) {
@@ -725,7 +730,7 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
           const result = await sendMessageWithRetry(identifiedUserText);
           let response = result.response;
           let text = "";
-          let currentProjectIdTask = projectId;
+          currentProjectIdTask = projectId || dbProjectId;
           const currentUserRoleId = userRoleId;
 
           let toolCallsCount = 0;
