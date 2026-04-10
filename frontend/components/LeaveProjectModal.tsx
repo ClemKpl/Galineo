@@ -107,7 +107,7 @@ export default function LeaveProjectModal({
               disabled={loading}
               className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-sm shadow-red-200 transition-all active:scale-95 disabled:opacity-50"
             >
-              {loading ? 'Traitement...' : 'Déconfirmer le départ'}
+              {loading ? 'Traitement...' : 'Confirmer le départ'}
             </button>
           </div>
         </div>
