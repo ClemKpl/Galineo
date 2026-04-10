@@ -52,6 +52,7 @@ router.delete('/users/:id', authMiddleware, adminMiddleware, (req, res) => {
       await run('DELETE FROM event_attendees WHERE user_id = ?', [targetId]);
       await run('DELETE FROM task_comments WHERE user_id = ?', [targetId]);
       await run('DELETE FROM support_tickets WHERE user_id = ?', [targetId]);
+      await run('DELETE FROM invitations WHERE inviter_id = ?', [targetId]);
       await run('DELETE FROM chat_group_members WHERE user_id = ?', [targetId]);
       await run('UPDATE chat_groups SET created_by = NULL WHERE created_by = ?', [targetId]);
 

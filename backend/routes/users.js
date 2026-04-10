@@ -184,7 +184,8 @@ router.delete('/me', authMiddleware, async (req, res) => {
     await new Promise((res) => db.run('UPDATE chat_groups SET created_by = NULL WHERE created_by = ?', [userId], res));
 
     // Supprimer les tickets de support
-    await run('DELETE FROM support_tickets WHERE user_id = ?', [userId]);
+    await new Promise((res) => db.run('DELETE FROM invitations WHERE inviter_id = ?', [userId], res));
+    await new Promise((res) => db.run('DELETE FROM support_tickets WHERE user_id = ?', [userId], res));
 
     // Gérer les projets dont l'utilisateur est seul propriétaire
     const ownedProjects = await new Promise((resolve, reject) =>
