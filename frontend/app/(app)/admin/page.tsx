@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Eye, Trash2 } from 'lucide-react';
 
 type User = {
   id: number;
@@ -279,7 +278,7 @@ export default function AdminPage() {
                         onClick={() => handleDeleteUser(u)}
                         className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-red-50 flex items-center justify-center"
                       >
-                        <Trash2 className="w-4 h-4 sm:hidden" />
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" className="sm:hidden"><path d="M19 7l-1 12H6L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/></svg>
                         <span className="hidden sm:inline">Supprimer</span>
                       </button>
                     )}
@@ -327,14 +326,14 @@ export default function AdminPage() {
                       onClick={() => window.open(`/projects/${p.id}`, '_blank')}
                       className="text-xs text-purple-600 hover:text-purple-700 font-semibold transition-colors px-2 py-1 rounded-lg hover:bg-purple-50 flex items-center justify-center"
                     >
-                      <Eye className="w-4 h-4 sm:hidden" />
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" className="sm:hidden"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                       <span className="hidden sm:inline">Consulter</span>
                     </button>
                     <button
                       onClick={() => handleDeleteProject(p)}
                       className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-red-50 flex items-center justify-center"
                     >
-                      <Trash2 className="w-4 h-4 sm:hidden" />
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" className="sm:hidden"><path d="M19 7l-1 12H6L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/></svg>
                       <span className="hidden sm:inline">Supprimer</span>
                     </button>
                   </td>
