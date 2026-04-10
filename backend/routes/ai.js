@@ -538,9 +538,14 @@ router.post('/chat', authMiddleware, checkAiPromptLimit, async (req, res) => {
     const userName = user?.name || 'Utilisateur';
     const userEmail = user?.email || 'inconnu';
 
+    let userRoleId = null;
     if (projectId) {
       const p = await dbGet(`SELECT title FROM projects WHERE id = ?`, [projectId]);
       if (p) projectTitle = p.title;
+
+      // Récupération du rôle de l'utilisateur dans ce projet
+      const membership = await dbGet(`SELECT role_id FROM project_members WHERE project_id = ? AND user_id = ?`, [projectId, userId]);
+      userRoleId = membership?.role_id || null;
     }
     
     // On injecte les infos utilisateur dans le scope interne pour sysInstruct
@@ -705,6 +710,7 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
           let response = result.response;
           let text = "";
           let currentProjectIdTask = projectId;
+          const currentUserRoleId = userRoleId;
 
           let toolCallsCount = 0;
           while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
@@ -712,30 +718,58 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
             const calls = response.functionCalls();
             const toolLogs = [];
             for (const call of calls) {
-              // --- VÉRIFICATION DES PERMISSIONS (Si mode projet) ---
+              // --- VÉRIFICATION DES PERMISSIONS ---
               if (projectId) {
+                // 1. Paramètres du projet (AI Settings)
                 const settings = await dbGet('SELECT * FROM project_ai_settings WHERE project_id = ?', [projectId]);
-                // On assume "autorisé" par défaut (1) si la ligne n'existe pas, sauf pour delete (0)
                 const canCreate = !settings || settings.allow_create === 1;
                 const canModify = !settings || settings.allow_modify === 1;
                 const canMembers = !settings || settings.allow_members === 1;
                 const canDelete = settings && settings.allow_delete === 1;
 
+                // 2. Rôle de l'utilisateur (Propriétaire=1, Admin=2, Membre=3, Observateur=4)
+                // Seuls Propriétaire et Admin peuvent effectuer des actions administratives via l'IA
+                const isAdminOrOwner = currentUserRoleId === 1 || currentUserRoleId === 2;
+
                 if (call.name === 'creer_elements' && !canCreate) {
-                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La création d'éléments par l'IA est désactivée pour ce projet." } });
+                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La création par l'IA est désactivée pour ce projet." } });
                   continue;
                 }
                 if (call.name === 'modifier_tache' && !canModify) {
-                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La modification de tâches par l'IA est désactivée pour ce projet." } });
+                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La modification par l'IA est désactivée pour ce projet." } });
                   continue;
                 }
-                if (call.name === 'gerer_membres' && !canMembers) {
-                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La gestion des membres par l'IA est désactivée pour ce projet." } });
-                  continue;
+
+                // Restriction de GESTION DES MEMBRES par rôle
+                if (call.name === 'gerer_membres') {
+                  if (!canMembers) {
+                    toolLogs.push({ name: call.name, response: { error: "Action refusée : La gestion des membres par l'IA est désactivée." } });
+                    continue;
+                  }
+                  if (!isAdminOrOwner) {
+                    toolLogs.push({ name: call.name, response: { error: "Action refusée : Vous n'avez pas les droits d'administrateur nécessaires pour gérer l'équipe via l'IA." } });
+                    continue;
+                  }
                 }
-                if (call.name === 'supprimer_elements' && !canDelete) {
-                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La suppression d'éléments par l'IA est désactivée (Désactivé par défaut / Expérimental)." } });
-                  continue;
+
+                // Restriction de MODIFICATION PARAMÈTRES par rôle
+                if (call.name === 'modifier_parametres_projet') {
+                  if (!isAdminOrOwner) {
+                    toolLogs.push({ name: call.name, response: { error: "Action refusée : Seuls les administrateurs peuvent modifier les paramètres globaux du projet via l'IA." } });
+                    continue;
+                  }
+                }
+
+                // Restriction de SUPPRESSION par rôle
+                if (call.name === 'supprimer_elements') {
+                  if (!canDelete) {
+                    toolLogs.push({ name: call.name, response: { error: "Action refusée : La suppression par l'IA est désactivée (Désactivé par défaut / Expérimental)." } });
+                    continue;
+                  }
+                  if (!isAdminOrOwner) {
+                    toolLogs.push({ name: call.name, response: { error: "Action refusée : Vous n'avez pas les droits d'administrateur nécessaires pour supprimer des éléments via l'IA." } });
+                    continue;
+                  }
                 }
               }
 
