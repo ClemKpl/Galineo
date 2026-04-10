@@ -153,14 +153,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
               created_at: h.created_at,
             }));
             
-            // On ne remplace que si l'historique serveur est cohérent avec l'état local
-            setMessages(prev => {
-              // Si le serveur a moins de messages que nous (sans compter le welcome), on attend le prochain poll
-              // car le message utilisateur vient d'être envoyé mais peut-être pas encore indexé par le GET
-              if (mapped.length < prev.length - 1) return prev;
-              
-              return [prev[0], ...mapped];
-            });
+            setMessages(prev => mergeHistory(prev, mapped));
             setLoading(false);
           }
         }
@@ -170,6 +163,26 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
     }, 1500);
     return () => clearInterval(interval);
   }, [loading, projectId]);
+
+  // Fonction de fusion inteligente pour éviter les disparitions
+  const mergeHistory = (prev: Message[], incoming: Message[]) => {
+    // On garde le message de bienvenue (prev[0])
+    const welcome = prev[0];
+    const current = prev.slice(1);
+
+    // Création d'un set de "clés" pour dédupliquer (rôle + contenu + date)
+    const existingKeys = new Set(current.map(m => `${m.role}|${m.content}|${m.created_at}`));
+    
+    const newFromIncoming = incoming.filter(m => {
+       const key = `${m.role}|${m.content}|${m.created_at}`;
+       return !existingKeys.has(key);
+    });
+
+    if (newFromIncoming.length === 0 && current.length === incoming.length) return prev;
+    
+    // On retourne le welcome + tout le reste (trié par date si possible)
+    return [welcome, ...incoming];
+  };
 
   async function checkActiveTask() {
     try {
@@ -218,11 +231,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
           created_at: h.created_at
         }));
         
-        setMessages(prev => {
-          // Sécurité identique : on ne réduit pas l'historique brutalement si un message vient d'être envoyé
-          if (mapped.length < prev.length - 1 && loading) return prev;
-          return [prev[0], ...mapped];
-        });
+        setMessages(prev => mergeHistory(prev, mapped));
       }
     } catch (err) {
       console.error('Failed to load history', err);

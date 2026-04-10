@@ -445,10 +445,10 @@ router.get('/history/:projectId', authMiddleware, async (req, res) => {
        FROM ai_messages m 
        LEFT JOIN users u ON u.id = m.user_id 
        WHERE ${isWizard ? 'm.project_id IS NULL AND m.user_id = ?' : 'm.project_id = ?'}
-       AND m.created_at >= datetime('now', '-' || ? || ' minute', '-10 second')
        ORDER BY m.id ASC`,
-      isWizard ? [userId, durationMin] : [projectId, durationMin]
+      isWizard ? [userId] : [projectId]
     );
+    console.log(`[AI History] Fetching for ${projectId}, found ${rows.length} rows`);
     res.json({ history: rows });
   } catch (err) {
     res.status(500).json({ error: err.message });
