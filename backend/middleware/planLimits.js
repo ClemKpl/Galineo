@@ -6,11 +6,29 @@ const FREE_LIMITS = {
   ai_prompts: 50
 };
 
+const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
+
+// Helper pour vérifier si l'utilisateur est admin ou premium
+function isUnlimited(req, userPlan) {
+  if (ADMIN_EMAILS.includes(req.user.email)) return true;
+  if (userPlan === 'premium') return true;
+  return false;
+}
+
+const ELEGANT_MESSAGE = (feature) => {
+  const labels = {
+    projects: 'projets',
+    collaborators: 'collaborateurs',
+    ai_prompts: 'prompts IA'
+  };
+  return `Vous avez atteint la limite de ${labels[feature] || 'ressources'} autorisée pour votre plan actuel. Pour continuer à créer, vous pouvez soit libérer de l'espace en supprimant des éléments existants, soit passer au plan Premium pour profiter d'un usage illimité.`;
+};
+
 // Bloque si l'user FREE a atteint sa limite de projets
 function checkProjectLimit(req, res, next) {
   db.get('SELECT plan FROM users WHERE id = ?', [req.user.id], (err, user) => {
     if (err || !user) return res.status(500).json({ error: 'Erreur serveur' });
-    if (user.plan === 'premium') return next();
+    if (isUnlimited(req, user.plan)) return next();
 
     db.get(
       'SELECT COUNT(*) as count FROM projects WHERE owner_id = ? AND status != "deleted"',
@@ -20,7 +38,7 @@ function checkProjectLimit(req, res, next) {
         if (row.count >= FREE_LIMITS.projects) {
           return res.status(403).json({
             error: 'PLAN_LIMIT',
-            message: `Limite atteinte : ${FREE_LIMITS.projects} projets maximum en plan Free.`,
+            message: ELEGANT_MESSAGE('projects'),
             limit: 'projects'
           });
         }
@@ -36,12 +54,12 @@ function checkCollaboratorLimit(req, res, next) {
 
   db.get('SELECT plan, id FROM users WHERE id = ?', [req.user.id], (err, user) => {
     if (err || !user) return res.status(500).json({ error: 'Erreur serveur' });
-    if (user.plan === 'premium') return next();
+    if (isUnlimited(req, user.plan)) return next();
 
     // Vérifie que l'user est proprio du projet
     db.get('SELECT owner_id FROM projects WHERE id = ?', [projectId], (err2, project) => {
-      if (err2 || !project) return next(); // laisser passer, la route gérera l'erreur
-      if (project.owner_id !== req.user.id) return next(); // seul le proprio est limité
+      if (err2 || !project) return next();
+      if (project.owner_id !== req.user.id) return next();
 
       db.get(
         'SELECT COUNT(*) as count FROM project_members WHERE project_id = ? AND user_id != ?',
@@ -51,7 +69,7 @@ function checkCollaboratorLimit(req, res, next) {
           if (row.count >= FREE_LIMITS.collaborators) {
             return res.status(403).json({
               error: 'PLAN_LIMIT',
-              message: `Limite atteinte : ${FREE_LIMITS.collaborators} collaborateurs maximum en plan Free.`,
+              message: ELEGANT_MESSAGE('collaborators'),
               limit: 'collaborators'
             });
           }
@@ -62,16 +80,16 @@ function checkCollaboratorLimit(req, res, next) {
   });
 }
 
-// Bloque si l'user FREE a dépassé ses 10 prompts IA
+// Bloque si l'user FREE a dépassé ses prompts IA
 function checkAiPromptLimit(req, res, next) {
-  db.get('SELECT plan, ai_prompts_count FROM users WHERE id = ?', [req.user.id], (err, user) => {
+  db.get('SELECT plan, email, ai_prompts_count FROM users WHERE id = ?', [req.user.id], (err, user) => {
     if (err || !user) return res.status(500).json({ error: 'Erreur serveur' });
-    if (user.plan === 'premium') return next();
+    if (isUnlimited(req, user.plan)) return next();
 
     if ((user.ai_prompts_count || 0) >= FREE_LIMITS.ai_prompts) {
       return res.status(403).json({
         error: 'PLAN_LIMIT',
-        message: `Limite atteinte : ${FREE_LIMITS.ai_prompts} prompts IA maximum en plan Free.`,
+        message: ELEGANT_MESSAGE('ai_prompts'),
         limit: 'ai_prompts'
       });
     }

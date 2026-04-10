@@ -19,7 +19,7 @@ async function request(path: string, options: RequestInit = {}) {
   console.log('📡 Appel API vers :', finalUrl);
   const res = await fetch(finalUrl, { cache: 'no-store', ...options, headers });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+  if (!res.ok) throw new Error(data.message || data.error || 'Erreur serveur');
   return data;
 }
 
