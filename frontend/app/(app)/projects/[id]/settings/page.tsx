@@ -326,7 +326,7 @@ export default function ProjectSettingsPage() {
           projectId={project.id}
           projectTitle={project.title}
           isOwner={project.owner_id === user?.id}
-          members={project.members}
+          members={project.members || []}
           currentUserId={user?.id || 0}
           onClose={() => setShowLeaveModal(false)}
         />

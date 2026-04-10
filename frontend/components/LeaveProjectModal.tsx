@@ -2,18 +2,13 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
-
-interface Member {
-  id: number;
-  name: string;
-  role_name: string;
-}
+import { ProjectMember } from '../app/(app)/projects/[id]/ProjectContext';
 
 interface LeaveProjectModalProps {
   projectId: number;
   projectTitle: string;
   isOwner: boolean;
-  members: Member[];
+  members: ProjectMember[];
   currentUserId: number;
   onClose: () => void;
 }
