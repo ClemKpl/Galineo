@@ -292,10 +292,10 @@ export default function DashboardPage() {
 
       {/* Assigned tasks */}
       <section className="mb-10 animate-fadeUp">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 px-1 gap-3">
+        <div className="flex items-center justify-between mb-4 px-1 gap-3">
           <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
-              {taskView === 'tasks' ? 'Mes tâches assignées' : 'Mes fonctionnalités assignées'}
+              {taskView === 'tasks' ? 'Mes tâches' : 'Mes fonct.'}
             </h2>
             {/* Toggle */}
             <div className="flex items-center bg-stone-100 rounded-xl p-0.5 gap-0.5">
@@ -303,24 +303,22 @@ export default function DashboardPage() {
                 onClick={() => setTaskView('tasks')}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${taskView === 'tasks' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
               >
-                <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
                 Tâches
               </button>
               <button
                 onClick={() => setTaskView('features')}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${taskView === 'features' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
               >
-                <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                Fonctionnalités
+                Fonct.
               </button>
             </div>
+            <button
+              onClick={() => { setAssignedLoading(true); fetchAssignedTasks(); }}
+              className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors ml-1"
+            >
+              Rafraîchir
+            </button>
           </div>
-          <button
-            onClick={() => { setAssignedLoading(true); fetchAssignedTasks(); }}
-            className="text-[10px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors"
-          >
-            Rafraîchir
-          </button>
         </div>
 
         {(() => {
