@@ -40,6 +40,7 @@ router.get('/me', authMiddleware, (req, res) => {
         row.plan = 'unlimited';
       }
       
+      row.isAdmin = req.user.isAdmin;
       res.json(row);
     });
   });
@@ -95,6 +96,7 @@ router.patch('/me', authMiddleware, (req, res) => {
         row.plan = 'unlimited';
       }
       
+      row.isAdmin = req.user.isAdmin;
       res.json(row);
     });
   });

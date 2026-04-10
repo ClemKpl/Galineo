@@ -19,6 +19,7 @@ export type Project = {
   deadline: string | null;
   owner_id: number;
   owner_name?: string;
+  owner_plan?: string;
   members?: ProjectMember[];
   invitations?: any[];
   my_role_id?: number;

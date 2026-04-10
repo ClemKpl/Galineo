@@ -10,6 +10,7 @@ interface User {
   email: string;
   avatar?: string | null;
   plan?: 'free' | 'premium' | 'unlimited';
+  isAdmin?: boolean;
   notif_project_updates?: number;
   notif_added_to_project?: number;
   notif_deadlines?: number;
