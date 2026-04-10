@@ -29,6 +29,7 @@ interface AssignedTask {
   due_date: string | null;
   project_id: number;
   project_title: string;
+  parent_id: number | null;
 }
 
 interface UpcomingEvent {
@@ -191,6 +192,7 @@ export default function DashboardPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [draggingProjectId, setDraggingProjectId] = useState<number | null>(null);
+  const [taskView, setTaskView] = useState<'tasks' | 'features'>('tasks');
 
   const handleToggleFavorite = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
@@ -282,10 +284,31 @@ export default function DashboardPage() {
       {/* Invitations */}
       <ProjectInvites onRefresh={fetchProjects} />
 
-      {/* Assigned tasks */}
+      {/* Assigned tasks / features */}
       <section className="mb-10 animate-fadeUp">
         <div className="flex items-center justify-between mb-4 px-1">
-          <h2 className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">Mes tâches assignées</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
+              {taskView === 'tasks' ? 'Mes tâches assignées' : 'Mes fonctionnalités assignées'}
+            </h2>
+            {/* Toggle */}
+            <div className="flex items-center bg-stone-100 rounded-xl p-0.5 gap-0.5">
+              <button
+                onClick={() => setTaskView('tasks')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${taskView === 'tasks' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+              >
+                <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                Tâches
+              </button>
+              <button
+                onClick={() => setTaskView('features')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${taskView === 'features' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+              >
+                <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Fonctionnalités
+              </button>
+            </div>
+          </div>
           <button
             onClick={() => { setAssignedLoading(true); fetchAssignedTasks(); }}
             className="text-[10px] font-black text-orange-500 hover:text-orange-600 uppercase tracking-widest transition-colors"
@@ -294,45 +317,52 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {assignedLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1,2,3].map((i) => (
-              <div key={i} className="bg-white rounded-2xl border border-stone-200 p-5 animate-pulse h-28" />
-            ))}
-          </div>
-        ) : assignedTasks.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-5 py-6 text-sm text-stone-400">
-            Aucune tâche assignée pour le moment.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {assignedTasks.slice(0, 9).map((t) => {
-              const due = t.due_date ? new Date(t.due_date) : null;
-              const dueText = due && !Number.isNaN(due.getTime()) ? due.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: '2-digit' }) : null;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => router.push(`/projects/${t.project_id}/tasks`)}
-                  className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-xl hover:shadow-orange-500/20 hover:border-orange-200 transition-all duration-300 group active:scale-[0.98]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-stone-900 line-clamp-2 group-hover:text-orange-500 transition-colors leading-snug">{t.title}</p>
-                      <p className="text-[10px] text-stone-400 mt-1.5 uppercase font-black tracking-widest truncate">{t.project_title}</p>
+        {(() => {
+          const filtered = assignedTasks.filter(t =>
+            taskView === 'tasks' ? t.parent_id !== null : t.parent_id === null
+          );
+          const emptyMsg = taskView === 'tasks' ? 'Aucune tâche assignée pour le moment.' : 'Aucune fonctionnalité assignée pour le moment.';
+
+          return assignedLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1,2,3].map((i) => (
+                <div key={i} className="bg-white rounded-2xl border border-stone-200 p-5 animate-pulse h-28" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-stone-300 bg-white px-5 py-6 text-sm text-stone-400">
+              {emptyMsg}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.slice(0, 9).map((t) => {
+                const due = t.due_date ? new Date(t.due_date) : null;
+                const dueText = due && !Number.isNaN(due.getTime()) ? due.toLocaleDateString('fr-FR', { year: 'numeric', month: 'short', day: '2-digit' }) : null;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => router.push(`/projects/${t.project_id}/tasks`)}
+                    className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-xl hover:shadow-orange-500/20 hover:border-orange-200 transition-all duration-300 group active:scale-[0.98]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-stone-900 line-clamp-2 group-hover:text-orange-500 transition-colors leading-snug">{t.title}</p>
+                        <p className="text-[10px] text-stone-400 mt-1.5 uppercase font-black tracking-widest truncate">{t.project_title}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-5 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] text-stone-400">
-                    <span className="px-2 py-0.5 bg-stone-50 rounded-md border border-stone-100 text-stone-500">{t.status === 'in_progress' ? 'En cours' : 'À faire'}</span>
-                    <span className="flex items-center gap-1 opacity-60">
-                       <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                       {dueText || 'Libre'}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
+                    <div className="mt-5 flex items-center justify-between text-[9px] font-black uppercase tracking-[0.15em] text-stone-400">
+                      <span className="px-2 py-0.5 bg-stone-50 rounded-md border border-stone-100 text-stone-500">{t.status === 'in_progress' ? 'En cours' : 'À faire'}</span>
+                      <span className="flex items-center gap-1 opacity-60">
+                        <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                        {dueText || 'Libre'}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
       </section>
 
       {/* Upcoming events */}
