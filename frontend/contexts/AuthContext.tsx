@@ -13,6 +13,10 @@ interface User {
   notif_project_updates?: number;
   notif_added_to_project?: number;
   notif_deadlines?: number;
+  notif_mentions?: number;
+  notif_task_completed?: number;
+  notif_ai_responses?: number;
+  notif_chat_messages?: number;
 }
 
 interface AuthContextType {
