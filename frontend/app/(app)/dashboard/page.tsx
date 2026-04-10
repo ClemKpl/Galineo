@@ -163,15 +163,15 @@ function ProjectCard({
 function EmptyState({ onNew }: { onNew: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
-        <svg width="28" height="28" fill="none" className="stroke-blue-500" strokeWidth="1.8" viewBox="0 0 24 24">
+      <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center mb-4">
+        <svg width="28" height="28" fill="none" className="stroke-orange-500" strokeWidth="1.8" viewBox="0 0 24 24">
           <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
         </svg>
       </div>
       <h3 className="text-stone-900 font-semibold text-lg mb-1">Aucun projet pour l&apos;instant</h3>
       <p className="text-stone-400 text-sm mb-6 max-w-xs">Créez votre premier projet ou attendez d&apos;être ajouté à un projet existant.</p>
       <button onClick={onNew}
-        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors text-sm">
+        className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-colors text-sm">
         <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <button onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all text-sm active:scale-95 shrink-0">
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all text-sm active:scale-95 shrink-0">
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>

@@ -128,14 +128,14 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
                   Accès Illimité Administrateur 👑
                 </div>
               ) : currentPlan === 'premium' ? (
-                <div className="w-full text-center py-2.5 rounded-xl bg-blue-50 text-blue-600 text-sm font-semibold cursor-default">
+                <div className="w-full text-center py-2.5 rounded-xl bg-orange-50 text-orange-600 text-sm font-semibold cursor-default">
                   Déjà Premium 🎉
                 </div>
               ) : (
                 <button
                   onClick={handleUpgrade}
                   disabled={loading}
-                  className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
