@@ -20,6 +20,7 @@ router.get('/assigned', authMiddleware, (req, res) => {
       LEFT JOIN users u1 ON t.created_by = u1.id
       LEFT JOIN users u2 ON t.assigned_to = u2.id
       WHERE t.assigned_to = ?
+        AND p.status = 'active'
       ORDER BY
         CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END,
         t.due_date ASC,
