@@ -329,6 +329,17 @@ const initDb = async () => {
         allow_modify INTEGER DEFAULT 1,
         allow_members INTEGER DEFAULT 1,
         allow_delete INTEGER DEFAULT 0
+      )`,
+      `CREATE TABLE IF NOT EXISTS support_tickets (
+        id ${autoInc},
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        subject TEXT NOT NULL,
+        message TEXT NOT NULL,
+        status TEXT DEFAULT 'open',
+        priority TEXT DEFAULT 'normal',
+        admin_reply TEXT,
+        replied_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`
     ];
 

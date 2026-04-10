@@ -200,10 +200,53 @@ async function sendPremiumWelcome({ email, name }) {
   });
 }
 
+const { ADMIN_EMAILS } = require('../config/admins');
+const SUPPORT_ADMIN_EMAILS = ADMIN_EMAILS;
+
+async function sendSupportNotification({ ticketId, subject, message, userName, userEmail, priority }) {
+  const priorityBadge = priority === 'high'
+    ? '<span style="background:#f97316;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em;">⭐ Prioritaire</span>'
+    : '<span style="background:#e7e5e4;color:#78716c;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em;">Normal</span>';
+
+  for (const adminEmail of SUPPORT_ADMIN_EMAILS) {
+    await sendMail({
+      to: adminEmail,
+      subject: `[Support #${ticketId}] ${subject}`,
+      html: baseTemplate(`
+        <p style="font-size:15px;color:#1c1917;">Nouveau ticket de support ${priorityBadge}</p>
+        <p style="color:#57534e;font-size:14px;margin:4px 0;">De : <strong>${userName}</strong> (${userEmail})</p>
+        <div style="background:#f5f5f4;border-radius:10px;padding:16px;margin:16px 0;">
+          <p style="font-weight:700;color:#1c1917;margin:0 0 8px;">${subject}</p>
+          <p style="color:#57534e;font-size:14px;line-height:1.6;margin:0;white-space:pre-wrap;">${message}</p>
+        </div>
+        ${btn(`${FRONTEND_URL}/admin?tab=support`, 'Répondre dans l\'admin')}
+      `),
+    }).catch(() => {});
+  }
+}
+
+async function sendSupportReplyNotification({ userEmail, userName, subject, reply }) {
+  await sendMail({
+    to: userEmail,
+    subject: `Réponse à votre ticket : ${subject}`,
+    html: baseTemplate(`
+      <p style="font-size:15px;color:#1c1917;">Bonjour ${userName},</p>
+      <p style="color:#57534e;font-size:15px;line-height:1.6;">L'équipe Galineo a répondu à votre ticket de support :</p>
+      <p style="font-weight:700;color:#1c1917;margin:16px 0 8px;">${subject}</p>
+      <div style="background:#fff7ed;border-left:3px solid #f97316;border-radius:0 10px 10px 0;padding:16px;margin:0 0 16px;">
+        <p style="color:#57534e;font-size:14px;line-height:1.6;margin:0;white-space:pre-wrap;">${reply}</p>
+      </div>
+      ${btn(`${FRONTEND_URL}/settings?tab=support`, 'Voir mon ticket')}
+    `),
+  });
+}
+
 module.exports = {
   sendMemberAdded,
   sendProjectInvitation,
   sendNotificationEmail,
   sendOwnershipTransferred,
-  sendPremiumWelcome
+  sendPremiumWelcome,
+  sendSupportNotification,
+  sendSupportReplyNotification,
 };

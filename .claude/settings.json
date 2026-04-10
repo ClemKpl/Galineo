@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /c/xampp/htdocs/Galineo/.env*)",
+      "Bash(npm list:*)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m 'fix: api.get ne prend qu'\\\\''un argument — stocker token avant appel /users/me:*)",
+      "Bash(git push:*)",
+      "Bash(git commit -m 'fix: wrap useSearchParams in Suspense pour éviter l'\\\\''erreur de prerendering:*)",
+      "Bash(git commit -m 'fix: Google OAuth — insérer password_hash vide pour respecter la contrainte NOT NULL:*)",
+      "Bash(git commit -m 'debug: log erreurs Google OAuth callback:*)",
+      "Bash(git commit -m 'debug: log activation strategy Google OAuth au démarrage:*)",
+      "Bash(git commit -m 'debug: log redirect URL Google OAuth:*)",
+      "Bash(git commit -m 'feat: responsive mobile settings & PricingModal:*)",
+      "Bash(git commit -m 'fix: PricingModal scrollable et limité à 90dvh sur mobile:*)"
+    ]
+  }
+}

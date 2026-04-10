@@ -4,7 +4,7 @@ const db = require('../db');
 const bcrypt = require('bcryptjs');
 const { authMiddleware } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
-const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
+const { ADMIN_EMAILS } = require('../config/admins');
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
 

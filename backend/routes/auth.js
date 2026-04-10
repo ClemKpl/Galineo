@@ -7,7 +7,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const db = require('../db');
 const { JWT_SECRET } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
-const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
+const { ADMIN_EMAILS } = require('../config/admins');
 
 // --- Google OAuth Strategy ---
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {

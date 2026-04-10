@@ -6,7 +6,7 @@ const FREE_LIMITS = {
   ai_prompts: 50
 };
 
-const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
+const { ADMIN_EMAILS } = require('../config/admins');
 
 // Helper pour vérifier si l'utilisateur est admin ou premium
 function isUnlimited(req, userPlan) {

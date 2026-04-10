@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 
-const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
+const { ADMIN_EMAILS } = require('../config/admins');
 
 function adminMiddleware(req, res, next) {
   const email = req.user?.email;

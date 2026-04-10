@@ -32,7 +32,20 @@ type Stats = {
   tasks: number;
 };
 
-type Tab = 'users' | 'projects';
+type Tab = 'users' | 'projects' | 'support';
+
+type SupportTicket = {
+  id: number;
+  user_name: string;
+  user_email: string;
+  user_plan: string;
+  subject: string;
+  message: string;
+  status: string;
+  priority: string;
+  admin_reply: string | null;
+  created_at: string;
+};
 
 const PLAN_LABELS: Record<string, string> = { free: 'Free', premium: 'Premium', unlimited: 'Admin' };
 const PLAN_COLORS: Record<string, string> = {
@@ -47,10 +60,12 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; error?: boolean } | null>(null);
   const [search, setSearch] = useState('');
+  const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({});
 
   const showToast = (message: string, error = false) => {
     setToast({ message, error });
@@ -60,14 +75,16 @@ export default function AdminPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, u, p] = await Promise.all([
+      const [s, u, p, t] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/users'),
         api.get('/admin/projects'),
+        api.get('/support/admin'),
       ]);
       setStats(s);
       setUsers(u);
       setProjects(p);
+      setTickets(t as SupportTicket[]);
     } catch {
       showToast('Accès refusé ou erreur serveur.', true);
       router.push('/dashboard');
@@ -111,6 +128,25 @@ export default function AdminPage() {
       await api.delete(`/admin/projects/${p.id}`);
       setProjects((prev) => prev.filter((x) => x.id !== p.id));
       showToast(`Projet "${p.title}" supprimé.`);
+    } catch (e) {
+      showToast((e as Error).message, true);
+    }
+  };
+
+  const handleTicketReply = async (ticket: SupportTicket, status?: string) => {
+    const reply = replyDrafts[ticket.id];
+    if (!reply?.trim() && !status) return;
+    try {
+      await api.patch(`/support/admin/${ticket.id}`, {
+        ...(reply?.trim() ? { admin_reply: reply.trim() } : {}),
+        ...(status ? { status } : {}),
+      });
+      setTickets((prev) => prev.map((t) => t.id === ticket.id
+        ? { ...t, admin_reply: reply?.trim() || t.admin_reply, status: status || t.status }
+        : t
+      ));
+      setReplyDrafts((prev) => { const n = { ...prev }; delete n[ticket.id]; return n; });
+      showToast('Ticket mis à jour');
     } catch (e) {
       showToast((e as Error).message, true);
     }
@@ -169,14 +205,21 @@ export default function AdminPage() {
 
       {/* Tabs + Search */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-1 bg-stone-100 p-1 rounded-xl">
-          {(['users', 'projects'] as Tab[]).map((t) => (
+        <div className="flex gap-1 bg-stone-100 p-1 rounded-xl flex-wrap">
+          {(['users', 'projects', 'support'] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => { setTab(t); setSearch(''); }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab === t ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all relative ${tab === t ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
             >
-              {t === 'users' ? `Utilisateurs (${users.length})` : `Projets (${projects.length})`}
+              {t === 'users' ? `Utilisateurs (${users.length})` : t === 'projects' ? `Projets (${projects.length})` : (
+                <span className="flex items-center gap-1.5">
+                  Support
+                  {tickets.filter(tk => tk.status === 'open').length > 0 && (
+                    <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{tickets.filter(tk => tk.status === 'open').length}</span>
+                  )}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -287,6 +330,65 @@ export default function AdminPage() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+      {/* Support tickets */}
+      {tab === 'support' && (
+        <div className="space-y-4">
+          {tickets.length === 0 && (
+            <div className="bg-white border border-stone-100 rounded-2xl px-5 py-10 text-center text-stone-400 text-sm">Aucun ticket de support</div>
+          )}
+          {tickets.map((t) => (
+            <div key={t.id} className={`bg-white border rounded-2xl overflow-hidden ${t.priority === 'high' ? 'border-orange-200' : 'border-stone-100'}`}>
+              <div className="px-5 py-4 flex items-start justify-between gap-3 flex-wrap">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-stone-900 text-sm">{t.subject}</span>
+                    {t.priority === 'high' && <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full uppercase">⭐ Prioritaire</span>}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                      t.status === 'closed' ? 'bg-stone-100 text-stone-500' :
+                      t.status === 'in_progress' ? 'bg-blue-100 text-blue-600' :
+                      'bg-emerald-100 text-emerald-600'
+                    }`}>{t.status === 'closed' ? 'Fermé' : t.status === 'in_progress' ? 'En cours' : 'Ouvert'}</span>
+                  </div>
+                  <p className="text-xs text-stone-400">{t.user_name} · {t.user_email} · <span className={`font-medium ${t.user_plan === 'premium' ? 'text-orange-500' : 'text-stone-400'}`}>{t.user_plan}</span> · {fmt(t.created_at)}</p>
+                  <p className="text-sm text-stone-600 mt-2 whitespace-pre-wrap">{t.message}</p>
+                  {t.admin_reply && (
+                    <div className="mt-3 bg-orange-50 border border-orange-100 rounded-xl p-3">
+                      <p className="text-xs font-bold text-orange-600 mb-1">Réponse envoyée</p>
+                      <p className="text-sm text-stone-600 whitespace-pre-wrap">{t.admin_reply}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  {t.status !== 'in_progress' && t.status !== 'closed' && (
+                    <button onClick={() => handleTicketReply(t, 'in_progress')} className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 font-medium hover:bg-blue-100 transition-colors">En cours</button>
+                  )}
+                  {t.status !== 'closed' && (
+                    <button onClick={() => handleTicketReply(t, 'closed')} className="text-xs px-3 py-1.5 rounded-lg bg-stone-100 text-stone-500 font-medium hover:bg-stone-200 transition-colors">Fermer</button>
+                  )}
+                </div>
+              </div>
+              {t.status !== 'closed' && (
+                <div className="border-t border-stone-100 px-5 py-4 flex gap-3 flex-wrap">
+                  <textarea
+                    rows={2}
+                    value={replyDrafts[t.id] || ''}
+                    onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [t.id]: e.target.value }))}
+                    placeholder="Répondre à l'utilisateur..."
+                    className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30 focus:border-purple-400 transition-all resize-none"
+                  />
+                  <button
+                    onClick={() => handleTicketReply(t)}
+                    disabled={!replyDrafts[t.id]?.trim()}
+                    className="self-end px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white font-semibold rounded-xl text-sm disabled:opacity-40 transition-colors"
+                  >
+                    Envoyer
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
