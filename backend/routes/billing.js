@@ -113,8 +113,10 @@ router.post('/webhook', async (req, res) => {
 
   try {
     // req.body est un Buffer car géré par express.raw dans server.js
+    console.log(`📦 [billing/webhook] Raw body length: ${req.body?.length || 0} bytes`);
+    console.log(`🔑 [billing/webhook] Secret defini: ${!!webhookSecret}`);
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    console.log(`🔔 [billing/webhook] Événement reçu: ${event.type}`);
+    console.log(`🔔 [billing/webhook] Événement valide reçu: ${event.type}`);
   } catch (e) {
     console.error(`❌ [billing/webhook] Signature invalide: ${e.message}`);
     return res.status(400).send(`Webhook Error: ${e.message}`);
