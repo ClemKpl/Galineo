@@ -4,7 +4,7 @@ const db = require('../db');
  * Middleware pour empêcher les modifications sur les projets non actifs (archivés ou supprimés)
  */
 function ensureProjectActive(req, res, next) {
-  const projectId = Number(req.params.id || req.params.projectId || req.body.project_id);
+  const projectId = Number(req.params.projectId || req.params.id || req.body.project_id);
   
   if (!projectId) return next();
 
