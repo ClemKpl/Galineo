@@ -111,33 +111,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Support
-  const [supportSubject, setSupportSubject] = useState('');
-  const [supportMessage, setSupportMessage] = useState('');
-  const [supportLoading, setSupportLoading] = useState(false);
-  const [tickets, setTickets] = useState<{id:number;subject:string;status:string;priority:string;admin_reply:string|null;created_at:string}[]>([]);
-  const [ticketsLoading, setTicketsLoading] = useState(false);
-
-  useEffect(() => {
-    setTicketsLoading(true);
-    api.get('/support').then((data) => setTickets(data as typeof tickets)).catch(() => {}).finally(() => setTicketsLoading(false));
-  }, []);
-
-  const handleSupportSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSupportLoading(true);
-    try {
-      await api.post('/support', { subject: supportSubject, message: supportMessage });
-      showToast('Ticket envoyé ! Nous vous répondrons rapidement.');
-      setSupportSubject(''); setSupportMessage('');
-      const data = await api.get('/support');
-      setTickets(data as typeof tickets);
-    } catch (err: unknown) {
-      showToast((err as Error).message, 'error');
-    } finally {
-      setSupportLoading(false);
-    }
-  };
 
   // Danger zone
   const [deleteConfirm, setDeleteConfirm] = useState('');
@@ -534,77 +507,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* ── Support ── */}
-      <div id="support">
-        <Section title="Support" description="Contactez l'équipe Galineo — les utilisateurs Premium sont traités en priorité">
-        <form onSubmit={handleSupportSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">Sujet</label>
-            <input
-              type="text" value={supportSubject} onChange={(e) => setSupportSubject(e.target.value)} required
-              placeholder="Ex : Problème avec les tâches"
-              className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1.5">Message</label>
-            <textarea
-              value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} required rows={4}
-              placeholder="Décrivez votre problème ou votre demande..."
-              className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all resize-none"
-            />
-          </div>
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            {user?.plan === 'premium' || user?.plan === 'unlimited' ? (
-              <span className="text-xs text-orange-600 font-medium flex items-center gap-1.5">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                Votre ticket sera traité en priorité
-              </span>
-            ) : (
-              <span className="text-xs text-stone-400">Passez à Premium pour un support prioritaire</span>
-            )}
-            <button type="submit" disabled={supportLoading}
-              className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-60 flex items-center gap-2">
-              {supportLoading && <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
-              {supportLoading ? 'Envoi...' : 'Envoyer le ticket'}
-            </button>
-          </div>
-        </form>
-
-        {/* Historique des tickets */}
-        {tickets.length > 0 && (
-          <div className="mt-6 border-t border-stone-100 pt-5 space-y-3">
-            <p className="text-sm font-medium text-stone-700">Mes tickets</p>
-            {ticketsLoading ? (
-              <p className="text-sm text-stone-400">Chargement...</p>
-            ) : tickets.map((t) => (
-              <div key={t.id} className="rounded-xl border border-stone-100 bg-stone-50 p-4 space-y-2">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <p className="text-sm font-semibold text-stone-800">{t.subject}</p>
-                  <div className="flex items-center gap-2">
-                    {t.priority === 'high' && (
-                      <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full uppercase tracking-wider">Prioritaire</span>
-                    )}
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                      t.status === 'closed' ? 'bg-stone-200 text-stone-500' :
-                      t.status === 'in_progress' ? 'bg-blue-100 text-blue-600' :
-                      'bg-emerald-100 text-emerald-600'
-                    }`}>{t.status === 'closed' ? 'Fermé' : t.status === 'in_progress' ? 'En cours' : 'Ouvert'}</span>
-                  </div>
-                </div>
-                {t.admin_reply && (
-                  <div className="bg-white border border-orange-100 rounded-lg p-3">
-                    <p className="text-xs font-bold text-orange-600 mb-1">Réponse de l'équipe</p>
-                    <p className="text-sm text-stone-600 whitespace-pre-wrap">{t.admin_reply}</p>
-                  </div>
-                )}
-                <p className="text-xs text-stone-400">{new Date(t.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
-    </div>
 
       {/* ── Danger zone ── */}
       <div className="bg-white rounded-2xl border border-red-100 overflow-hidden">

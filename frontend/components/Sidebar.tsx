@@ -51,11 +51,6 @@ const IconShield = () => (
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
   </svg>
 );
-const IconHelp = () => (
-  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-    <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-  </svg>
-);
 
 function NotifIcon({ type }: { type: string }) {
   if (type === 'mention') return (
@@ -250,7 +245,6 @@ export default function Sidebar({
     { href: '/messages', label: 'Discussions', icon: <IconChat /> },
     { href: '/history', label: 'Historique', icon: <IconFolder /> },
     { href: '/trash', label: 'Corbeille', icon: <IconTrash /> },
-    { href: '/settings#support', label: 'Support', icon: <IconHelp /> },
     ...(user?.plan === 'unlimited' ? [{ href: '/admin', label: 'Panel Admin', icon: <IconShield /> }] : []),
   ];
 

@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar';
 import CreateProjectModal from '@/components/CreateProjectModal';
 import AiChat from '@/components/AiChat';
 import PricingModal from '@/components/PricingModal';
+import SupportModal from '@/components/SupportModal';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -13,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [showModal, setShowModal] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -25,8 +27,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleOpenPricing = () => setShowPricing(true);
+    const handleOpenSupport = () => setShowSupport(true);
     window.addEventListener('open-pricing', handleOpenPricing);
-    return () => window.removeEventListener('open-pricing', handleOpenPricing);
+    window.addEventListener('open-support', handleOpenSupport);
+    return () => {
+      window.removeEventListener('open-pricing', handleOpenPricing);
+      window.removeEventListener('open-support', handleOpenSupport);
+    };
   }, []);
 
   if (isLoading) {
@@ -154,6 +161,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           currentPlan={user?.plan ?? 'free'}
         />
       )}
+
+      {showSupport && (
+        <SupportModal
+          onClose={() => setShowSupport(false)}
+        />
+      )}
+
+      {/* Bouton Support Flottant Discret */}
+      <button
+        type="button"
+        onClick={() => setShowSupport(true)}
+        title="Contacter le support"
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-white border border-stone-200 rounded-full shadow-lg flex items-center justify-center text-stone-600 hover:text-orange-500 hover:border-orange-200 transition-all active:scale-90 group sm:flex hidden"
+      >
+        <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" className="group-hover:scale-110 transition-transform">
+          <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </button>
     </div>
   );
 }
