@@ -622,11 +622,11 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
             ${hierarchyInfo}
 
             CONSIGNES GÉNÉRALES :
-            1. STRUCTURE MINIMALE : Un projet DOIT comporter AU MOINS 3 fonctionnalités ('feature') et un total de 6 tâches ('task').
-            2. RÈGLE D'OR : Pour CHAQUE fonctionnalité ('feature') que tu crées, tu as l'OBLIGATION STRICTE de générer au moins 2 tâches ('task') liées. Ne laisse jamais une fonctionnalité sans tâches.
-            3. PRÉCISION : Si l'utilisateur demande des tâches spécifiques, tu DOIS les inclure sans faute.
-            3. DATES : Initialise TOUJOURS les dates en commençant par aujourd'hui (${currentDate}).
-            4. ASSIGNATION : Assigne par défaut les tâches à l'utilisateur actuel (${userEmail}).
+            1. EXHAUSTIVITÉ : Ne t'arrête pas au minimum. Ton but est de générer un projet COMPLET et PROFESSIONNEL. Propose autant de fonctionnalités et de tâches que nécessaire pour couvrir tous les aspects (technique, organisationnel, communication, etc.).
+            2. MÉTHODOLOGIE : Avant de répartir les tâches, commence TOUJOURS par définir et proposer les RÔLES des membres présents dans le projet pour assurer une organisation claire.
+            3. RÈGLE D'OR : Pour CHAQUE fonctionnalité ('feature'), génère un ensemble de tâches ('task') cohérentes et détaillées.
+            4. DATES : Sois extrêmement rigoureux sur les 'start_date' et 'due_date'. Elles doivent s'étaler logiquement sur la durée du projet en commençant par aujourd'hui (${currentDate}).
+            5. PRÉCISION : Intègre sans faute toute demande spécifique de l'utilisateur.
 
             RÈGLES CRITIQUES :
             1. PAS DE DOUBLONS : Si l'historique montre que le projet est déjà créé, refuse de recommencer et renvoie vers la Room.
