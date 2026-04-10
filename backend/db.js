@@ -69,7 +69,9 @@ if (isProd) {
       const finalSql = convertSql(sql);
       pool.query(finalSql, params || [])
         .then(res => {
-          const result = { lastID: res.rows[0]?.id || null, changes: res.rowCount };
+          // Sur PostgreSQL avec RETURNING id, le résultat est dans res.rows[0].id
+          const lastID = res.rows?.[0]?.id || null;
+          const result = { lastID, changes: res.rowCount };
           if (cb) cb.call(result, null);
         })
         .catch(err => {

@@ -228,7 +228,8 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
             priority: task.priority || 'normal'
           }));
 
-        const taskCounts = actionableTasks.reduce((acc, task) => {
+        // Stats should include EVERYTHING the user sees as a task
+        const taskCounts = normalizedTasks.reduce((acc, task) => {
           const status = task.status || 'todo';
           acc.total += 1;
           if (status === 'done') acc.done += 1;

@@ -36,7 +36,11 @@ function checkProjectLimit(req, res, next) {
       [Number(req.user.id)],
       (err2, row) => {
         if (err2) return res.status(500).json({ error: `Erreur SQL Count: ${err2.message}` });
-        if (row.count >= FREE_LIMITS.projects) {
+        
+        const count = row ? parseInt(row.count, 10) : 0;
+        console.log(`[LIMIT_CHECK] User ${req.user.id} has ${count}/${FREE_LIMITS.projects} projects`);
+
+        if (count >= FREE_LIMITS.projects) {
           return res.status(403).json({
             error: 'PLAN_LIMIT',
             message: ELEGANT_MESSAGE('projects'),
