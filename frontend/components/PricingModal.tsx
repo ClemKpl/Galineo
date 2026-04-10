@@ -42,7 +42,7 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
       {/* Modal */}
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-[fadeUp_0.3s_ease-out]">
         {/* Header */}
-        <div className="bg-gradient-to-br from-stone-900 to-stone-800 px-8 py-8 text-center relative">
+        <div className="bg-stone-900 px-8 py-8 text-center relative">
           <button onClick={onClose} className="absolute top-4 right-4 text-stone-500 hover:text-stone-300 transition-colors p-1">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -93,7 +93,7 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
           </div>
 
           {/* PREMIUM */}
-          <div className="rounded-2xl border-2 border-orange-400 bg-gradient-to-b from-orange-50 to-white p-6 flex flex-col relative overflow-hidden shadow-lg shadow-orange-100">
+          <div className="rounded-2xl border-2 border-orange-400 bg-white p-6 flex flex-col relative overflow-hidden shadow-lg shadow-orange-100">
             <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl tracking-wider uppercase">
               Recommandé
             </div>

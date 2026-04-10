@@ -11,7 +11,7 @@ const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
 // Helper pour vérifier si l'utilisateur est admin ou premium
 function isUnlimited(req, userPlan) {
   if (ADMIN_EMAILS.includes(req.user.email)) return true;
-  if (userPlan === 'premium') return true;
+  if (userPlan === 'premium' || userPlan === 'unlimited') return true;
   return false;
 }
 
@@ -26,16 +26,16 @@ const ELEGANT_MESSAGE = (feature) => {
 
 // Bloque si l'user FREE a atteint sa limite de projets
 function checkProjectLimit(req, res, next) {
-  db.get('SELECT plan FROM users WHERE id = ?', [req.user.id], (err, user) => {
+  db.get('SELECT plan FROM users WHERE id = ?', [Number(req.user.id)], (err, user) => {
     if (err) return res.status(500).json({ error: `Erreur SQL Plan: ${err.message}` });
     if (!user) return res.status(500).json({ error: 'Utilisateur non trouvé dans la vérification de plan' });
     if (isUnlimited(req, user.plan)) return next();
 
     db.get(
-      'SELECT COUNT(*) as count FROM projects WHERE owner_id = ? AND status != "deleted"',
-      [req.user.id],
+      'SELECT COUNT(*) as count FROM projects WHERE owner_id = ? AND (status IS NULL OR status != "deleted")',
+      [Number(req.user.id)],
       (err2, row) => {
-        if (err2) return res.status(500).json({ error: 'Erreur serveur' });
+        if (err2) return res.status(500).json({ error: `Erreur SQL Count: ${err2.message}` });
         if (row.count >= FREE_LIMITS.projects) {
           return res.status(403).json({
             error: 'PLAN_LIMIT',

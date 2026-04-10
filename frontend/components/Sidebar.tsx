@@ -291,7 +291,7 @@ export default function Sidebar({
           onClick={() => router.push('/settings')}
           className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-stone-800 transition-colors cursor-pointer group text-left"
         >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-stone-700 to-stone-900 border border-stone-800 flex items-center justify-center text-white font-semibold text-xs shrink-0 shadow-sm overflow-hidden">
+          <div className="w-8 h-8 rounded-xl bg-stone-800 border border-stone-700 flex items-center justify-center text-white font-semibold text-xs shrink-0 shadow-sm overflow-hidden">
             {user?.avatar ? (
               <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
             ) : (
@@ -524,9 +524,9 @@ export default function Sidebar({
         {(!user?.plan || user?.plan === 'free') && (
           <button
             onClick={() => window.dispatchEvent(new Event('open-pricing'))}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-orange-500/20 to-orange-500/10 hover:from-orange-500/30 hover:to-orange-500/20 border border-orange-500/20 text-orange-400 hover:text-orange-300 transition-all text-sm font-semibold group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-all text-sm font-bold group shadow-lg shadow-orange-500/20"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="group-hover:scale-110 transition-transform"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="group-hover:scale-110 transition-transform font-black"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             Passer à Premium
           </button>
         )}
