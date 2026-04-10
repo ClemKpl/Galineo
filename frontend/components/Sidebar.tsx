@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
-import PricingModal from '@/components/PricingModal';
+// PricingModal est maintenant géré par le layout global via l'événement 'open-pricing'
 
 function initials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -90,8 +90,6 @@ export default function Sidebar({
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-
-  const [showPricing, setShowPricing] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -520,7 +518,7 @@ export default function Sidebar({
       <div className="px-3 pb-5 pt-2 border-t border-stone-800 space-y-1">
         {user?.plan !== 'premium' && (
           <button
-            onClick={() => setShowPricing(true)}
+            onClick={() => window.dispatchEvent(new Event('open-pricing'))}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-orange-500/20 to-amber-500/10 hover:from-orange-500/30 hover:to-amber-500/20 border border-orange-500/20 text-orange-400 hover:text-orange-300 transition-all text-sm font-semibold group"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="group-hover:scale-110 transition-transform"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
@@ -534,12 +532,7 @@ export default function Sidebar({
         </button>
       </div>
 
-      {showPricing && (
-        <PricingModal
-          onClose={() => setShowPricing(false)}
-          currentPlan={user?.plan ?? 'free'}
-        />
-      )}
+      {/* Le PricingModal a été déplacé dans le layout.tsx pour un affichage global */}
 
       <style jsx>{`
         @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }

@@ -5,12 +5,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from '@/components/Sidebar';
 import CreateProjectModal from '@/components/CreateProjectModal';
 import AiChat from '@/components/AiChat';
+import PricingModal from '@/components/PricingModal';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [showModal, setShowModal] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -20,6 +22,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const handleOpenPricing = () => setShowPricing(true);
+    window.addEventListener('open-pricing', handleOpenPricing);
+    return () => window.removeEventListener('open-pricing', handleOpenPricing);
+  }, []);
 
   if (isLoading) {
     return (
@@ -137,6 +145,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             window.dispatchEvent(new Event('project-created'));
             if (newId) router.push(`/projects/${newId}`);
           }}
+        />
+      )}
+
+      {showPricing && (
+        <PricingModal
+          onClose={() => setShowPricing(false)}
+          currentPlan={user?.plan ?? 'free'}
         />
       )}
     </div>
