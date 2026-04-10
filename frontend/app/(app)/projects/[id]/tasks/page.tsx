@@ -499,7 +499,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
               </button>
               <button 
                 onClick={() => setViewMode('kanban')} 
-                className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-stone-900 text-white shadow-sm' : 'text-stone-400 hover:bg-stone-50'}`}
+                className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-stone-900 text-white' : 'text-stone-400 hover:bg-stone-50'}`}
               >
                 Kanban
               </button>
@@ -508,15 +508,15 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
            <div className="flex items-center gap-2 w-full sm:w-auto">
              {!isReadOnly && (
                <>
-                 <button onClick={() => openCreateTask()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-stone-200 hover:border-stone-300 text-stone-700 font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-sm">
+                 <button onClick={() => openCreateTask()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-stone-200 hover:border-stone-300 text-stone-700 font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95">
                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                     Tâche
                  </button>
-                 <button onClick={() => openCreateFeature()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-sm">
+                 <button onClick={() => openCreateFeature()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95">
                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                      <span>Fonc.</span>
                   </button>
-                  <button onClick={handleClearProject} className="flex h-10 w-10 shrink-0 items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-xl transition-all active:scale-95 shadow-sm" title="Vider le projet">
+                  <button onClick={handleClearProject} className="flex h-10 w-10 shrink-0 items-center justify-center bg-red-50 hover:bg-red-100 text-red-500 border border-red-100 rounded-xl transition-all active:scale-95" title="Vider le projet">
                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                   </button>
                </>

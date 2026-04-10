@@ -524,7 +524,7 @@ export default function Sidebar({
         {(!user?.plan || user?.plan === 'free') && (
           <button
             onClick={() => window.dispatchEvent(new Event('open-pricing'))}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-all text-sm font-bold group shadow-sm active:scale-95"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white transition-all text-sm font-bold group active:scale-95"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="group-hover:scale-110 transition-transform font-black"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             Passer à Premium

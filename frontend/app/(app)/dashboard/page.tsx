@@ -79,10 +79,10 @@ function ProjectCard({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={`bg-white rounded-2xl border p-5 transition-all duration-300 cursor-grab active:cursor-grabbing group ${
-        isDragging ? 'opacity-40 scale-95 border-orange-300 border-dashed bg-stone-50' : 'border-stone-200 hover:shadow-xl hover:border-stone-300 hover:-translate-y-1'
+        isDragging ? 'opacity-40 scale-95 border-orange-300 border-dashed bg-stone-50' : 'border-stone-200 hover:border-stone-300 hover:-translate-y-1'
       }`}>
       <div className="flex items-center gap-4 mb-4">
-        <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center text-stone-500 font-bold overflow-hidden shadow-sm shrink-0">
+        <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center text-stone-500 font-bold overflow-hidden shrink-0">
           {project.avatar ? (
             <img src={project.avatar} alt={project.title} className="w-full h-full object-cover" />
           ) : (
@@ -279,7 +279,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <button onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-orange-500 active:scale-95 shrink-0">
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all text-sm active:scale-95 shrink-0">
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
@@ -348,7 +348,7 @@ export default function DashboardPage() {
                   <button
                     key={t.id}
                     onClick={() => router.push(`/projects/${t.project_id}/tasks`)}
-                    className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-xl hover:shadow-orange-500/20 hover:border-orange-200 transition-all duration-300 group active:scale-[0.98]"
+                    className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:border-orange-200 transition-all duration-300 group active:scale-[0.98]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
