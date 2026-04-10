@@ -292,8 +292,8 @@ export default function DashboardPage() {
 
       {/* Assigned tasks / features */}
       <section className="mb-10 animate-fadeUp">
-        <div className="flex items-center justify-between mb-4 px-1">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 px-1 gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h2 className="text-[10px] font-black text-stone-400 uppercase tracking-[0.2em]">
               {taskView === 'tasks' ? 'Mes tâches assignées' : 'Mes fonctionnalités assignées'}
             </h2>
