@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
-
+const { deleteProjectsPermanently } = require('../utils/projectDeleter');
 const { ADMIN_EMAILS } = require('../config/admins');
 
 function adminMiddleware(req, res, next) {
@@ -119,11 +119,19 @@ router.get('/projects', authMiddleware, adminMiddleware, (req, res) => {
   );
 });
 
-// DELETE /admin/projects/:id — supprimer définitivement un projet
+// DELETE /admin/projects/:id — placer un projet dans la corbeille
 router.delete('/projects/:id', authMiddleware, adminMiddleware, (req, res) => {
   db.run("UPDATE projects SET status = 'deleted' WHERE id = ?", [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true });
+    res.json({ success: true, message: 'Projet placé dans la corbeille' });
+  });
+});
+
+// DELETE /admin/projects/:id/hard — supprimer DEFINITIVEMENT un projet
+router.delete('/projects/:id/hard', authMiddleware, adminMiddleware, (req, res) => {
+  deleteProjectsPermanently([req.params.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true, message: 'Projet supprimé définitivement' });
   });
 });
 

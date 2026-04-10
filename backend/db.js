@@ -231,7 +231,7 @@ const initDb = async () => {
     )`,
     `CREATE TABLE IF NOT EXISTS activity_logs (
       id ${autoInc},
-      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
       user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       entity_type TEXT NOT NULL,
       entity_id INTEGER,

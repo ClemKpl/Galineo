@@ -127,7 +127,6 @@ router.post('/login', (req, res) => {
   db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!user) {
-      logActivity(null, null, 'auth', null, 'login_failed', { email, ip: req.ip, reason: 'user_not_found' }).catch(() => {});
       return res.status(401).json({ error: "Aucun compte n'est associé à cette adresse. Veuillez en créer un." });
     }
 

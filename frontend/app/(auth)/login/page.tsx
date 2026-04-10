@@ -39,11 +39,7 @@ function LoginForm() {
         router.push(`/join/${joinToken}`);
       }
     } catch (err: any) {
-      if (err.message === 'Failed to fetch') {
-        setError("Impossible de contacter le serveur. Veuillez vérifier votre connexion ou réessayer.");
-      } else {
-        setError(err.message || "Une erreur est survenue");
-      }
+      setError(err.message || "Une erreur est survenue");
     } finally {
       setLoading(false);
     }

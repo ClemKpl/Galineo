@@ -123,11 +123,23 @@ export default function AdminPage() {
   };
 
   const handleDeleteProject = async (p: Project) => {
-    if (!confirm(`Supprimer le projet "${p.title}" ? Il sera placé dans la corbeille.`)) return;
+    const isAlreadyDeleted = p.status === 'deleted';
+    const msg = isAlreadyDeleted 
+      ? `Supprimer DÉFINITIVEMENT le projet "${p.title}" ? Cette action est irréversible et supprimera toutes les données associées (tâches, logs, etc.).`
+      : `Souhaitez-vous désactiver le projet "${p.title}" ? Il ne sera plus accessible aux utilisateurs mais restera visible dans ce panel pour archivage.`;
+    
+    if (!confirm(msg)) return;
+    
     try {
-      await api.delete(`/admin/projects/${p.id}`);
-      setProjects((prev) => prev.filter((x) => x.id !== p.id));
-      showToast(`Projet "${p.title}" supprimé.`);
+      if (isAlreadyDeleted) {
+        await api.delete(`/admin/projects/${p.id}/hard`);
+        setProjects((prev) => prev.filter((x) => x.id !== p.id));
+        showToast(`Projet "${p.title}" supprimé définitivement de la base de données.`);
+      } else {
+        await api.delete(`/admin/projects/${p.id}`);
+        setProjects((prev) => prev.map((x) => x.id === p.id ? { ...x, status: 'deleted' } : x));
+        showToast(`Projet "${p.title}" a été désactivé.`);
+      }
     } catch (e) {
       showToast((e as Error).message, true);
     }
@@ -312,7 +324,11 @@ export default function AdminPage() {
                 <tr key={p.id} className="hover:bg-stone-50/50 transition-colors">
                   <td className="px-5 py-3.5">
                     <div className="font-medium text-stone-900">{p.title}</div>
-                    <div className={`text-xs mt-0.5 ${p.status === 'active' ? 'text-green-500' : 'text-stone-400'}`}>{p.status}</div>
+                    <div className={`text-[10px] font-bold uppercase tracking-widest mt-1 inline-block px-2 py-0.5 rounded-md ${
+                      p.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                    }`}>
+                      {p.status === 'active' ? 'Actif' : 'Dans la corbeille'}
+                    </div>
                   </td>
                   <td className="px-5 py-3.5 hidden sm:table-cell">
                     <div className="text-stone-700 font-medium">{p.owner_name}</div>
@@ -331,10 +347,19 @@ export default function AdminPage() {
                     </button>
                     <button
                       onClick={() => handleDeleteProject(p)}
-                      className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-red-50 flex items-center justify-center"
+                      title={p.status === 'deleted' ? "Supprimer définitivement" : "Placer dans la corbeille"}
+                      className={`text-xs font-medium transition-colors px-2 py-1 rounded-lg flex items-center justify-center ${
+                        p.status === 'deleted' ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-stone-400 hover:text-red-500 hover:bg-red-50'
+                      }`}
                     >
-                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" className="sm:hidden"><path d="M19 7l-1 12H6L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/></svg>
-                      <span className="hidden sm:inline">Supprimer</span>
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" className="sm:hidden">
+                        {p.status === 'deleted' ? (
+                          <path d="M19 7l-1 12H6L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3" />
+                        ) : (
+                           <path d="M19 7l-1 12H6L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3" />
+                        )}
+                      </svg>
+                      <span className="hidden sm:inline">{p.status === 'deleted' ? 'Supprimer définitivement' : 'Supprimer'}</span>
                     </button>
                   </td>
                 </tr>
