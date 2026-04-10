@@ -361,11 +361,12 @@ export default function DashboardPage() {
                          {dueText || 'Libre'}
                       </span>
                     </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
       </section>
 
       {/* Upcoming events */}
