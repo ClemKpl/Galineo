@@ -1,9 +1,9 @@
 const db = require('../db');
 
 const FREE_LIMITS = {
-  projects: 10,
-  collaborators: 5,
-  ai_prompts: 50
+  projects: 3,
+  collaborators: 2,
+  ai_prompts: 10
 };
 
 const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
