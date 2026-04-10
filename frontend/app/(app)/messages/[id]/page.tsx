@@ -108,9 +108,9 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
   const isAdmin = group.myRole === 'admin';
 
   return (
-    <div className="flex flex-col h-full bg-stone-50 animate-fadeIn">
+    <div className="relative flex h-full flex-col overflow-hidden bg-stone-50 animate-fadeIn">
       {/* Group Header */}
-      <header className="bg-white border-b border-stone-200 px-8 py-4 flex items-center justify-between shrink-0">
+      <header className="flex shrink-0 items-center justify-between border-b border-stone-200 bg-white px-4 py-4 md:px-8">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => router.push('/messages')}
@@ -148,7 +148,7 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
       </header>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto px-4 pb-36 pt-6 space-y-6 custom-scrollbar md:px-8 md:pb-8">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 bg-orange-100 text-orange-500 rounded-2xl flex items-center justify-center mb-4">
@@ -196,8 +196,8 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Message Input */}
-      <footer className="p-8 bg-white border-t border-stone-100 shrink-0">
-        <form onSubmit={handleSendMessage} className="relative group">
+      <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-20 border-t border-stone-100 bg-white/95 px-4 py-4 backdrop-blur md:relative md:bottom-0 md:z-auto md:bg-white md:px-8 md:py-8">
+        <form onSubmit={handleSendMessage} className="relative mx-auto max-w-4xl group">
           <input 
             type="text" 
             value={newMessage}
