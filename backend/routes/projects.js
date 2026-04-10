@@ -388,8 +388,34 @@ router.get('/:id', authMiddleware, (req, res) => {
         if (err3) return res.status(500).json({ error: err3.message });
         res.json({ ...project, members, invitations });
       });
+      });
     });
   });
+});
+
+// POST /projects/:id/toggle-favorite — mettre/retirer des favoris
+router.post('/:id/toggle-favorite', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const userId = req.user.id;
+
+  db.get(
+    'SELECT is_favorite FROM project_members WHERE project_id = ? AND user_id = ?',
+    [projectId, userId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.status(404).json({ error: 'Membre non trouvé' });
+
+      const newFavorite = row.is_favorite ? 0 : 1;
+      db.run(
+        'UPDATE project_members SET is_favorite = ? WHERE project_id = ? AND user_id = ?',
+        [newFavorite, projectId, userId],
+        function(updateErr) {
+          if (updateErr) return res.status(500).json({ error: updateErr.message });
+          res.json({ is_favorite: newFavorite });
+        }
+      );
+    }
+  );
 });
 
 function canManageMembers(userId, projectId, cb) {
