@@ -134,10 +134,36 @@ export default function SettingsPage() {
     let cancelled = false;
 
     const handleBillingSuccess = async () => {
+      // Poll /billing/status jusqu'à ce que le plan soit premium (webhook async)
+      const MAX_ATTEMPTS = 10;
+      const DELAY_MS = 2000;
+      let upgraded = false;
+
+      for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        if (cancelled) return;
+        try {
+          const status = await api.get('/billing/status');
+          if (status?.plan === 'premium') {
+            upgraded = true;
+            break;
+          }
+        } catch {
+          // ignore, on réessaie
+        }
+        if (i < MAX_ATTEMPTS - 1) {
+          await new Promise((r) => setTimeout(r, DELAY_MS));
+        }
+      }
+
+      if (cancelled) return;
       await refreshUser();
       if (cancelled) return;
 
-      showToast('Merci pour votre passage en Premium. Votre soutien aide directement au développement de Galineo.');
+      if (upgraded) {
+        showToast('Merci pour votre passage en Premium. Votre soutien aide directement au développement de Galineo.');
+      } else {
+        showToast('Paiement reçu. Votre compte sera mis à jour sous peu.', 'success');
+      }
       window.history.replaceState({}, '', '/settings');
     };
 
