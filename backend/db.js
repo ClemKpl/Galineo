@@ -179,12 +179,12 @@ const initDb = async () => {
       id ${autoInc},
       title TEXT NOT NULL,
       description TEXT,
-      owner_id INTEGER REFERENCES users(id),
+      owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     `CREATE TABLE IF NOT EXISTS project_members (
-      project_id INTEGER REFERENCES projects(id),
-      user_id INTEGER REFERENCES users(id),
+      project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       role_id INTEGER,
       PRIMARY KEY (project_id, user_id)
     )`,
@@ -200,39 +200,39 @@ const initDb = async () => {
       description TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS role_permissions (
-      role_id INTEGER,
-      permission_id INTEGER,
+      role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
+      permission_id INTEGER REFERENCES permissions(id) ON DELETE CASCADE,
       PRIMARY KEY (role_id, permission_id)
     )`,
     `CREATE TABLE IF NOT EXISTS tasks (
       id ${autoInc},
-      project_id INTEGER NOT NULL REFERENCES projects(id),
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
       parent_id INTEGER,
       title TEXT NOT NULL,
       description TEXT,
       status TEXT DEFAULT 'todo',
       priority TEXT DEFAULT 'normal',
       due_date TEXT,
-      created_by INTEGER NOT NULL REFERENCES users(id),
-      assigned_to INTEGER REFERENCES users(id),
+      created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+      assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     `CREATE TABLE IF NOT EXISTS notifications (
       id ${autoInc},
-      user_id INTEGER NOT NULL REFERENCES users(id),
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       type TEXT NOT NULL,
       title TEXT NOT NULL,
       message TEXT,
-      project_id INTEGER REFERENCES projects(id),
-      from_user_id INTEGER REFERENCES users(id),
-      task_id INTEGER REFERENCES tasks(id),
+      project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+      from_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
       is_read INTEGER DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     `CREATE TABLE IF NOT EXISTS activity_logs (
       id ${autoInc},
-      project_id INTEGER NOT NULL REFERENCES projects(id),
-      user_id INTEGER REFERENCES users(id),
+      project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       entity_type TEXT NOT NULL,
       entity_id INTEGER,
       action_type TEXT NOT NULL,
@@ -280,32 +280,32 @@ const initDb = async () => {
     const extraTables = [
       `CREATE TABLE IF NOT EXISTS task_comments (
         id ${autoInc},
-        task_id INTEGER NOT NULL REFERENCES tasks(id),
-        user_id INTEGER NOT NULL REFERENCES users(id),
+        task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
       `CREATE TABLE IF NOT EXISTS milestones (
         id ${autoInc},
-        project_id INTEGER NOT NULL REFERENCES projects(id),
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
         title TEXT NOT NULL,
         date TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
       `CREATE TABLE IF NOT EXISTS calendar_events (
         id ${autoInc},
-        project_id INTEGER NOT NULL REFERENCES projects(id),
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
         title TEXT NOT NULL,
         description TEXT,
         start_datetime TEXT NOT NULL,
         end_datetime TEXT NOT NULL,
         location TEXT,
-        created_by INTEGER NOT NULL REFERENCES users(id),
+        created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
       `CREATE TABLE IF NOT EXISTS event_attendees (
-        event_id INTEGER NOT NULL REFERENCES calendar_events(id),
-        user_id INTEGER NOT NULL REFERENCES users(id),
+        event_id INTEGER NOT NULL REFERENCES calendar_events(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         notified INTEGER DEFAULT 0,
         PRIMARY KEY (event_id, user_id)
       )`,
@@ -314,7 +314,7 @@ const initDb = async () => {
         project_id INTEGER NOT NULL REFERENCES projects(id),
         email TEXT NOT NULL,
         role_id INTEGER NOT NULL REFERENCES roles(id),
-        inviter_id INTEGER NOT NULL REFERENCES users(id),
+        inviter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         token TEXT UNIQUE NOT NULL,
         status TEXT DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

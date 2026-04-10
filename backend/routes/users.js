@@ -179,6 +179,18 @@ router.delete('/me', authMiddleware, async (req, res) => {
     // Supprimer les notifications
     await run('DELETE FROM notifications WHERE user_id = ?', [userId]);
 
+    // Supprimer les tâches AI actives
+    await run('DELETE FROM ai_active_tasks WHERE user_id = ?', [userId]);
+
+    // Supprimer les participations aux événements
+    await run('DELETE FROM event_attendees WHERE user_id = ?', [userId]);
+
+    // Supprimer les commentaires de tâches
+    await run('DELETE FROM task_comments WHERE user_id = ?', [userId]);
+
+    // Supprimer les tickets de support
+    await run('DELETE FROM support_tickets WHERE user_id = ?', [userId]);
+
     // Gérer les projets dont l'utilisateur est seul propriétaire
     const ownedProjects = await new Promise((resolve, reject) =>
       db.all('SELECT id FROM projects WHERE owner_id = ?', [userId], (err, rows) => err ? reject(err) : resolve(rows || []))
