@@ -16,7 +16,7 @@ async function logActivity(projectId, userId, entityType, entityId, actionType, 
     db.run(
       `INSERT INTO activity_logs (project_id, user_id, entity_type, entity_id, action_type, details)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [projectId, userId, entityType, entityId || null, actionType, detailsStr || null],
+      [projectId || null, userId || null, entityType, entityId || null, actionType, detailsStr || null],
       function(err) {
         if (err) {
           console.error('❌ [ActivityLogger Error]:', err.message);

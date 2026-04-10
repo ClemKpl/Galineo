@@ -27,7 +27,8 @@ const ELEGANT_MESSAGE = (feature) => {
 // Bloque si l'user FREE a atteint sa limite de projets
 function checkProjectLimit(req, res, next) {
   db.get('SELECT plan FROM users WHERE id = ?', [req.user.id], (err, user) => {
-    if (err || !user) return res.status(500).json({ error: 'Erreur serveur' });
+    if (err) return res.status(500).json({ error: `Erreur SQL Plan: ${err.message}` });
+    if (!user) return res.status(500).json({ error: 'Utilisateur non trouvé dans la vérification de plan' });
     if (isUnlimited(req, user.plan)) return next();
 
     db.get(
