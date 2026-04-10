@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 const { authMiddleware } = require('../middleware/auth');
+const ADMIN_EMAILS = ['capelleclem@gmail.com', 'flgherardi@gmail.com'];
 
 // GET /users/search?q= — rechercher des utilisateurs
 router.get('/search', authMiddleware, (req, res) => {
@@ -27,9 +28,15 @@ router.get('/me', authMiddleware, (req, res) => {
   db.run('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [userId], (updateErr) => {
     if (updateErr) console.error('❌ Erreur update last_login_at:', updateErr.message);
     
-    db.get('SELECT id, name, email, avatar, notif_project_updates, notif_added_to_project, notif_deadlines, created_at FROM users WHERE id = ?', [userId], (err, row) => {
+    db.get('SELECT id, name, email, avatar, plan, notif_project_updates, notif_added_to_project, notif_deadlines, created_at FROM users WHERE id = ?', [userId], (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!row) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      
+      // Override plan for whitelisted admins
+      if (ADMIN_EMAILS.includes(row.email)) {
+        row.plan = 'unlimited';
+      }
+      
       res.json(row);
     });
   });
@@ -69,8 +76,14 @@ router.patch('/me', authMiddleware, (req, res) => {
       if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Email déjà utilisé' });
       return res.status(500).json({ error: err.message });
     }
-    db.get('SELECT id, name, email, avatar, notif_project_updates, notif_added_to_project, notif_deadlines FROM users WHERE id = ?', [userId], (err2, row) => {
+    db.get('SELECT id, name, email, avatar, plan, notif_project_updates, notif_added_to_project, notif_deadlines FROM users WHERE id = ?', [userId], (err2, row) => {
       if (err2) return res.status(500).json({ error: err2.message });
+      
+      // Override plan for whitelisted admins
+      if (row && ADMIN_EMAILS.includes(row.email)) {
+        row.plan = 'unlimited';
+      }
+      
       res.json(row);
     });
   });

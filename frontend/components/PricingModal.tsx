@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 
 interface Props {
   onClose: () => void;
-  currentPlan?: 'free' | 'premium';
+  currentPlan?: 'free' | 'premium' | 'unlimited';
 }
 
 const CheckIcon = () => (
@@ -123,7 +123,11 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
               ))}
             </ul>
             <div className="mt-6">
-              {currentPlan === 'premium' ? (
+              {currentPlan === 'unlimited' ? (
+                <div className="w-full text-center py-2.5 rounded-xl bg-purple-100 text-purple-600 text-sm font-semibold cursor-default">
+                  Accès Illimité Administrateur 👑
+                </div>
+              ) : currentPlan === 'premium' ? (
                 <div className="w-full text-center py-2.5 rounded-xl bg-orange-100 text-orange-500 text-sm font-semibold cursor-default">
                   Déjà Premium 🎉
                 </div>

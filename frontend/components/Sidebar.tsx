@@ -260,13 +260,18 @@ export default function Sidebar({
         <div className="px-5 h-16 flex items-center justify-between border-b border-stone-800">
           <div className="flex items-center gap-2">
             <span className="text-white font-bold text-lg tracking-tight">Galineo</span>
-            {user?.plan === 'premium' ? (
+            {user?.plan === 'unlimited' ? (
+              <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md animate-pulse">
+                <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                Illimité
+              </span>
+            ) : user?.plan === 'premium' ? (
               <span className="flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 Premium
               </span>
             ) : (
-              <span className="text-xs bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-md font-medium">v1</span>
+              <span className="text-[10px] bg-stone-700/50 text-stone-400 px-2 py-0.5 rounded-full font-bold border border-stone-700/50">Gratuit</span>
             )}
           </div>
           <button 
@@ -516,7 +521,7 @@ export default function Sidebar({
 
       {/* Upgrade CTA + Logout */}
       <div className="px-3 pb-5 pt-2 border-t border-stone-800 space-y-1">
-        {user?.plan !== 'premium' && (
+        {user?.plan === 'free' && (
           <button
             onClick={() => window.dispatchEvent(new Event('open-pricing'))}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-orange-500/20 to-amber-500/10 hover:from-orange-500/30 hover:to-amber-500/20 border border-orange-500/20 text-orange-400 hover:text-orange-300 transition-all text-sm font-semibold group"

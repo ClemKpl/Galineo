@@ -9,7 +9,7 @@ interface User {
   name: string;
   email: string;
   avatar?: string | null;
-  plan?: 'free' | 'premium';
+  plan?: 'free' | 'premium' | 'unlimited';
   notif_project_updates?: number;
   notif_added_to_project?: number;
   notif_deadlines?: number;
