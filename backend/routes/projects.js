@@ -8,6 +8,75 @@ const { sendMemberAdded, sendProjectInvitation, sendOwnershipTransferred } = req
 const { checkProjectLimit, checkCollaboratorLimit } = require('../middleware/planLimits');
 const crypto = require('crypto');
 
+function deleteProjectsPermanently(projectIds, cb) {
+  const ids = (projectIds || []).map(Number).filter((id) => Number.isFinite(id));
+  if (ids.length === 0) return cb(null);
+
+  const placeholders = ids.map(() => '?').join(', ');
+  const steps = [
+    {
+      sql: `DELETE FROM task_comments WHERE task_id IN (SELECT id FROM tasks WHERE project_id IN (${placeholders}))`,
+      params: ids,
+    },
+    {
+      sql: `DELETE FROM notifications WHERE task_id IN (SELECT id FROM tasks WHERE project_id IN (${placeholders})) OR project_id IN (${placeholders})`,
+      params: [...ids, ...ids],
+    },
+    {
+      sql: `DELETE FROM event_attendees WHERE event_id IN (SELECT id FROM calendar_events WHERE project_id IN (${placeholders}))`,
+      params: ids,
+    },
+    {
+      sql: `DELETE FROM calendar_events WHERE project_id IN (${placeholders})`,
+      params: ids,
+    },
+    {
+      sql: `DELETE FROM milestones WHERE project_id IN (${placeholders})`,
+      params: ids,
+    },
+    {
+      sql: `DELETE FROM invitations WHERE project_id IN (${placeholders})`,
+      params: ids,
+    },
+    {
+      sql: `DELETE FROM project_share_links WHERE project_id IN (${placeholders})`,
+      params: ids,
+    },
+    {
+      sql: `DELETE FROM project_ai_settings WHERE project_id IN (${placeholders})`,
+      params: ids,
+    },
+    {
+      sql: `DELETE FROM activity_logs WHERE project_id IN (${placeholders})`,
+      params: ids,
+    },
+    {
+      sql: `DELETE FROM tasks WHERE project_id IN (${placeholders})`,
+      params: ids,
+    },
+    {
+      sql: `DELETE FROM project_members WHERE project_id IN (${placeholders})`,
+      params: ids,
+    },
+    {
+      sql: `DELETE FROM projects WHERE id IN (${placeholders})`,
+      params: ids,
+    },
+  ];
+
+  let index = 0;
+  const runNext = () => {
+    if (index >= steps.length) return cb(null);
+    const step = steps[index++];
+    db.run(step.sql, step.params, (err) => {
+      if (err) return cb(err);
+      runNext();
+    });
+  };
+
+  runNext();
+}
+
 // GET /projects — mes projets (propriétaire ou membre)
 router.get('/', authMiddleware, (req, res) => {
   const userId = req.user.id;
@@ -165,27 +234,14 @@ router.delete('/trash/empty', authMiddleware, (req, res) => {
         return res.json({ message: 'Aucun projet à supprimer définitivement.', deleted_count: 0 });
       }
 
-      const placeholders = projectIds.map(() => '?').join(', ');
-      db.run(
-        `DELETE FROM projects WHERE id IN (${placeholders})`,
-        projectIds,
-        (deleteProjectsErr) => {
-          if (deleteProjectsErr) return res.status(500).json({ error: deleteProjectsErr.message });
+      deleteProjectsPermanently(projectIds, (deleteErr) => {
+        if (deleteErr) return res.status(500).json({ error: deleteErr.message });
 
-          db.run(
-            `DELETE FROM project_members WHERE project_id IN (${placeholders})`,
-            projectIds,
-            (deleteMembersErr) => {
-              if (deleteMembersErr) return res.status(500).json({ error: deleteMembersErr.message });
-
-              res.json({
-                message: `${projectIds.length} projet${projectIds.length > 1 ? 's' : ''} supprimé${projectIds.length > 1 ? 's' : ''} définitivement.`,
-                deleted_count: projectIds.length
-              });
-            }
-          );
-        }
-      );
+        res.json({
+          message: `${projectIds.length} projet${projectIds.length > 1 ? 's' : ''} supprimé${projectIds.length > 1 ? 's' : ''} définitivement.`,
+          deleted_count: projectIds.length
+        });
+      });
     }
   );
 });
@@ -733,9 +789,8 @@ router.delete('/:id/hard', authMiddleware, (req, res) => {
       return res.status(403).json({ error: 'Seul le propriétaire peut supprimer le projet' });
     }
 
-    db.run('DELETE FROM projects WHERE id = ?', [projectId], (err) => {
+    deleteProjectsPermanently([projectId], (err) => {
       if (err) return res.status(500).json({ error: err.message });
-      db.run('DELETE FROM project_members WHERE project_id = ?', [projectId]);
       res.json({ message: 'Projet supprimé définitivement' });
     });
   });
