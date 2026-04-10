@@ -25,6 +25,7 @@ interface Project {
 interface AssignedTask {
   id: number;
   title: string;
+  parent_id: number | null;
   status: 'todo' | 'in_progress' | 'done' | string;
   due_date: string | null;
   project_id: number;
@@ -188,6 +189,7 @@ export default function DashboardPage() {
   const [manageProjectId, setManageProjectId] = useState<number | null>(null);
   const [assignedTasks, setAssignedTasks] = useState<AssignedTask[]>([]);
   const [assignedLoading, setAssignedLoading] = useState(true);
+  const [taskView, setTaskView] = useState<'tasks' | 'features'>('tasks');
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [draggingProjectId, setDraggingProjectId] = useState<number | null>(null);
