@@ -145,7 +145,7 @@ export default function AiChat() {
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 bg-stone-900 text-white shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500">
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10a9.96 9.96 0 0 1-5.06-1.37L2 22l1.37-4.94A9.96 9.96 0 0 1 2 12C2 6.48 6.48 2 12 2z"/>
                   <path d="M8 10h.01M12 10h.01M16 10h.01" strokeLinecap="round" strokeWidth="3"/>
@@ -178,7 +178,7 @@ export default function AiChat() {
                 <div
                   className={`max-w-[85%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed shadow-sm ${
                     m.role === 'user'
-                      ? 'bg-orange-500 text-white rounded-br-none shadow-orange-500/20'
+                      ? 'bg-orange-500 text-white rounded-br-none shadow-orange-500'
                       : 'bg-white text-stone-700 border border-stone-100 rounded-bl-none'
                   }`}
                 >
@@ -223,7 +223,7 @@ export default function AiChat() {
                 onKeyDown={handleKeyDown}
                 placeholder="Décris ton projet…"
                 disabled={loading}
-                className="flex-1 resize-none bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-sm text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-orange-400/10 focus:border-orange-400/50 disabled:opacity-50 overflow-hidden leading-relaxed transition-all"
+                className="flex-1 resize-none bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-sm text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500/50 disabled:opacity-50 overflow-hidden leading-relaxed transition-all"
                 style={{ minHeight: '40px', maxHeight: '100px' }}
               />
               <button

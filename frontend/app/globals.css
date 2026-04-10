@@ -20,7 +20,6 @@ html, body {
 ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
 
-/* Line clamp utility */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -30,151 +29,129 @@ html, body {
 }
 
 /* ══════════════════════════════════════════
-   ACCENT COLOR THEMES
-   Overrides all orange-* Tailwind classes
-   via data-accent attribute on <html>
-══════════════════════════════════════════ */
+   DYNAMIC THEME SYSTEM (CSS VARIABLES)
+   ══════════════════════════════════════════ */
 
-/* ── Blue ── */
-[data-accent="blue"] .bg-orange-500 { background-color: #3b82f6 !important; }
-[data-accent="blue"] .bg-orange-600 { background-color: #2563eb !important; }
-[data-accent="blue"] .bg-orange-50  { background-color: #eff6ff !important; }
-[data-accent="blue"] .bg-orange-100 { background-color: #dbeafe !important; }
-[data-accent="blue"] .hover\:bg-orange-50:hover  { background-color: #eff6ff !important; }
-[data-accent="blue"] .hover\:bg-orange-100:hover { background-color: #dbeafe !important; }
-[data-accent="blue"] .hover\:bg-orange-600:hover { background-color: #2563eb !important; }
-[data-accent="blue"] .active\:bg-orange-700:active { background-color: #1d4ed8 !important; }
-[data-accent="blue"] .text-orange-400 { color: #60a5fa !important; }
-[data-accent="blue"] .text-orange-500 { color: #3b82f6 !important; }
-[data-accent="blue"] .text-orange-600 { color: #2563eb !important; }
-[data-accent="blue"] .text-orange-700 { color: #1d4ed8 !important; }
-[data-accent="blue"] .hover\:text-orange-400:hover { color: #60a5fa !important; }
-[data-accent="blue"] .hover\:text-orange-500:hover { color: #3b82f6 !important; }
-[data-accent="blue"] .hover\:text-orange-600:hover { color: #2563eb !important; }
-[data-accent="blue"] .border-orange-100 { border-color: #dbeafe !important; }
-[data-accent="blue"] .border-orange-200 { border-color: #bfdbfe !important; }
-[data-accent="blue"] .border-orange-400 { border-color: #60a5fa !important; }
-[data-accent="blue"] .focus\:border-orange-400:focus { border-color: #60a5fa !important; }
-[data-accent="blue"] .from-orange-400 { --tw-gradient-from: #60a5fa var(--tw-gradient-from-position) !important; }
-[data-accent="blue"] .to-orange-600   { --tw-gradient-to:   #2563eb var(--tw-gradient-to-position)   !important; }
-[data-accent="blue"] .bg-orange-500\/20 { background-color: rgb(59 130 246 / 0.2) !important; }
-[data-accent="blue"] .shadow-orange-100 { --tw-shadow-color: rgb(59 130 246 / 0.1) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
-[data-accent="blue"] .shadow-orange-200 { --tw-shadow-color: rgb(59 130 246 / 0.2) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
-[data-accent="blue"] .from-orange-500 { --tw-gradient-from: #3b82f6 var(--tw-gradient-from-position) !important; }
-[data-accent="blue"] .to-orange-500   { --tw-gradient-to:   #3b82f6 var(--tw-gradient-to-position) !important; }
-[data-accent="blue"] .from-orange-500\/20 { --tw-gradient-from: rgb(59 130 246 / 0.2) var(--tw-gradient-from-position) !important; }
-[data-accent="blue"] .to-orange-500\/10   { --tw-gradient-to:   rgb(59 130 246 / 0.1) var(--tw-gradient-to-position) !important; }
-[data-accent="blue"] .border-orange-500\/20 { border-color: rgb(59 130 246 / 0.2) !important; }
-[data-accent="blue"] .border-orange-500\/30 { border-color: rgb(59 130 246 / 0.3) !important; }
-[data-accent="blue"] .text-orange-300 { color: #93c5fd !important; }
-[data-accent="blue"] .hover\:text-orange-300:hover { color: #93c5fd !important; }
-[data-accent="blue"] .accent-orange-500 { accent-color: #3b82f6 !important; }
+:root {
+  --accent-50: #fff7ed;
+  --accent-100: #ffedd5;
+  --accent-200: #fed7aa;
+  --accent-300: #fdba74;
+  --accent-400: #fb923c;
+  --accent-500: #f97316;
+  --accent-600: #ea580c;
+  --accent-700: #c2410c;
+  --accent-shadow: rgb(249 115 22 / 0.2);
+}
 
-/* ── Violet ── */
-[data-accent="violet"] .bg-orange-500 { background-color: #8b5cf6 !important; }
-[data-accent="violet"] .bg-orange-600 { background-color: #7c3aed !important; }
-[data-accent="violet"] .bg-orange-50  { background-color: #f5f3ff !important; }
-[data-accent="violet"] .bg-orange-100 { background-color: #ede9fe !important; }
-[data-accent="violet"] .hover\:bg-orange-50:hover  { background-color: #f5f3ff !important; }
-[data-accent="violet"] .hover\:bg-orange-100:hover { background-color: #ede9fe !important; }
-[data-accent="violet"] .hover\:bg-orange-600:hover { background-color: #7c3aed !important; }
-[data-accent="violet"] .active\:bg-orange-700:active { background-color: #6d28d9 !important; }
-[data-accent="violet"] .text-orange-400 { color: #a78bfa !important; }
-[data-accent="violet"] .text-orange-500 { color: #8b5cf6 !important; }
-[data-accent="violet"] .text-orange-600 { color: #7c3aed !important; }
-[data-accent="violet"] .text-orange-700 { color: #6d28d9 !important; }
-[data-accent="violet"] .hover\:text-orange-400:hover { color: #a78bfa !important; }
-[data-accent="violet"] .hover\:text-orange-500:hover { color: #8b5cf6 !important; }
-[data-accent="violet"] .hover\:text-orange-600:hover { color: #7c3aed !important; }
-[data-accent="violet"] .border-orange-100 { border-color: #ede9fe !important; }
-[data-accent="violet"] .border-orange-200 { border-color: #ddd6fe !important; }
-[data-accent="violet"] .border-orange-400 { border-color: #a78bfa !important; }
-[data-accent="violet"] .focus\:border-orange-400:focus { border-color: #a78bfa !important; }
-[data-accent="violet"] .from-orange-400 { --tw-gradient-from: #a78bfa var(--tw-gradient-from-position) !important; }
-[data-accent="violet"] .to-orange-600   { --tw-gradient-to:   #7c3aed var(--tw-gradient-to-position)   !important; }
-[data-accent="violet"] .bg-orange-500\/20 { background-color: rgb(139 92 246 / 0.2) !important; }
-[data-accent="violet"] .shadow-orange-100 { --tw-shadow-color: rgb(139 92 246 / 0.1) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
-[data-accent="violet"] .shadow-orange-200 { --tw-shadow-color: rgb(139 92 246 / 0.2) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
-[data-accent="violet"] .from-orange-500 { --tw-gradient-from: #8b5cf6 var(--tw-gradient-from-position) !important; }
-[data-accent="violet"] .to-orange-500   { --tw-gradient-to:   #8b5cf6 var(--tw-gradient-to-position) !important; }
-[data-accent="violet"] .from-orange-500\/20 { --tw-gradient-from: rgb(139 92 246 / 0.2) var(--tw-gradient-from-position) !important; }
-[data-accent="violet"] .to-orange-500\/10   { --tw-gradient-to:   rgb(139 92 246 / 0.1) var(--tw-gradient-to-position) !important; }
-[data-accent="violet"] .border-orange-500\/20 { border-color: rgb(139 92 246 / 0.2) !important; }
-[data-accent="violet"] .border-orange-500\/30 { border-color: rgb(139 92 246 / 0.3) !important; }
-[data-accent="violet"] .text-orange-300 { color: #c4b5fd !important; }
-[data-accent="violet"] .hover\:text-orange-300:hover { color: #c4b5fd !important; }
-[data-accent="violet"] .accent-orange-500 { accent-color: #8b5cf6 !important; }
+[data-accent="blue"] {
+  --accent-50: #eff6ff;
+  --accent-100: #dbeafe;
+  --accent-200: #bfdbfe;
+  --accent-300: #93c5fd;
+  --accent-400: #60a5fa;
+  --accent-500: #3b82f6;
+  --accent-600: #2563eb;
+  --accent-700: #1d4ed8;
+  --accent-shadow: rgb(59 130 246 / 0.2);
+}
 
-/* ── Emerald ── */
-[data-accent="emerald"] .bg-orange-500 { background-color: #10b981 !important; }
-[data-accent="emerald"] .bg-orange-600 { background-color: #059669 !important; }
-[data-accent="emerald"] .bg-orange-50  { background-color: #ecfdf5 !important; }
-[data-accent="emerald"] .bg-orange-100 { background-color: #d1fae5 !important; }
-[data-accent="emerald"] .hover\:bg-orange-50:hover  { background-color: #ecfdf5 !important; }
-[data-accent="emerald"] .hover\:bg-orange-100:hover { background-color: #d1fae5 !important; }
-[data-accent="emerald"] .hover\:bg-orange-600:hover { background-color: #059669 !important; }
-[data-accent="emerald"] .active\:bg-orange-700:active { background-color: #047857 !important; }
-[data-accent="emerald"] .text-orange-400 { color: #34d399 !important; }
-[data-accent="emerald"] .text-orange-500 { color: #10b981 !important; }
-[data-accent="emerald"] .text-orange-600 { color: #059669 !important; }
-[data-accent="emerald"] .text-orange-700 { color: #047857 !important; }
-[data-accent="emerald"] .hover\:text-orange-400:hover { color: #34d399 !important; }
-[data-accent="emerald"] .hover\:text-orange-500:hover { color: #10b981 !important; }
-[data-accent="emerald"] .hover\:text-orange-600:hover { color: #059669 !important; }
-[data-accent="emerald"] .border-orange-100 { border-color: #d1fae5 !important; }
-[data-accent="emerald"] .border-orange-200 { border-color: #a7f3d0 !important; }
-[data-accent="emerald"] .border-orange-400 { border-color: #34d399 !important; }
-[data-accent="emerald"] .focus\:border-orange-400:focus { border-color: #34d399 !important; }
-[data-accent="emerald"] .from-orange-400 { --tw-gradient-from: #34d399 var(--tw-gradient-from-position) !important; }
-[data-accent="emerald"] .to-orange-600   { --tw-gradient-to:   #059669 var(--tw-gradient-to-position)   !important; }
-[data-accent="emerald"] .bg-orange-500\/20 { background-color: rgb(16 185 129 / 0.2) !important; }
-[data-accent="emerald"] .shadow-orange-100 { --tw-shadow-color: rgb(16 185 129 / 0.1) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
-[data-accent="emerald"] .shadow-orange-200 { --tw-shadow-color: rgb(16 185 129 / 0.2) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
-[data-accent="emerald"] .from-orange-500 { --tw-gradient-from: #10b981 var(--tw-gradient-from-position) !important; }
-[data-accent="emerald"] .to-orange-500   { --tw-gradient-to:   #10b981 var(--tw-gradient-to-position) !important; }
-[data-accent="emerald"] .from-orange-500\/20 { --tw-gradient-from: rgb(16 185 129 / 0.2) var(--tw-gradient-from-position) !important; }
-[data-accent="emerald"] .to-orange-500\/10   { --tw-gradient-to:   rgb(16 185 129 / 0.1) var(--tw-gradient-to-position) !important; }
-[data-accent="emerald"] .border-orange-500\/20 { border-color: rgb(16 185 129 / 0.2) !important; }
-[data-accent="emerald"] .border-orange-500\/30 { border-color: rgb(16 185 129 / 0.3) !important; }
-[data-accent="emerald"] .text-orange-300 { color: #6ee7b7 !important; }
-[data-accent="emerald"] .hover\:text-orange-300:hover { color: #6ee7b7 !important; }
-[data-accent="emerald"] .accent-orange-500 { accent-color: #10b981 !important; }
+[data-accent="violet"] {
+  --accent-50: #f5f3ff;
+  --accent-100: #ede9fe;
+  --accent-200: #ddd6fe;
+  --accent-300: #c4b5fd;
+  --accent-400: #a78bfa;
+  --accent-500: #8b5cf6;
+  --accent-600: #7c3aed;
+  --accent-700: #6d28d9;
+  --accent-shadow: rgb(139 92 246 / 0.2);
+}
 
-/* ── Rose ── */
-[data-accent="rose"] .bg-orange-500 { background-color: #f43f5e !important; }
-[data-accent="rose"] .bg-orange-600 { background-color: #e11d48 !important; }
-[data-accent="rose"] .bg-orange-50  { background-color: #fff1f2 !important; }
-[data-accent="rose"] .bg-orange-100 { background-color: #ffe4e6 !important; }
-[data-accent="rose"] .hover\:bg-orange-50:hover  { background-color: #fff1f2 !important; }
-[data-accent="rose"] .hover\:bg-orange-100:hover { background-color: #ffe4e6 !important; }
-[data-accent="rose"] .hover\:bg-orange-600:hover { background-color: #e11d48 !important; }
-[data-accent="rose"] .active\:bg-orange-700:active { background-color: #be123c !important; }
-[data-accent="rose"] .text-orange-400 { color: #fb7185 !important; }
-[data-accent="rose"] .text-orange-500 { color: #f43f5e !important; }
-[data-accent="rose"] .text-orange-600 { color: #e11d48 !important; }
-[data-accent="rose"] .text-orange-700 { color: #be123c !important; }
-[data-accent="rose"] .hover\:text-orange-400:hover { color: #fb7185 !important; }
-[data-accent="rose"] .hover\:text-orange-500:hover { color: #f43f5e !important; }
-[data-accent="rose"] .hover\:text-orange-600:hover { color: #e11d48 !important; }
-[data-accent="rose"] .border-orange-100 { border-color: #ffe4e6 !important; }
-[data-accent="rose"] .border-orange-200 { border-color: #fecdd3 !important; }
-[data-accent="rose"] .border-orange-400 { border-color: #fb7185 !important; }
-[data-accent="rose"] .focus\:border-orange-400:focus { border-color: #fb7185 !important; }
-[data-accent="rose"] .from-orange-400 { --tw-gradient-from: #fb7185 var(--tw-gradient-from-position) !important; }
-[data-accent="rose"] .to-orange-600   { --tw-gradient-to:   #e11d48 var(--tw-gradient-to-position)   !important; }
-[data-accent="rose"] .bg-orange-500\/20 { background-color: rgb(244 63 94 / 0.2) !important; }
-[data-accent="rose"] .shadow-orange-100 { --tw-shadow-color: rgb(244 63 94 / 0.1) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
-[data-accent="rose"] .shadow-orange-200 { --tw-shadow-color: rgb(244 63 94 / 0.2) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
-[data-accent="rose"] .from-orange-500 { --tw-gradient-from: #f43f5e var(--tw-gradient-from-position) !important; }
-[data-accent="rose"] .to-orange-500   { --tw-gradient-to:   #f43f5e var(--tw-gradient-to-position) !important; }
-[data-accent="rose"] .from-orange-500\/20 { --tw-gradient-from: rgb(244 63 94 / 0.2) var(--tw-gradient-from-position) !important; }
-[data-accent="rose"] .to-orange-500\/10   { --tw-gradient-to:   rgb(244 63 94 / 0.1) var(--tw-gradient-to-position) !important; }
-[data-accent="rose"] .border-orange-500\/20 { border-color: rgb(244 63 94 / 0.2) !important; }
-[data-accent="rose"] .border-orange-500\/30 { border-color: rgb(244 63 94 / 0.3) !important; }
-[data-accent="rose"] .text-orange-300 { color: #fda4af !important; }
-[data-accent="rose"] .hover\:text-orange-300:hover { color: #fda4af !important; }
-[data-accent="rose"] .accent-orange-500 { accent-color: #f43f5e !important; }
+[data-accent="emerald"] {
+  --accent-50: #ecfdf5;
+  --accent-100: #d1fae5;
+  --accent-200: #a7f3d0;
+  --accent-300: #6ee7b7;
+  --accent-400: #34d399;
+  --accent-500: #10b981;
+  --accent-600: #059669;
+  --accent-700: #047857;
+  --accent-shadow: rgb(16 185 129 / 0.2);
+}
 
+[data-accent="rose"] {
+  --accent-50: #fff1f2;
+  --accent-100: #ffe4e6;
+  --accent-200: #fecdd3;
+  --accent-300: #fda4af;
+  --accent-400: #fb7185;
+  --accent-500: #f43f5e;
+  --accent-600: #e11d48;
+  --accent-700: #be123c;
+  --accent-shadow: rgb(244 63 94 / 0.2);
+}
+
+/* ── Tailwind Overrides (Universal) ── */
+
+/* Apply to all data-accent folders */
+[data-accent] .bg-orange-50 { background-color: var(--accent-50) !important; }
+[data-accent] .bg-orange-100 { background-color: var(--accent-100) !important; }
+[data-accent] .bg-orange-500 { background-color: var(--accent-500) !important; }
+[data-accent] .bg-orange-600 { background-color: var(--accent-600) !important; }
+[data-accent] .hover\:bg-orange-50:hover { background-color: var(--accent-50) !important; }
+[data-accent] .hover\:bg-orange-600:hover { background-color: var(--accent-600) !important; }
+[data-accent] .active\:bg-orange-700:active { background-color: var(--accent-700) !important; }
+
+[data-accent] .text-orange-300 { color: var(--accent-300) !important; }
+[data-accent] .text-orange-400 { color: var(--accent-400) !important; }
+[data-accent] .text-orange-500 { color: var(--accent-500) !important; }
+[data-accent] .text-orange-600 { color: var(--accent-600) !important; }
+[data-accent] .text-orange-700 { color: var(--accent-700) !important; }
+[data-accent] .hover\:text-orange-300:hover { color: var(--accent-300) !important; }
+[data-accent] .hover\:text-orange-500:hover { color: var(--accent-500) !important; }
+[data-accent] .hover\:text-orange-600:hover { color: var(--accent-600) !important; }
+
+[data-accent] .border-orange-100 { border-color: var(--accent-100) !important; }
+[data-accent] .border-orange-200 { border-color: var(--accent-200) !important; }
+[data-accent] .border-orange-400 { border-color: var(--accent-400) !important; }
+[data-accent] .border-orange-500 { border-color: var(--accent-500) !important; }
+[data-accent] .focus\:border-orange-400:focus { border-color: var(--accent-400) !important; }
+
+[data-accent] .from-orange-400 { --tw-gradient-from: var(--accent-400) var(--tw-gradient-from-position) !important; }
+[data-accent] .from-orange-500 { --tw-gradient-from: var(--accent-500) var(--tw-gradient-from-position) !important; }
+[data-accent] .to-orange-500 { --tw-gradient-to: var(--accent-500) var(--tw-gradient-to-position) !important; }
+[data-accent] .to-orange-600 { --tw-gradient-to: var(--accent-600) var(--tw-gradient-to-position) !important; }
+
+/* Shadows */
+[data-accent] .shadow-orange-500 { --tw-shadow-color: var(--accent-shadow) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent] .shadow-orange-100 { --tw-shadow-color: var(--accent-100) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent] .shadow-orange-200 { --tw-shadow-color: var(--accent-200) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+
+/* Opacity variants */
+[data-accent] .bg-orange-500\/20 { background-color: color-mix(in srgb, var(--accent-500), transparent 80%) !important; }
+[data-accent] .border-orange-500\/20 { border-color: color-mix(in srgb, var(--accent-500), transparent 80%) !important; }
+[data-accent] .border-orange-500\/30 { border-color: color-mix(in srgb, var(--accent-500), transparent 70%) !important; }
+[data-accent] .from-orange-500\/20 { --tw-gradient-from: color-mix(in srgb, var(--accent-500), transparent 80%) var(--tw-gradient-from-position) !important; }
+[data-accent] .to-orange-500\/10 { --tw-gradient-to: color-mix(in srgb, var(--accent-500), transparent 90%) var(--tw-gradient-to-position) !important; }
+
+/* Misc */
+[data-accent] .accent-orange-500 { accent-color: var(--accent-500) !important; }
+
+/* Focus Rings */
+[data-accent] .focus\:ring-orange-500\/10:focus { --tw-ring-color: color-mix(in srgb, var(--accent-500), transparent 90%) !important; }
+[data-accent] .focus\:border-orange-500\/50:focus { border-color: color-mix(in srgb, var(--accent-500), transparent 50%) !important; }
+
+/* ── Special case: Project Avatars & Specific highlights ── */
+[data-accent] .bg-orange-400 { background-color: var(--accent-400) !important; }
+[data-accent] .from-orange-400 { --tw-gradient-from: var(--accent-400) var(--tw-gradient-from-position) !important; }
+[data-accent] .to-orange-400 { --tw-gradient-to: var(--accent-400) var(--tw-gradient-to-position) !important; }
+
+/* ── Special case: Harmony with Violet sections (Events) ── */
+[data-accent] .shadow-violet-100 { --tw-shadow-color: var(--accent-100) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
+[data-accent] .bg-violet-100 { background-color: var(--accent-100) !important; }
+[data-accent] .text-violet-700 { color: var(--accent-700) !important; }
+[data-accent] .border-violet-200 { border-color: var(--accent-200) !important; }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }

@@ -163,7 +163,7 @@ function EmptyState({ onNew }: { onNew: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
       <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center mb-4">
-        <svg width="28" height="28" fill="none" stroke="#f97316" strokeWidth="1.8" viewBox="0 0 24 24">
+        <svg width="28" height="28" fill="none" className="stroke-orange-500" strokeWidth="1.8" viewBox="0 0 24 24">
           <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
         </svg>
       </div>
@@ -271,7 +271,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <button onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all text-sm shadow-sm active:scale-95 shrink-0">
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-orange-500 active:scale-95 shrink-0">
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
@@ -313,7 +313,7 @@ export default function DashboardPage() {
                 <button
                   key={t.id}
                   onClick={() => router.push(`/projects/${t.project_id}/tasks`)}
-                  className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-xl hover:shadow-stone-200/40 hover:border-orange-200 transition-all duration-300 group active:scale-[0.98]"
+                  className="text-left bg-white rounded-2xl border border-stone-200 p-5 hover:shadow-xl hover:shadow-orange-500/20 hover:border-orange-200 transition-all duration-300 group active:scale-[0.98]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
