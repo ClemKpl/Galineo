@@ -499,7 +499,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
               </button>
               <button 
                 onClick={() => setViewMode('kanban')} 
-                className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/20' : 'text-stone-400 hover:bg-stone-50'}`}
+                className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-stone-900 text-white shadow-sm' : 'text-stone-400 hover:bg-stone-50'}`}
               >
                 Kanban
               </button>
@@ -512,7 +512,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                     Tâche
                  </button>
-                 <button onClick={() => openCreateFeature()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-orange-500/20">
+                 <button onClick={() => openCreateFeature()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 shadow-sm">
                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                      <span>Fonc.</span>
                   </button>
