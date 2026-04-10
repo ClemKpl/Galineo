@@ -138,6 +138,18 @@ const functions = {
     let created = 0;
     const featureMap = {};
     for (const el of elements.filter(e => e.type === 'feature')) {
+      // Check limits
+      const info = await dbGet(`
+        SELECT u.plan, (SELECT COUNT(*) FROM tasks WHERE project_id = ?) as task_count
+        FROM projects p
+        JOIN users u ON u.id = p.owner_id
+        WHERE p.id = ?
+      `, [targetProjectId, targetProjectId]);
+
+      if (info && info.plan === 'free' && info.task_count >= 25) {
+         return { error: "Limite de 25 tâches atteinte pour le forfait gratuit. L'utilisateur doit passer à Premium pour ajouter plus de fonctionnalités." };
+      }
+
       let assignedTo = null;
       if (el.assigned_email) {
         const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [el.assigned_email]);
@@ -151,6 +163,18 @@ const functions = {
       created++;
     }
     for (const el of elements.filter(e => e.type === 'task')) {
+      // Check limits
+      const info = await dbGet(`
+       SELECT u.plan, (SELECT COUNT(*) FROM tasks WHERE project_id = ?) as task_count
+       FROM projects p
+       JOIN users u ON u.id = p.owner_id
+       WHERE p.id = ?
+     `, [targetProjectId, targetProjectId]);
+
+     if (info && info.plan === 'free' && info.task_count >= 25) {
+        return { message: `Partiellement terminé. Créé ${created} éléments, mais la limite de 25 tâches du forfait gratuit a été atteinte.`, created };
+     }
+
       let assignedTo = null;
       if (el.assigned_email) {
         const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [el.assigned_email]);

@@ -157,11 +157,25 @@ router.post('/import', authMiddleware, ensureProjectActive, (req, res) => {
   const featureIdByTitle = {};
   const createTaskRecord = (record, parentId, cb) => {
     const { title, description, status, priority, phase, start_date, due_date } = record;
-    db.run(`
-      INSERT INTO tasks (project_id, parent_id, title, description, status, priority, phase, start_date, due_date, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [projectId, parentId, title, description || null, status || 'todo', priority || 'normal', phase || null, start_date || null, due_date || null, createdBy],
-    function(err) { cb(err, this.lastID); });
+    
+    // Check limit first
+    db.get(`
+      SELECT u.plan, (SELECT COUNT(*) FROM tasks WHERE project_id = ?) as task_count
+      FROM projects p
+      JOIN users u ON u.id = p.owner_id
+      WHERE p.id = ?
+    `, [projectId, projectId], (err, info) => {
+      if (err) return cb(err);
+      if (info && info.plan === 'free' && info.task_count >= 25) {
+        return cb(new Error('Limite de 25 tâches atteinte pour le forfait gratuit.'));
+      }
+
+      db.run(`
+        INSERT INTO tasks (project_id, parent_id, title, description, status, priority, phase, start_date, due_date, created_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [projectId, parentId, title, description || null, status || 'todo', priority || 'normal', phase || null, start_date || null, due_date || null, createdBy],
+      function(err) { cb(err, this.lastID); });
+    });
   };
 
   const featureRows = records.filter(r => (r.type || '').toLowerCase() === 'feature');
@@ -232,22 +246,39 @@ router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
 
   if (!title) return res.status(400).json({ error: 'Titre requis' });
 
-  db.run(`
-    INSERT INTO tasks (project_id, parent_id, title, description, phase, priority, start_date, due_date, created_by, assigned_to, color)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `, [projectId, parent_id || null, title, description || null, phase || null, priority || 'normal', start_date || null, due_date || null, createdBy, assigned_to || null, color || null],
-  function(err) {
+  // Check limits for project owner
+  db.get(`
+    SELECT u.plan, (SELECT COUNT(*) FROM tasks WHERE project_id = ?) as task_count
+    FROM projects p
+    JOIN users u ON u.id = p.owner_id
+    WHERE p.id = ?
+  `, [projectId, projectId], (err, info) => {
     if (err) return res.status(500).json({ error: err.message });
-    const taskId = this.lastID;
-    
-    // Log Activity
-    logActivity(projectId, createdBy, 'task', taskId, 'created', { title });
+    if (!info) return res.status(404).json({ error: 'Projet introuvable' });
 
-    if (assigned_to && assigned_to !== createdBy) {
-      const notifMsg = `"${title}" vous a été assignée.`;
-      createNotification({
-        userId: assigned_to,
-        type: 'task_assigned',
+    if (!req.user.isAdmin && info.plan === 'free' && info.task_count >= 25) {
+      return res.status(403).json({ 
+        error: 'Limite de 25 tâches atteinte pour le forfait gratuit.',
+        code: 'LIMIT_REACHED'
+      });
+    }
+
+    db.run(`
+      INSERT INTO tasks (project_id, parent_id, title, description, phase, priority, start_date, due_date, created_by, assigned_to, color)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [projectId, parent_id || null, title, description || null, phase || null, priority || 'normal', start_date || null, due_date || null, createdBy, assigned_to || null, color || null],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      const taskId = this.lastID;
+      
+      // Log Activity
+      logActivity(projectId, createdBy, 'task', taskId, 'created', { title });
+
+      if (assigned_to && assigned_to !== createdBy) {
+        const notifMsg = `"${title}" vous a été assignée.`;
+        createNotification({
+          userId: assigned_to,
+          type: 'task_assigned',
         title: 'Nouvelle tâche',
         message: notifMsg,
         projectId: projectId,

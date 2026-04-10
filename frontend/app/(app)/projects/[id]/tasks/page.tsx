@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProject } from '../ProjectContext';
 import { useToast } from '@/contexts/ToastContext';
+import PricingModal from '@/components/PricingModal';
 
 const KANBAN_COLUMNS = [
   { key: 'todo', label: 'À faire', accent: 'bg-stone-700', soft: 'bg-stone-100 text-stone-700' },
@@ -18,10 +19,12 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const resolvedParams = use(params);
   const projectId = resolvedParams.id;
   const { user } = useAuth();
-  const project = useProject();
+  const project = useProject() as any;
   const isReadOnly = project.status !== 'active';
 
   const [tasks, setTasks] = useState<any[]>([]);
+  const isLimitReached = !user?.isAdmin && project.owner_plan === 'free' && tasks.length >= 25;
+  const [showPricing, setShowPricing] = useState(false);
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -394,7 +397,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             {!isReadOnly && (
               <div className="flex items-center gap-3 lg:opacity-0 lg:group-hover:opacity-100 transition-all ml-auto lg:ml-0">
                 {isFeature && (
-                  <button onClick={(e) => { e.stopPropagation(); openCreateTask(task.id); }} className="text-orange-600 hover:text-orange-700 active:scale-95 transition-transform" title="Ajouter une tâche">
+                  <button onClick={(e) => { e.stopPropagation(); isLimitReached ? setShowPricing(true) : openCreateTask(task.id); }} className={`active:scale-95 transition-transform ${isLimitReached ? 'text-stone-300' : 'text-orange-600 hover:text-orange-700'}`} title={isLimitReached ? "Limite atteinte (25 tâches)" : "Ajouter une tâche"}>
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                   </button>
                 )}
@@ -533,11 +536,11 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
            <div className="flex items-center gap-2 w-full sm:w-auto">
              {!isReadOnly && (
                <>
-                 <button onClick={() => openCreateTask()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-stone-200 hover:border-stone-300 text-stone-700 font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95">
+                 <button onClick={() => isLimitReached ? setShowPricing(true) : openCreateTask()} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-stone-200 hover:border-stone-300 font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 ${isLimitReached ? 'text-stone-300' : 'text-stone-700'}`}>
                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                     Tâche
                  </button>
-                 <button onClick={() => openCreateFeature()} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95">
+                 <button onClick={() => isLimitReached ? setShowPricing(true) : openCreateFeature()} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 font-bold rounded-xl text-xs uppercase tracking-widest transition-all active:scale-95 ${isLimitReached ? 'bg-stone-100 text-stone-400' : 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/20'}`}>
                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                      <span>Fonc.</span>
                   </button>
@@ -617,7 +620,9 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
       ) : tasks.length === 0 ? (
         <div className="bg-white border text-center border-stone-200 rounded-3xl py-16 px-6">
           <p className="text-stone-400 font-bold uppercase tracking-widest text-xs mb-4">Votre projet est encore vide</p>
-          <button onClick={() => openCreateFeature()} className="text-orange-500 text-sm font-black uppercase tracking-tighter hover:underline transition-all">Créer la première fonctionnalité</button>
+          <button onClick={() => isLimitReached ? setShowPricing(true) : openCreateFeature()} className="text-orange-500 text-sm font-black uppercase tracking-tighter hover:underline transition-all">
+            {isLimitReached ? "Limite de 25 tâches atteinte (Forfait Gratuit)" : "Créer la première fonctionnalité"}
+          </button>
         </div>
       ) : viewMode === 'kanban' ? (
         <div className="flex lg:grid gap-5 lg:grid-cols-3 overflow-x-auto lg:overflow-x-visible pb-8 lg:pb-0 scrollbar-none -mx-4 px-4 md:-mx-0 md:px-0">
@@ -953,6 +958,10 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
+      
+      {showPricing && (
+        <PricingModal onClose={() => setShowPricing(false)} currentPlan={project.owner_plan || 'free'} />
+      )}
     </div>
   );
 }

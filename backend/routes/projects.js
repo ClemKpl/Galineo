@@ -241,8 +241,9 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
   const userId = req.user.id;
 
   db.get(`
-    SELECT DISTINCT p.id, p.title, p.deadline, p.status, p.avatar
+    SELECT DISTINCT p.id, p.title, p.deadline, p.status, p.avatar, u.plan as owner_plan
     FROM projects p
+    LEFT JOIN users u ON u.id = p.owner_id
     LEFT JOIN project_members pm ON pm.project_id = p.id
     WHERE p.id = ? AND (p.owner_id = ? OR pm.user_id = ? OR ? = 1)
   `, [projectId, userId, userId, req.user.isAdmin ? 1 : 0], (projectErr, project) => {
@@ -445,7 +446,7 @@ router.patch('/:id/restore', authMiddleware, (req, res) => {
 router.get('/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   db.get(`
-    SELECT p.*, u.name as owner_name, pm.role_id as my_role_id, pm.is_favorite as is_favorite
+    SELECT p.*, u.name as owner_name, u.plan as owner_plan, pm.role_id as my_role_id, pm.is_favorite as is_favorite
     FROM projects p
     LEFT JOIN users u ON p.owner_id = u.id
     LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ?

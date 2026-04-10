@@ -73,10 +73,11 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
             <ul className="space-y-3 flex-1">
               {[
                 { ok: true,  text: '3 projets maximum' },
+                { ok: true,  text: '25 tâches / projet max' },
                 { ok: true,  text: '2 collaborateurs / projet' },
                 { ok: true,  text: '10 prompts IA / total' },
                 { ok: false, text: 'Projets illimités' },
-                { ok: false, text: 'Collaborateurs illimités' },
+                { ok: false, text: 'Tâches illimitées' },
                 { ok: false, text: 'IA illimitée' },
               ].map((f, i) => (
                 <li key={i} className="flex items-center gap-2.5 text-sm text-stone-600">
@@ -109,11 +110,10 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
             </div>
             <ul className="space-y-3 flex-1">
               {[
-                'Projets illimités',
+                'Projets et tâches illimités',
                 'Collaborateurs illimités',
                 'Prompts IA illimités',
                 'Support prioritaire',
-                'Accès aux nouvelles fonctionnalités',
                 'Badge Premium exclusif ✨',
               ].map((f, i) => (
                 <li key={i} className="flex items-center gap-2.5 text-sm text-stone-700">
