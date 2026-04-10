@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { ProjectProvider, Project } from './ProjectContext';
+import LeaveProjectModal from '@/components/LeaveProjectModal';
 
 export default function ProjectLayout({ children, params }: { children: React.ReactNode, params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -13,6 +14,7 @@ export default function ProjectLayout({ children, params }: { children: React.Re
 
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -52,10 +54,7 @@ export default function ProjectLayout({ children, params }: { children: React.Re
     { name: 'Chat', path: `/projects/${projectId}/chat` },
   ];
 
-  const isAdmin = project.owner_id === user?.id || project.my_role_id === 1 || project.my_role_id === 2;
-  if (isAdmin) {
-    tabs.push({ name: 'Paramètres', path: `/projects/${projectId}/settings` });
-  }
+  tabs.push({ name: 'Paramètres', path: `/projects/${projectId}/settings` });
 
   return (
     <ProjectProvider value={project}>
@@ -97,7 +96,22 @@ export default function ProjectLayout({ children, params }: { children: React.Re
               <Link href="/dashboard" className="flex items-center justify-center px-4 py-2 border border-stone-200 text-stone-600 hover:bg-stone-50 hover:text-stone-900 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95">
                 Retour
               </Link>
+              <button 
+                onClick={() => setShowLeaveModal(true)}
+                className="flex items-center justify-center px-4 py-2 bg-stone-50 hover:bg-stone-100 text-stone-500 hover:text-red-600 border border-stone-200 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95 gap-2 group"
+              >
+                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="group-hover:translate-x-0.5 transition-transform"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Quitter
+              </button>
             </div>
+
+            {/* Mobile Leave Icon */}
+            <button 
+              onClick={() => setShowLeaveModal(true)}
+              className="lg:hidden flex h-10 w-10 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 text-stone-400 active:text-red-500 active:scale-95 transition-all shrink-0"
+            >
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
           </div>
 
           {/* Interior Navigation - Scrollable on mobile */}
@@ -120,6 +134,17 @@ export default function ProjectLayout({ children, params }: { children: React.Re
         <div className="flex-1 overflow-auto">
           {children}
         </div>
+
+        {showLeaveModal && (
+          <LeaveProjectModal
+            projectId={project.id}
+            projectTitle={project.title}
+            isOwner={project.owner_id === user?.id}
+            members={project.members || []}
+            currentUserId={user?.id || 0}
+            onClose={() => setShowLeaveModal(false)}
+          />
+        )}
       </div>
     </ProjectProvider>
   );

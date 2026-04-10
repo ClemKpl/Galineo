@@ -111,7 +111,8 @@ export default function ProjectSettingsPage() {
                 value={title} 
                 onChange={(e) => setTitle(e.target.value)} 
                 required
-                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 transition-all font-medium"
+                disabled={!isOwner}
+                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 transition-all font-medium disabled:opacity-70 disabled:cursor-not-allowed"
               />
             </div>
             
@@ -121,7 +122,8 @@ export default function ProjectSettingsPage() {
                 value={description} 
                 onChange={(e) => setDescription(e.target.value)} 
                 rows={4}
-                className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 transition-all resize-none"
+                disabled={!isOwner}
+                className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 transition-all resize-none disabled:opacity-70 disabled:cursor-not-allowed"
                 placeholder="Décrivez l'objectif du projet..."
               />
             </div>
@@ -132,7 +134,8 @@ export default function ProjectSettingsPage() {
                 type="date" 
                 value={deadline} 
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 transition-all"
+                disabled={!isOwner}
+                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
               />
             </div>
             
@@ -143,20 +146,23 @@ export default function ProjectSettingsPage() {
                 value={projectAvatar} 
                 onChange={(e) => setProjectAvatar(e.target.value)}
                 placeholder="https://votre-image.jpg"
-                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 transition-all font-medium"
+                disabled={!isOwner}
+                className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 text-stone-900 transition-all font-medium disabled:opacity-70 disabled:cursor-not-allowed"
               />
             </div>
           </div>
           
-          <div className="pt-4 flex justify-end">
-            <button 
-              type="submit" 
-              disabled={saving}
-              className="px-6 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
-            >
-              {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
-            </button>
-          </div>
+          {isOwner && (
+            <div className="pt-4 flex justify-end">
+              <button 
+                type="submit" 
+                disabled={saving}
+                className="px-6 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+              >
+                {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+              </button>
+            </div>
+          )}
         </form>
       </section>
 
@@ -206,15 +212,17 @@ export default function ProjectSettingsPage() {
         <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-stone-900">Équipe & Membres</h2>
-            <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold mt-1">Gérez qui a accès à ce projet</p>
+            <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold mt-1">Les collaborateurs actifs sur ce projet</p>
           </div>
-          <button 
-            onClick={() => setShowMembersModal(true)}
-            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
-          >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-            Gérer les membres
-          </button>
+          {isOwner && (
+            <button 
+              onClick={() => setShowMembersModal(true)}
+              className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
+            >
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+              Gérer les membres
+            </button>
+          )}
         </div>
         <div className="p-6">
           <div className="flex flex-wrap gap-4">
@@ -248,26 +256,6 @@ export default function ProjectSettingsPage() {
         <ShareLinksSection projectId={project.id} />
       )}
 
-      {/* Leave Project Section (Visible to everyone) */}
-      <section className="bg-stone-50/50 rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50">
-          <h2 className="text-lg font-bold text-stone-900">Quitter le projet</h2>
-          <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold mt-1">Se retirer de l&apos;équipe</p>
-        </div>
-        <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold text-stone-900">Quitter Galineo Room</p>
-            <p className="text-xs text-stone-500 mt-1">Vous ne ferez plus partie des membres et ne pourrez plus accéder aux données.</p>
-          </div>
-          <button 
-            onClick={() => setShowLeaveModal(true)}
-            className="px-6 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
-          >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Quitter le projet
-          </button>
-        </div>
-      </section>
 
       {isOwner && (
         <>
@@ -321,14 +309,11 @@ export default function ProjectSettingsPage() {
         />
       )}
 
-      {showLeaveModal && (
-        <LeaveProjectModal
-          projectId={project.id}
-          projectTitle={project.title}
-          isOwner={project.owner_id === user?.id}
-          members={project.members || []}
-          currentUserId={user?.id || 0}
-          onClose={() => setShowLeaveModal(false)}
+      {showMembersModal && (
+        <ManageMembersModal 
+          projectId={project.id} 
+          onClose={() => setShowMembersModal(false)}
+          onChanged={() => {}}
         />
       )}
     </div>
