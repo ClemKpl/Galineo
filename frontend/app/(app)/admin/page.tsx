@@ -322,7 +322,7 @@ export default function AdminPage() {
                   <td className="px-5 py-3.5 hidden md:table-cell text-stone-400 text-xs">{fmt(p.created_at)}</td>
                   <td className="px-5 py-3.5 text-right flex items-center justify-end gap-2">
                     <button
-                      onClick={() => window.open(`/project/${p.id}`, '_blank')}
+                      onClick={() => window.open(`/projects/${p.id}`, '_blank')}
                       className="text-xs text-purple-600 hover:text-purple-700 font-semibold transition-colors px-2 py-1 rounded-lg hover:bg-purple-50"
                     >
                       Consulter
