@@ -9,8 +9,12 @@ const { logActivity } = require('../utils/activityLogger');
 function projectMemberMiddleware(req, res, next) {
   const projectId = req.params.projectId || req.params.id;
   const userId = req.user.id;
+  const isAdmin = req.user.isAdmin === true;
 
   if (!projectId) return res.status(400).json({ error: 'ID de projet manquant' });
+
+  // Les administrateurs peuvent consulter n'importe quel projet sans en être membres
+  if (isAdmin) return next();
 
   db.get(
     `SELECT p.id FROM projects p

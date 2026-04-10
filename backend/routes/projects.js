@@ -244,8 +244,8 @@ router.get('/:id/dashboard', authMiddleware, (req, res) => {
     SELECT DISTINCT p.id, p.title, p.deadline, p.status, p.avatar
     FROM projects p
     LEFT JOIN project_members pm ON pm.project_id = p.id
-    WHERE p.id = ? AND (p.owner_id = ? OR pm.user_id = ?)
-  `, [projectId, userId, userId], (projectErr, project) => {
+    WHERE p.id = ? AND (p.owner_id = ? OR pm.user_id = ? OR ? = 1)
+  `, [projectId, userId, userId, req.user.isAdmin ? 1 : 0], (projectErr, project) => {
     if (projectErr) return res.status(500).json({ error: projectErr.message });
     if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
 
@@ -449,8 +449,8 @@ router.get('/:id', authMiddleware, (req, res) => {
     FROM projects p
     LEFT JOIN users u ON p.owner_id = u.id
     LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ?
-    WHERE p.id = ? AND (p.owner_id = ? OR pm.user_id = ?)
-  `, [req.user.id, id, req.user.id, req.user.id], (err, project) => {
+    WHERE p.id = ? AND (p.owner_id = ? OR pm.user_id = ? OR ? = 1)
+  `, [req.user.id, id, req.user.id, req.user.id, req.user.isAdmin ? 1 : 0], (err, project) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
 

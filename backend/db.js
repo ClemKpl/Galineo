@@ -213,7 +213,7 @@ const initDb = async () => {
       status TEXT DEFAULT 'todo',
       priority TEXT DEFAULT 'normal',
       due_date TEXT,
-      created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE SET NULL,
+      created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
       assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
