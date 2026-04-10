@@ -6,13 +6,13 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type AccentColor } from '@/components/ThemeProvider';
 import PricingModal from '@/components/PricingModal';
-import Toast from '@/components/Toast';
+import { useToast } from '@/contexts/ToastContext';
 
 function initials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-type ToastState = { message: string; type: 'success' | 'error' };
+// Toast géré globalement
 
 function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
@@ -104,9 +104,8 @@ export default function SettingsPage() {
   const [aiDuration, setAiDuration] = useState(60);
   const [aiSaving, setAiSaving] = useState(false);
 
-  // Toast
-  const [toast, setToast] = useState<ToastState | null>(null);
-  const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
+  // Toast global
+  const { showToast } = useToast();
 
   // Retour depuis Stripe : rafraîchir le plan et remercier l'utilisateur
   useEffect(() => {
@@ -545,15 +544,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-
-      <style jsx>{`
-        @keyframes fadeUp {
-          from { transform: translateY(12px); opacity: 0; }
-          to   { transform: translateY(0);     opacity: 1; }
-        }
-      `}</style>
 
       {showPricing && (
         <PricingModal

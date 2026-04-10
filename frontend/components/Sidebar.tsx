@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
-import Toast from './Toast';
+// Toast est maintenant géré globalement via le contexte
+import { useToast } from '@/contexts/ToastContext';
 // PricingModal est maintenant géré par le layout global via l'événement 'open-pricing'
 
 function initials(name: string) {
@@ -100,7 +101,7 @@ export default function Sidebar({
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifsLoading, setNotifsLoading] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const { showToast } = useToast();
   const panelRef = useRef<HTMLDivElement>(null);
   const notifInitialized = useRef(false);
 
@@ -219,16 +220,16 @@ export default function Sidebar({
       
       const project = projects.find(p => p.id === projectId);
       if (project) {
-        setToast({ 
-          message: res.is_favorite 
+        showToast(
+          res.is_favorite 
             ? `« ${project.title} » ajouté aux favoris` 
             : `« ${project.title} » retiré des favoris`,
-          type: 'success'
-        });
+          'success'
+        );
       }
     } catch (err) {
       console.error('Failed to toggle favorite', err);
-      setToast({ message: "Erreur lors de la mise à jour des favoris", type: 'error' });
+      showToast("Erreur lors de la mise à jour des favoris", "error");
     }
   }
 
@@ -564,14 +565,6 @@ export default function Sidebar({
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
       `}</style>
-      
-      {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
-        />
-      )}
     </aside>
     </>
   );

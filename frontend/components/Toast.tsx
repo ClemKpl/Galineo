@@ -21,7 +21,10 @@ export default function Toast({ message, type = 'success', onClose, duration = 3
                   'bg-blue-600 text-white';
 
   return (
-    <div className={`fixed bottom-6 right-6 z-[999] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium animate-[fadeUp_0.3s_ease-out] ${bgClass}`}>
+    <div className={`fixed z-[999] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-medium animate-[fadeUp_0.3s_ease-out] ${bgClass}
+      bottom-20 left-4 right-4 sm:right-auto sm:max-w-md
+      lg:left-[calc(16rem+1.5rem)] lg:bottom-6
+    `}>
       {type === 'success' && (
         <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
           <polyline points="20 6 9 17 4 12"/>
@@ -37,7 +40,7 @@ export default function Toast({ message, type = 'success', onClose, duration = 3
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
         </svg>
       )}
-      <span>{message}</span>
+      <span className="truncate">{message}</span>
 
       <style jsx>{`
         @keyframes fadeUp {
