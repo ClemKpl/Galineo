@@ -302,7 +302,7 @@ router.patch('/me/ai-settings', authMiddleware, (req, res) => {
   const { ai_history_duration } = req.body;
   
   const val = parseInt(ai_history_duration);
-  if (isNaN(val) || val < 1) return res.status(400).json({ error: "Durée d'historique invalide (minimum 1 min)." });
+  if (isNaN(val) || val < 10 || val > 60) return res.status(400).json({ error: "Durée d'historique invalide (entre 10 et 60 minutes)." });
 
   db.run('UPDATE users SET ai_history_duration = ? WHERE id = ?', [val, userId], (err) => {
     if (err) return res.status(500).json({ error: err.message });

@@ -112,6 +112,12 @@ export default function SettingsPage() {
   const [aiDuration, setAiDuration] = useState(60);
   const [aiSaving, setAiSaving] = useState(false);
 
+  useEffect(() => {
+    api.get('/users/me/ai-settings').then((data: { ai_history_duration?: number }) => {
+      if (data?.ai_history_duration) setAiDuration(Math.min(60, Math.max(10, data.ai_history_duration)));
+    }).catch(() => {});
+  }, []);
+
   // Toast global
   const { showToast } = useToast();
 
@@ -509,9 +515,10 @@ export default function SettingsPage() {
             <div className="flex gap-3">
               <input
                 type="number"
-                min="1"
+                min="10"
+                max="60"
                 value={aiDuration}
-                onChange={(e) => setAiDuration(parseInt(e.target.value))}
+                onChange={(e) => setAiDuration(Math.min(60, Math.max(10, parseInt(e.target.value) || 10)))}
                 className="w-32 px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all font-medium"
               />
               <button
