@@ -161,6 +161,10 @@ const initDb = async () => {
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_added_to_project INTEGER DEFAULT 1`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_deadlines INTEGER DEFAULT 1`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_history_duration INTEGER DEFAULT 60`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'free'`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT`,
+    `ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_prompts_count INTEGER DEFAULT 0`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_added_to_project INTEGER DEFAULT 1`,
     `ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_deadlines INTEGER DEFAULT 1`,
     `CREATE TABLE IF NOT EXISTS roles (

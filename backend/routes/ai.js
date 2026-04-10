@@ -4,6 +4,7 @@ const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { logActivity } = require('../utils/activityLogger');
+const { checkAiPromptLimit } = require('../middleware/planLimits');
 
 const MODEL_NAME = "gemini-3.1-flash-lite-preview";
 
@@ -511,7 +512,7 @@ router.get('/active-task/:projectId', authMiddleware, async (req, res) => {
 });
 
 // ─── Route Chat (Refactorisée pour l'arrière-plan) ───────────────────────────
-router.post('/chat', authMiddleware, async (req, res) => {
+router.post('/chat', authMiddleware, checkAiPromptLimit, async (req, res) => {
   const { messages, projectId, mode = 'project' } = req.body;
   const userId = req.user.id;
 

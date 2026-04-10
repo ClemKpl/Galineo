@@ -4,6 +4,7 @@ const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
 const { sendMemberAdded, sendProjectInvitation } = require('../utils/mailer');
+const { checkProjectLimit, checkCollaboratorLimit } = require('../middleware/planLimits');
 const crypto = require('crypto');
 
 // GET /projects — mes projets (propriétaire ou membre)
@@ -29,7 +30,7 @@ router.get('/', authMiddleware, (req, res) => {
 });
 
 // POST /projects — créer un projet
-router.post('/', authMiddleware, (req, res) => {
+router.post('/', authMiddleware, checkProjectLimit, (req, res) => {
   const { title, description, deadline, members, avatar, start_date } = req.body;
   const ownerId = req.user.id;
   if (!title) return res.status(400).json({ error: 'Titre requis' });
@@ -410,7 +411,7 @@ function canManageMembers(userId, projectId, cb) {
 }
 
 // POST /projects/:id/members — ajouter un membre (admin/proprio) ou inviter par email
-router.post('/:id/members', authMiddleware, (req, res) => {
+router.post('/:id/members', authMiddleware, checkCollaboratorLimit, (req, res) => {
   const projectId = Number(req.params.id);
   const currentUserId = req.user.id;
   const { userId, roleId, email } = req.body || {};

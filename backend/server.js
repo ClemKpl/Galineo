@@ -16,9 +16,12 @@ const eventRoutes = require('./routes/events');
 const globalEventRoutes = require('./routes/events_global');
 const aiRoutes          = require('./routes/ai');
 const chatGroupRoutes   = require('./routes/chat_groups');
+const billingRoutes     = require('./routes/billing');
 
 const app = express();
 app.use(cors());
+// Webhook Stripe doit recevoir le raw body AVANT express.json()
+app.use('/billing/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ status: 'OK', version: 'v1' }));
@@ -35,6 +38,7 @@ app.use('/notifications', notificationRoutes);
 app.use('/events', globalEventRoutes);
 app.use('/ai',    aiRoutes);
 app.use('/chat-groups', chatGroupRoutes);
+app.use('/billing', billingRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
