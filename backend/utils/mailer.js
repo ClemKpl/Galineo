@@ -159,8 +159,27 @@ async function sendNotificationEmail({ userId, type, title, message, projectId, 
   });
 }
 
+/**
+ * Email quand la propriété d'un projet est transférée
+ */
+async function sendOwnershipTransferred({ email, projectName, prevOwnerName, projectId }) {
+  const projectUrl = `${FRONTEND_URL}/projects/${projectId}`;
+  return sendMail({
+    to: email,
+    subject: `Transfert de propriété : ${projectName}`,
+    html: baseTemplate(`
+      <h2 style="margin: 0 0 8px; font-size: 20px;">Vous êtes le nouveau propriétaire</h2>
+      <p style="color: #57534e;"><strong style="color: #1c1917;">${prevOwnerName}</strong> vous a transféré la propriété exclusive du projet <strong style="color: #1c1917;">${projectName}</strong>.</p>
+      <p style="color: #57534e;">En tant que propriétaire, vous avez désormais tous les droits de gestion sur ce projet.</p>
+      ${btn(projectUrl, 'Gérer le projet')}
+      <p style="margin-top: 16px; font-size: 12px; color: #a8a29e;">Lien : ${projectUrl}</p>
+    `)
+  });
+}
+
 module.exports = {
   sendMemberAdded,
   sendProjectInvitation,
-  sendNotificationEmail
+  sendNotificationEmail,
+  sendOwnershipTransferred
 };

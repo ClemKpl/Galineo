@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
-const { sendMemberAdded, sendProjectInvitation } = require('../utils/mailer');
+const { sendMemberAdded, sendProjectInvitation, sendOwnershipTransferred } = require('../utils/mailer');
 const { checkProjectLimit, checkCollaboratorLimit } = require('../middleware/planLimits');
 const crypto = require('crypto');
 
@@ -865,19 +865,124 @@ router.patch('/:id/ai-settings', authMiddleware, (req, res) => {
   });
 });
 
-// POST /projects/:id/toggle-favorite — Ajouter/Retirer des favoris
-router.post('/:id/toggle-favorite', authMiddleware, (req, res) => {
-  const projectId = req.params.id;
-  const userId = req.user.id;
-
-  db.get('SELECT is_favorite FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, userId], (err, pm) => {
+// GET /projects/invitations/pending — Voir mes invitations en attente
+router.get('/invitations/pending', authMiddleware, (req, res) => {
+  const userEmail = req.user.email;
+  db.all(`
+    SELECT i.*, p.title as project_title, p.avatar as project_avatar, u.name as inviter_name
+    FROM invitations i
+    JOIN projects p ON i.project_id = p.id
+    JOIN users u ON i.inviter_id = u.id
+    WHERE i.email = ? AND i.status = 'pending'
+    ORDER BY i.created_at DESC
+  `, [userEmail], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (!pm) return res.status(404).json({ error: "Session non membre" });
+    res.json(rows);
+  });
+});
 
-    const nextVal = pm.is_favorite ? 0 : 1;
-    db.run('UPDATE project_members SET is_favorite = ? WHERE project_id = ? AND user_id = ?', [nextVal, projectId, userId], (errRun) => {
-      if (errRun) return res.status(500).json({ error: errRun.message });
-      res.json({ is_favorite: nextVal });
+// POST /projects/invitations/:id/accept — Accepter une invitation
+router.post('/invitations/:id/accept', authMiddleware, (req, res) => {
+  const invitationId = req.params.id;
+  const userId = req.user.id;
+  const userEmail = req.user.email;
+
+  db.get('SELECT * FROM invitations WHERE id = ? AND email = ? AND status = "pending"', [invitationId, userEmail], (err, invite) => {
+    if (err || !invite) return res.status(404).json({ error: "Invitation non trouvée." });
+
+    db.run(
+      'INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)',
+      [invite.project_id, userId, invite.role_id],
+      function (errJoin) {
+        if (errJoin) return res.status(500).json({ error: errJoin.message });
+        
+        db.run('UPDATE invitations SET status = "accepted" WHERE id = ?', [invitationId]);
+        
+        logActivity(invite.project_id, userId, 'member', userId, 'joined_via_invite');
+        res.json({ message: "Invitation acceptée !", projectId: invite.project_id });
+      }
+    );
+  });
+});
+
+// POST /projects/invitations/:id/decline — Refuser une invitation
+router.post('/invitations/:id/decline', authMiddleware, (req, res) => {
+  const invitationId = req.params.id;
+  const userEmail = req.user.email;
+
+  db.run('UPDATE invitations SET status = "declined" WHERE id = ? AND email = ?', [invitationId, userEmail], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: "Invitation déclinée." });
+  });
+});
+
+// POST /projects/:id/leave — Quitter un projet (avec transfert de propriété si besoin)
+router.post('/:id/leave', authMiddleware, (req, res) => {
+  const projectId = Number(req.params.id);
+  const userId = req.user.id;
+  const { successorId } = req.body;
+
+  db.get('SELECT owner_id, title FROM projects WHERE id = ?', [projectId], (pErr, project) => {
+    if (pErr || !project) return res.status(404).json({ error: "Projet non trouvé." });
+
+    const isOwner = project.owner_id === userId;
+
+    db.all('SELECT user_id FROM project_members WHERE project_id = ?', [projectId], (mErr, members) => {
+      if (mErr) return res.status(500).json({ error: mErr.message });
+      
+      const otherMembers = members.filter(m => m.user_id !== userId);
+
+      const finishLeave = () => {
+        db.run('DELETE FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, userId], (delErr) => {
+          if (delErr) return res.status(500).json({ error: delErr.message });
+          logActivity(projectId, userId, 'member', userId, 'left_project');
+          res.json({ message: "Vous avez quitté le projet." });
+        });
+      };
+
+      if (isOwner) {
+        if (otherMembers.length === 0) {
+          // Seul membre : suppression soft delete
+          db.run("UPDATE projects SET status = 'deleted' WHERE id = ?", [projectId], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            finishLeave();
+          });
+        } else {
+          // Plusieurs membres : transfert requis
+          if (!successorId) return res.status(400).json({ error: "Vous devez désigner un successeur avant de quitter le projet." });
+          
+          const successorExists = otherMembers.some(m => m.user_id === Number(successorId));
+          if (!successorExists) return res.status(400).json({ error: "Le successeur désigné n'est pas membre du projet." });
+
+          db.run('UPDATE projects SET owner_id = ? WHERE id = ?', [successorId, projectId], (updErr) => {
+            if (updErr) return res.status(500).json({ error: updErr.message });
+            
+            // Promouvoir le successeur au rôle proprio (id 1)
+            db.run('UPDATE project_members SET role_id = 1 WHERE project_id = ? AND user_id = ?', [projectId, successorId]);
+            
+            // Notification et Email au nouveau proprio
+            db.get('SELECT name, email FROM users WHERE id = ?', [successorId], (uErr, succ) => {
+              if (succ) {
+                db.run('INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
+                  [successorId, 'owner_transferred', 'Nouveau rôle', `Vous êtes le nouveau propriétaire du projet "${project.title}"`, projectId, userId]);
+                
+                sendOwnershipTransferred({
+                  email: succ.email,
+                  projectName: project.title,
+                  prevOwnerName: req.user.name,
+                  projectId: projectId
+                }).catch(e => console.error(e));
+              }
+            });
+
+            logActivity(projectId, userId, 'project', projectId, 'ownership_transferred', { successorId });
+            finishLeave();
+          });
+        }
+      } else {
+        // Simple membre
+        finishLeave();
+      }
     });
   });
 });

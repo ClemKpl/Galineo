@@ -5,6 +5,7 @@ import { useProject } from '../ProjectContext';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import ManageMembersModal from '@/components/ManageMembersModal';
+import LeaveProjectModal from '@/components/LeaveProjectModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -20,6 +21,7 @@ export default function ProjectSettingsPage() {
   const [projectAvatar, setProjectAvatar] = useState(project.avatar || '');
   const [saving, setSaving] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [aiSettings, setAiSettings] = useState({ allow_create: 1, allow_modify: 1, allow_members: 1, allow_delete: 0 });
   const [aiLoading, setAiLoading] = useState(false);
@@ -246,6 +248,27 @@ export default function ProjectSettingsPage() {
         <ShareLinksSection projectId={project.id} />
       )}
 
+      {/* Leave Project Section (Visible to everyone) */}
+      <section className="bg-stone-50/50 rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50">
+          <h2 className="text-lg font-bold text-stone-900">Quitter le projet</h2>
+          <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold mt-1">Se retirer de l&apos;équipe</p>
+        </div>
+        <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-bold text-stone-900">Quitter Galineo Room</p>
+            <p className="text-xs text-stone-500 mt-1">Vous ne ferez plus partie des membres et ne pourrez plus accéder aux données.</p>
+          </div>
+          <button 
+            onClick={() => setShowLeaveModal(true)}
+            className="px-6 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Quitter le projet
+          </button>
+        </div>
+      </section>
+
       {isOwner && (
         <>
           <section className="bg-orange-50/30 rounded-2xl border border-orange-100 shadow-sm overflow-hidden">
@@ -295,6 +318,17 @@ export default function ProjectSettingsPage() {
           projectId={project.id} 
           onClose={() => setShowMembersModal(false)}
           onChanged={() => {}}
+        />
+      )}
+
+      {showLeaveModal && (
+        <LeaveProjectModal
+          projectId={project.id}
+          projectTitle={project.title}
+          isOwner={project.owner_id === user?.id}
+          members={project.members}
+          currentUserId={user?.id || 0}
+          onClose={() => setShowLeaveModal(false)}
         />
       )}
     </div>

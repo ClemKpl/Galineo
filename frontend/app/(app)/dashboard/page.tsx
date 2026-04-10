@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateProjectModal from '@/components/CreateProjectModal';
 import ManageMembersModal from '@/components/ManageMembersModal';
+import ProjectInvites from '@/components/ProjectInvites';
 import { useRouter } from 'next/navigation';
 
 interface Project {
@@ -277,6 +278,9 @@ export default function DashboardPage() {
           Nouveau projet
         </button>
       </div>
+
+      {/* Invitations */}
+      <ProjectInvites onRefresh={fetchProjects} />
 
       {/* Assigned tasks */}
       <section className="mb-10 animate-fadeUp">
