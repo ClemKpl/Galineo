@@ -17,13 +17,16 @@ export default function AuthCallbackPage() {
       return;
     }
 
-    // Récupère le profil complet avec le token
-    api.get('/users/me', { headers: { Authorization: `Bearer ${token}` } })
+    // Stocke le token temporairement pour que api.get puisse l'utiliser
+    localStorage.setItem('galineo_token', token);
+
+    api.get('/users/me')
       .then((res) => {
-        login(token, res.data);
+        login(token, res);
         router.replace('/dashboard');
       })
       .catch(() => {
+        localStorage.removeItem('galineo_token');
         router.replace('/login?error=google_failed');
       });
   }, []);
