@@ -150,6 +150,46 @@ router.get('/trash', authMiddleware, (req, res) => {
   });
 });
 
+// DELETE /projects/trash/empty — supprimer définitivement tous mes projets dans la corbeille
+router.delete('/trash/empty', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+
+  db.all(
+    'SELECT id FROM projects WHERE owner_id = ? AND status = ?',
+    [userId, 'deleted'],
+    (selectErr, rows) => {
+      if (selectErr) return res.status(500).json({ error: selectErr.message });
+
+      const projectIds = Array.isArray(rows) ? rows.map((row) => row.id) : [];
+      if (projectIds.length === 0) {
+        return res.json({ message: 'Aucun projet à supprimer définitivement.', deleted_count: 0 });
+      }
+
+      const placeholders = projectIds.map(() => '?').join(', ');
+      db.run(
+        `DELETE FROM projects WHERE id IN (${placeholders})`,
+        projectIds,
+        (deleteProjectsErr) => {
+          if (deleteProjectsErr) return res.status(500).json({ error: deleteProjectsErr.message });
+
+          db.run(
+            `DELETE FROM project_members WHERE project_id IN (${placeholders})`,
+            projectIds,
+            (deleteMembersErr) => {
+              if (deleteMembersErr) return res.status(500).json({ error: deleteMembersErr.message });
+
+              res.json({
+                message: `${projectIds.length} projet${projectIds.length > 1 ? 's' : ''} supprimé${projectIds.length > 1 ? 's' : ''} définitivement.`,
+                deleted_count: projectIds.length
+              });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
 // GET /projects/:id/dashboard — synthèse du dashboard projet
 router.get('/:id/dashboard', authMiddleware, (req, res) => {
   const projectId = Number(req.params.id);

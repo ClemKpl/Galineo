@@ -17,6 +17,7 @@ interface Project {
 export default function TrashPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [emptyingTrash, setEmptyingTrash] = useState(false);
   const router = useRouter();
 
   const fetchTrash = useCallback(async () => {
@@ -57,13 +58,41 @@ export default function TrashPage() {
     }
   };
 
+  const emptyTrash = async () => {
+    if (!projects.length) return;
+    if (!confirm('ATTENTION : Voulez-vous supprimer définitivement tout le contenu de la corbeille ? Cette action est irréversible.')) return;
+
+    setEmptyingTrash(true);
+    try {
+      await api.delete('/projects/trash/empty');
+      fetchTrash();
+    } catch (err) {
+      alert((err as Error).message);
+    } finally {
+      setEmptyingTrash(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto animate-[fadeIn_0.3s_ease-out]">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-stone-900">Corbeille</h1>
-        <p className="text-stone-400 text-sm mt-0.5">
-          {loading ? 'Chargement...' : `${projects.length} projet${projects.length > 1 ? 's' : ''} supprimé${projects.length > 1 ? 's' : ''}`}
-        </p>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">Corbeille</h1>
+          <p className="text-stone-400 text-sm mt-0.5">
+            {loading ? 'Chargement...' : `${projects.length} projet${projects.length > 1 ? 's' : ''} supprimé${projects.length > 1 ? 's' : ''}`}
+          </p>
+        </div>
+        {!loading && projects.length > 0 && (
+          <button
+            type="button"
+            onClick={emptyTrash}
+            disabled={emptyingTrash}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-600 transition-all hover:bg-red-100 disabled:opacity-50 active:scale-95"
+          >
+            {emptyingTrash && <div className="h-3.5 w-3.5 rounded-full border-2 border-red-300/50 border-t-red-600 animate-spin" />}
+            Tout vider
+          </button>
+        )}
       </div>
 
       {loading ? (
