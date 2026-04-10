@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { Eye, Trash2 } from 'lucide-react';
 
 type User = {
   id: number;
@@ -276,9 +277,10 @@ export default function AdminPage() {
                     {u.email !== user?.email && (
                       <button
                         onClick={() => handleDeleteUser(u)}
-                        className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
+                        className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-red-50 flex items-center justify-center"
                       >
-                        Supprimer
+                        <Trash2 className="w-4 h-4 sm:hidden" />
+                        <span className="hidden sm:inline">Supprimer</span>
                       </button>
                     )}
                   </td>
@@ -323,15 +325,17 @@ export default function AdminPage() {
                   <td className="px-5 py-3.5 text-right flex items-center justify-end gap-2">
                     <button
                       onClick={() => window.open(`/projects/${p.id}`, '_blank')}
-                      className="text-xs text-purple-600 hover:text-purple-700 font-semibold transition-colors px-2 py-1 rounded-lg hover:bg-purple-50"
+                      className="text-xs text-purple-600 hover:text-purple-700 font-semibold transition-colors px-2 py-1 rounded-lg hover:bg-purple-50 flex items-center justify-center"
                     >
-                      Consulter
+                      <Eye className="w-4 h-4 sm:hidden" />
+                      <span className="hidden sm:inline">Consulter</span>
                     </button>
                     <button
                       onClick={() => handleDeleteProject(p)}
-                      className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
+                      className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-red-50 flex items-center justify-center"
                     >
-                      Supprimer
+                      <Trash2 className="w-4 h-4 sm:hidden" />
+                      <span className="hidden sm:inline">Supprimer</span>
                     </button>
                   </td>
                 </tr>
