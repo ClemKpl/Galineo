@@ -263,8 +263,8 @@ export default function AdminPage() {
 
       {/* Users table */}
       {tab === 'users' && (
-        <div className="bg-white border border-stone-100 rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-stone-100 rounded-2xl overflow-x-auto custom-scrollbar">
+          <table className="w-full text-sm min-w-[600px]">
             <thead className="bg-stone-50 border-b border-stone-100">
               <tr>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-stone-400 uppercase tracking-wider">Utilisateur</th>
@@ -319,8 +319,8 @@ export default function AdminPage() {
 
       {/* Projects table */}
       {tab === 'projects' && (
-        <div className="bg-white border border-stone-100 rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white border border-stone-100 rounded-2xl overflow-x-auto custom-scrollbar">
+          <table className="w-full text-sm min-w-[700px]">
             <thead className="bg-stone-50 border-b border-stone-100">
               <tr>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-stone-400 uppercase tracking-wider">Projet</th>

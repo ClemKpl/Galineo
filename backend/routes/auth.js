@@ -8,6 +8,9 @@ const db = require('../db');
 const { JWT_SECRET } = require('../middleware/auth');
 const { ADMIN_EMAILS } = require('../config/admins');
 const { createNotification } = require('../utils/notifService');
+const { verifyEmailExistence } = require('../utils/emailValidator');
+const { createVerificationCode, verifyCode, consumeCode } = require('../utils/otpService');
+const { sendVerificationEmail } = require('../utils/mailer');
 
 // --- Google OAuth Strategy ---
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -57,14 +60,51 @@ const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
 const MAX_LOGIN_ATTEMPTS = 10;
 const LOCK_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
+// POST /auth/verify-email/request
+router.post('/verify-email/request', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email manquant' });
+
+  // 1. Validation DNS/Jetables
+  const check = await verifyEmailExistence(email);
+  if (!check.valid) return res.status(400).json({ error: check.error });
+
+  // 2. Vérifier si l'email existe déjà
+  db.get('SELECT id FROM users WHERE email = ?', [email.toLowerCase()], async (err, user) => {
+    if (user) return res.status(409).json({ error: 'Cet email est déjà associé à un compte.' });
+
+    try {
+      // 3. Générer et envoyer le code
+      const code = await createVerificationCode(email);
+      await sendVerificationEmail({ email, code });
+      res.json({ success: true, message: 'Un code de confirmation a été envoyé à votre adresse email.' });
+    } catch (error) {
+      console.error('❌ [OTP Error]', error);
+      res.status(500).json({ error: "Erreur lors de l'envoi de l'email de confirmation." });
+    }
+  });
+});
+
 // POST /auth/register
 router.post('/register', async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password)
-    return res.status(400).json({ error: 'Champs manquants' });
+  const { name, email, password, code } = req.body;
+  if (!name || !email || !password || !code)
+    return res.status(400).json({ error: 'Tous les champs sont obligatoires (don t forget the confirmation code).' });
 
   if (!PASSWORD_REGEX.test(password))
     return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre.' });
+
+  // 1. Double check validation (safety)
+  const emailCheck = await verifyEmailExistence(email);
+  if (!emailCheck.valid) {
+    return res.status(400).json({ error: emailCheck.error });
+  }
+
+  // 2. Vérifier le code OTP
+  const isValidCode = await verifyCode(email, code);
+  if (!isValidCode) {
+    return res.status(400).json({ error: 'Code de confirmation invalide ou expiré.' });
+  }
 
   try {
     const hash = await bcrypt.hash(password, 10);
@@ -106,6 +146,7 @@ router.post('/register', async (req, res) => {
                 
                 stmt.finalize();
                 updateStmt.finalize();
+                consumeCode(email);
                // note: notifStmt is async and might finish after response, but ok for this simple use case
               }
               const plan = ADMIN_EMAILS.includes(email.toLowerCase()) ? 'unlimited' : 'free';

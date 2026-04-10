@@ -217,6 +217,24 @@ async function sendPremiumWelcome({ email, name }) {
   });
 }
 
+/**
+ * Email de vérification (OTP) lors de l'inscription
+ */
+async function sendVerificationEmail({ email, code }) {
+  return sendMail({
+    to: email,
+    subject: `Votre code de confirmation Galineo : ${code}`,
+    html: baseTemplate(`
+      <h2 style="margin: 0 0 8px; font-size: 20px;">Confirmez votre adresse email</h2>
+      <p style="color: #57534e;">Merci de rejoindre Galineo ! Utilisez le code ci-dessous pour finaliser votre inscription :</p>
+      <div style="background: #fdf2f8; border: 1px dashed #f97316; padding: 24px; text-align: center; border-radius: 12px; margin: 24px 0;">
+        <span style="font-family: monospace; font-size: 32px; font-weight: 800; color: #f97316; letter-spacing: 4px;">${code}</span>
+      </div>
+      <p style="color: #57534e; font-size: 13px;">Ce code expirera dans 15 minutes. Si vous n'avez pas demandé ce code, vous pouvez ignorer cet email.</p>
+    `)
+  });
+}
+
 const { ADMIN_EMAILS } = require('../config/admins');
 const SUPPORT_ADMIN_EMAILS = ADMIN_EMAILS;
 
@@ -266,4 +284,5 @@ module.exports = {
   sendPremiumWelcome,
   sendSupportNotification,
   sendSupportReplyNotification,
+  sendVerificationEmail,
 };
