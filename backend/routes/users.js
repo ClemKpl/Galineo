@@ -137,7 +137,7 @@ router.post('/me/reset', authMiddleware, (req, res) => {
           // Trouver un successeur (le plus ancien membre non-propriétaire)
           await new Promise((resolve, reject) => {
             db.get(
-              'SELECT user_id FROM project_members WHERE project_id = ? AND user_id != ? ORDER BY created_at ASC LIMIT 1',
+              'SELECT user_id FROM project_members WHERE project_id = ? AND user_id != ? ORDER BY user_id ASC LIMIT 1',
               [projectId, userId],
               (succErr, successor) => {
                 if (succErr) return reject(succErr);
