@@ -165,7 +165,15 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 // GET /auth/google/callback — Callback après authentification Google
 router.get('/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=google_failed` }),
+  (req, res, next) => {
+    passport.authenticate('google', { session: false }, (err, user) => {
+      if (err) console.error('❌ [Google OAuth Error]', err);
+      if (!user) console.error('❌ [Google OAuth] Aucun utilisateur retourné');
+      if (err || !user) return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=google_failed`);
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   (req, res) => {
     const user = req.user;
     const plan = ADMIN_EMAILS.includes(user.email.toLowerCase()) ? 'unlimited' : (user.plan || 'free');
