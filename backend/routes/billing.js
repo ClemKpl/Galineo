@@ -24,6 +24,15 @@ router.post('/checkout', authMiddleware, async (req, res) => {
 
     try {
       let customerId = user.stripe_customer_id;
+      if (customerId) {
+        // Vérifie que le customer existe encore sur Stripe (changement de compte possible)
+        try {
+          await stripe.customers.retrieve(customerId);
+        } catch {
+          customerId = null;
+          db.run('UPDATE users SET stripe_customer_id = NULL WHERE id = ?', [userId]);
+        }
+      }
       if (!customerId) {
         const customer = await stripe.customers.create({ email: user.email, metadata: { userId: String(userId) } });
         customerId = customer.id;
