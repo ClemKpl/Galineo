@@ -167,7 +167,7 @@ export default function AiChat() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-5 py-6 space-y-6 bg-stone-50/50 scrollbar-none relative">
+          <div className="flex-1 overflow-y-auto px-5 pt-6 pb-32 lg:pb-6 space-y-6 bg-stone-50/50 scrollbar-none relative">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeUp`}>
                 {m.role === 'assistant' && (
@@ -208,9 +208,9 @@ export default function AiChat() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Input */}
-          <div className="px-4 pb-12 lg:pb-5 pt-4 border-t border-stone-100 bg-white shrink-0">
-            <div className="flex items-end gap-3">
+          {/* Input - Fixé au dessus de la nav mobile */}
+          <div className="absolute lg:relative bottom-[90px] lg:bottom-0 inset-x-0 px-4 py-4 lg:py-5 border-t border-stone-100 bg-white/95 backdrop-blur shrink-0 z-50">
+            <div className="flex items-end gap-3 max-w-full">
               <textarea
                 ref={inputRef}
                 rows={1}

@@ -329,7 +329,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 lg:px-8 py-4 lg:py-6 space-y-4 lg:space-y-6 relative">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pt-4 lg:py-6 pb-36 lg:pb-6 space-y-4 lg:space-y-6 relative">
         {aiSettings?.allow_delete === 1 && (
           <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 animate-pulse">
             <span className="text-xl">⚠️</span>
@@ -411,7 +411,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Input - Fixé au dessus du menu mobile */}
-      <div className="p-3 lg:p-8 bg-white border-t border-stone-200 shrink-0 pb-[80px] lg:pb-8 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+      <div className="absolute lg:relative bottom-[90px] lg:bottom-0 inset-x-0 p-3 lg:p-8 bg-white/95 backdrop-blur border-t border-stone-200 shrink-0 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
         <div className="max-w-[1000px] mx-auto relative">
           <textarea
             value={input}
