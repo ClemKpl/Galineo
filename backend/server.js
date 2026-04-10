@@ -20,9 +20,15 @@ const billingRoutes     = require('./routes/billing');
 
 const app = express();
 app.use(cors());
-// Webhook Stripe doit recevoir le raw body AVANT express.json()
+// Webhook Stripe doit recevoir le raw body SANS interférence du parser JSON global
+app.use((req, res, next) => {
+  if (req.originalUrl === '/billing/webhook') {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 app.use('/billing/webhook', express.raw({ type: 'application/json' }));
-app.use(express.json());
 
 app.get('/health', (req, res) => res.json({ status: 'OK', version: 'v1' }));
 

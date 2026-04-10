@@ -96,38 +96,57 @@ router.post('/test/downgrade', authMiddleware, (req, res) => {
   );
 });
 
-// POST /billing/webhook — événements Stripe (raw body requis)
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  if (!stripe) return res.status(500).send("Configuration Stripe manquante.");
+// POST /billing/webhook — événements Stripe (raw body traité dans server.js)
+router.post('/webhook', async (req, res) => {
+  if (!stripe) {
+    console.error('❌ [billing/webhook] Stripe n\'est pas initialisé.');
+    return res.status(500).send("Configuration Stripe manquante.");
+  }
+
   const sig = req.headers['stripe-signature'];
   let event;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    console.warn('⚠️ [billing/webhook] STRIPE_WEBHOOK_SECRET manquante.');
+  }
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    // req.body est un Buffer car géré par express.raw dans server.js
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    console.log(`🔔 [billing/webhook] Événement reçu: ${event.type}`);
   } catch (e) {
-    console.error('[webhook] Signature invalide:', e.message);
+    console.error(`❌ [billing/webhook] Signature invalide: ${e.message}`);
     return res.status(400).send(`Webhook Error: ${e.message}`);
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const userId = session.metadata?.userId;
+    console.log(`💳 [billing/webhook] Session complétée. Metadata UserID: ${userId}`);
+
     if (userId) {
       db.run(
         'UPDATE users SET plan = ?, stripe_subscription_id = ? WHERE id = ?',
         ['premium', session.subscription || session.payment_intent, userId],
         (err) => {
           if (!err) {
-            console.log(`✅ [billing] User ${userId} passé en Premium`);
-            // Récupérer les infos pour l'email
+            console.log(`✅ [billing] Utilisateur ${userId} passé en Premium.`);
+            // Envoyer un email de bienvenue
             db.get('SELECT name, email FROM users WHERE id = ?', [userId], (err2, user) => {
               if (!err2 && user) {
-                mailer.sendPremiumWelcome({ email: user.email, name: user.name }).catch(console.error);
+                mailer.sendPremiumWelcome({ email: user.email, name: user.name })
+                  .then(() => console.log(`📧 [billing] Email de bienvenue envoyé à ${user.email}`))
+                  .catch(e => console.error(`❌ [billing] Erreur mailer: ${e.message}`));
               }
             });
+          } else {
+            console.error(`❌ [billing] Erreur SQL lors du passage en Premium: ${err.message}`);
           }
         }
       );
+    } else {
+      console.warn('⚠️ [billing/webhook] Kein userId in metadata gefunden.');
     }
   }
 
@@ -135,9 +154,11 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     const sub = event.data.object;
     db.run(
       'UPDATE users SET plan = ?, stripe_subscription_id = NULL WHERE stripe_subscription_id = ?',
-      ['free', sub.id]
+      ['free', sub.id],
+      (err) => {
+        if (!err) console.log(`⬇️ [billing] Abonnement ${sub.id} annulé → retour en mode free.`);
+      }
     );
-    console.log(`⬇️ [billing] Abonnement ${sub.id} annulé → free`);
   }
 
   res.json({ received: true });
