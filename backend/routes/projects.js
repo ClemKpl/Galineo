@@ -197,7 +197,7 @@ router.get('/trash', authMiddleware, (req, res) => {
     LEFT JOIN users u ON p.owner_id = u.id
     LEFT JOIN project_members pm ON pm.project_id = p.id
     WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'deleted'
-    ORDER BY p.updated_at DESC
+    ORDER BY p.created_at DESC
   `, [userId, userId], (err, rows) => {
     // Si updated_at n'existe pas, on trie par created_at
     if (err) {

@@ -19,16 +19,25 @@ const chatGroupRoutes   = require('./routes/chat_groups');
 const billingRoutes     = require('./routes/billing');
 
 const app = express();
-app.use(cors());
-// Webhook Stripe doit recevoir le raw body SANS interférence du parser JSON global
+
+// 1. Webhook Stripe : traitement RAW prioritaire (avant CORS et JSON)
 app.use((req, res, next) => {
   if (req.originalUrl === '/billing/webhook') {
     express.raw({ type: '*/*' })(req, res, next);
   } else {
-    express.json()(req, res, next);
+    next();
   }
 });
-app.use('/billing/webhook', express.raw({ type: 'application/json' }));
+
+// 2. Middlewares globaux
+app.use(cors());
+app.use((req, res, next) => {
+  if (req.originalUrl !== '/billing/webhook') {
+    express.json()(req, res, next);
+  } else {
+    next();
+  }
+});
 
 app.get('/health', (req, res) => res.json({ status: 'OK', version: 'v1' }));
 
