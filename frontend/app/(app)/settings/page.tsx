@@ -1,9 +1,11 @@
 'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type AccentColor } from '@/components/ThemeProvider';
+import PricingModal from '@/components/PricingModal';
 
 function initials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -93,6 +95,7 @@ export default function SettingsPage() {
   const [notifDeadline, setNotifDeadline]   = useState(true);
   const [notifLoading, setNotifLoading]     = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
 
   // Charger les paramètres au montage
   useEffect(() => {
@@ -384,8 +387,8 @@ export default function SettingsPage() {
             ) : (!user?.plan || user?.plan === 'free') ? (
               <button
                 type="button"
-                onClick={() => window.dispatchEvent(new Event('open-pricing'))}
-                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg shadow-orange-100 transition-all active:scale-95 text-sm"
+                onClick={() => setShowPricing(true)}
+                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg shadow-orange-100 transition-all active:scale-95 text-sm flex items-center gap-2"
               >
                 Passer à Premium
               </button>
@@ -510,6 +513,13 @@ export default function SettingsPage() {
           to   { transform: translateY(0);     opacity: 1; }
         }
       `}</style>
+
+      {showPricing && (
+        <PricingModal
+          onClose={() => setShowPricing(false)}
+          currentPlan={user?.plan ?? 'free'}
+        />
+      )}
     </div>
   );
 }
