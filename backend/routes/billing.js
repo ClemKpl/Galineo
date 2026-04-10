@@ -125,7 +125,9 @@ router.post('/webhook', async (req, res) => {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const userId = session.metadata?.userId;
-    console.log(`💳 [billing/webhook] Session complétée. Metadata UserID: ${userId}`);
+    console.log(`💳 [billing/webhook] Session complétée ID: ${session.id}`);
+    console.log(`👤 [billing/webhook] Metadata reçue: ${JSON.stringify(session.metadata || {})}`);
+    console.log(`🎯 [billing/webhook] UserID identifié: ${userId}`);
 
     if (userId) {
       db.run(

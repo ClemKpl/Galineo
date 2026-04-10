@@ -23,7 +23,7 @@ app.use(cors());
 // Webhook Stripe doit recevoir le raw body SANS interférence du parser JSON global
 app.use((req, res, next) => {
   if (req.originalUrl === '/billing/webhook') {
-    express.raw({ type: 'application/json' })(req, res, next);
+    express.raw({ type: '*/*' })(req, res, next);
   } else {
     express.json()(req, res, next);
   }
