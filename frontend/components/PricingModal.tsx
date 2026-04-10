@@ -135,7 +135,7 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
                 <button
                   onClick={handleUpgrade}
                   disabled={loading}
-                  className="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-md shadow-orange-200"
+                  className="w-full py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-sm"
                 >
                   {loading ? (
                     <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />

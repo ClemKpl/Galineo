@@ -388,7 +388,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowPricing(true)}
-                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg shadow-orange-100 transition-all active:scale-95 text-sm flex items-center gap-2"
+                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-br from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white font-bold rounded-xl shadow-sm transition-all active:scale-95 text-sm flex items-center gap-2"
               >
                 Passer à Premium
               </button>
