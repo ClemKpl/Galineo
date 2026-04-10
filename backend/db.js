@@ -63,7 +63,8 @@ if (isProd) {
     if (sql.toUpperCase().includes('INSERT') && !sql.toUpperCase().includes('RETURNING')) {
       const isLinkTable = sql.toLowerCase().includes('project_members') ||
         sql.toLowerCase().includes('role_permissions') ||
-        sql.toLowerCase().includes('chat_group_members');
+        sql.toLowerCase().includes('chat_group_members') ||
+        sql.toLowerCase().includes('project_ai_settings');
       if (!isLinkTable) {
         converted += ' RETURNING id';
       }
