@@ -246,6 +246,21 @@ const initDb = async () => {
       await new Promise((res, rej) => db.run(q, (err) => err ? rej(err) : res()));
     }
 
+    // --- MIGRATIONS FORCÉES (POSTGRESQL PRODUCTION) ---
+    if (isPostgres) {
+      console.log('🐘 PostgreSQL migration: ensuring created_by columns are nullable...');
+      const migrateNull = async (table) => {
+        return new Promise(res => {
+          db.run(`ALTER TABLE ${table} ALTER COLUMN created_by DROP NOT NULL`, (err) => {
+            if (err) console.log(`ℹ️ [Migration] ${table}.created_by already nullable or table missing.`);
+            res();
+          });
+        });
+      };
+      await migrateNull('tasks');
+      await migrateNull('chat_groups');
+    }
+
     // 2. Migrations (Colonnes manquantes)
     await ensureColumn('users', 'last_login_at', 'TIMESTAMP');
     await ensureColumn('users', 'plan', "TEXT DEFAULT 'free'");
