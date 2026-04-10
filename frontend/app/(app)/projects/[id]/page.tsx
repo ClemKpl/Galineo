@@ -259,7 +259,7 @@ export default function ProjectDashboardPage() {
   }
 
   return (
-    <div className="min-h-full bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.16),_transparent_32%),radial-gradient(circle_at_top_right,_rgba(245,158,11,0.12),_transparent_26%),linear-gradient(180deg,_#fafaf9_0%,_#f5f5f4_100%)] p-6 sm:p-8 animate-fadeIn">
+    <div className="min-h-full bg-[radial-gradient(circle_at_top_left,var(--accent-rgba-low),transparent_32%),radial-gradient(circle_at_top_right,var(--accent-rgba-vlow),transparent_26%),linear-gradient(180deg,#fafaf9_0%,#f5f5f4_100%)] p-6 sm:p-8 animate-fadeIn">
       <div className="mx-auto max-w-7xl space-y-6">
         <section className="overflow-hidden rounded-[30px] border border-stone-200/80 bg-white/90 shadow-xl">
           <div className="flex flex-col gap-6 px-6 py-6 sm:px-8 lg:flex-row lg:items-start lg:justify-between">
@@ -519,7 +519,7 @@ export default function ProjectDashboardPage() {
         {canManageProject && (dashboard?.pending_features || []).length > 0 && (
           <section className="mt-8 bg-orange-50/50 border border-orange-100 rounded-[32px] p-8 -mx-2">
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-200">
+              <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500">
                 <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
               </div>
               <div>

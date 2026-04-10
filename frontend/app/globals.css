@@ -128,12 +128,23 @@ html, body {
 [data-accent] .shadow-orange-100 { --tw-shadow-color: var(--accent-100) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
 [data-accent] .shadow-orange-200 { --tw-shadow-color: var(--accent-200) !important; --tw-shadow: var(--tw-shadow-colored) !important; }
 
+/* Gradients helpers */
+[data-accent] {
+  --accent-rgba-low: color-mix(in srgb, var(--accent-500), transparent 84%);
+  --accent-rgba-vlow: color-mix(in srgb, var(--accent-500), transparent 88%);
+}
+
 /* Opacity variants */
 [data-accent] .bg-orange-500\/20 { background-color: color-mix(in srgb, var(--accent-500), transparent 80%) !important; }
 [data-accent] .border-orange-500\/20 { border-color: color-mix(in srgb, var(--accent-500), transparent 80%) !important; }
 [data-accent] .border-orange-500\/30 { border-color: color-mix(in srgb, var(--accent-500), transparent 70%) !important; }
 [data-accent] .from-orange-500\/20 { --tw-gradient-from: color-mix(in srgb, var(--accent-500), transparent 80%) var(--tw-gradient-from-position) !important; }
 [data-accent] .to-orange-500\/10 { --tw-gradient-to: color-mix(in srgb, var(--accent-500), transparent 90%) var(--tw-gradient-to-position) !important; }
+
+/* Group Hover variants */
+[data-accent] .group:hover .group-hover\:bg-orange-50 { background-color: var(--accent-50) !important; }
+[data-accent] .group:hover .group-hover\:text-orange-500 { color: var(--accent-500) !important; }
+[data-accent] .group:hover .group-hover\:text-orange-600 { color: var(--accent-600) !important; }
 
 /* Misc */
 [data-accent] .accent-orange-500 { accent-color: var(--accent-500) !important; }
