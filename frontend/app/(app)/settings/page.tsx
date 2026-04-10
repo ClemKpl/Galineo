@@ -66,6 +66,7 @@ export default function SettingsPage() {
   const { user, login, updateUser, logout, token, refreshUser } = useAuth();
   const searchParams = useSearchParams();
   const handledBillingSuccessRef = useRef(false);
+  const canUseTestBillingTools = process.env.NODE_ENV !== 'production';
 
   // Profil
   const [name, setName]   = useState(user?.name ?? '');
@@ -88,6 +89,7 @@ export default function SettingsPage() {
   const [notifDeadline, setNotifDeadline]   = useState(true);
   const [notifLoading, setNotifLoading]     = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [testDowngradeLoading, setTestDowngradeLoading] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
 
   // Charger les paramètres au montage
@@ -242,6 +244,19 @@ export default function SettingsPage() {
     }
   };
 
+  const handleTestDowngradePremium = async () => {
+    setTestDowngradeLoading(true);
+    try {
+      const res = await api.post('/billing/test/downgrade', {});
+      await refreshUser();
+      showToast(res.message || 'Le compte a été repassé en gratuit pour le test.');
+    } catch (err: any) {
+      showToast(err.message || 'Impossible de retirer Premium pour le test', 'error');
+    } finally {
+      setTestDowngradeLoading(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-6">
       {/* Header */}
@@ -391,15 +406,28 @@ export default function SettingsPage() {
           
           <div className="shrink-0 w-full sm:w-auto">
             {user?.plan === 'premium' ? (
-              <button
-                type="button"
-                onClick={handleManageBilling}
-                disabled={billingLoading}
-                className="w-full sm:w-auto px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2 shadow-lg shadow-stone-200"
-              >
-                {billingLoading && <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
-                Gérer l&apos;abonnement
-              </button>
+              <div className="flex w-full flex-col gap-2 sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleManageBilling}
+                  disabled={billingLoading}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2 shadow-lg shadow-stone-200"
+                >
+                  {billingLoading && <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+                  Gérer l&apos;abonnement
+                </button>
+                {canUseTestBillingTools && (
+                  <button
+                    type="button"
+                    onClick={handleTestDowngradePremium}
+                    disabled={testDowngradeLoading}
+                    className="w-full sm:w-auto px-5 py-2.5 border border-orange-200 bg-orange-50 text-orange-700 font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2"
+                  >
+                    {testDowngradeLoading && <div className="w-3.5 h-3.5 border-2 border-orange-300/50 border-t-orange-600 rounded-full animate-spin" />}
+                    Retirer Premium (test)
+                  </button>
+                )}
+              </div>
             ) : (!user?.plan || user?.plan === 'free') ? (
               <button
                 type="button"

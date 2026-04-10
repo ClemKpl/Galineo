@@ -8,6 +8,7 @@ const mailer = require('../utils/mailer');
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 const PRICE_ID = process.env.STRIPE_PRICE_ID;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://galineo.vercel.app';
+const IS_TEST_BILLING_TOOLS_ENABLED = process.env.NODE_ENV !== 'production';
 
 if (!stripe) {
   console.warn('⚠️ [Stripe] STRIPE_SECRET_KEY manquante. Les fonctionnalités de paiement sont désactivées.');
@@ -77,6 +78,27 @@ router.get('/status', authMiddleware, (req, res) => {
     if (err || !user) return res.status(404).json({ error: 'Introuvable' });
     res.json({ plan: user.plan || 'free', ai_prompts_count: user.ai_prompts_count || 0 });
   });
+});
+
+// POST /billing/test/downgrade — outil de test pour retirer Premium à l'utilisateur courant
+router.post('/test/downgrade', authMiddleware, (req, res) => {
+  if (!IS_TEST_BILLING_TOOLS_ENABLED) {
+    return res.status(404).json({ error: 'Route introuvable' });
+  }
+
+  db.run(
+    'UPDATE users SET plan = ?, stripe_subscription_id = NULL WHERE id = ? AND plan = ?',
+    ['free', req.user.id, 'premium'],
+    function (err) {
+      if (err) return res.status(500).json({ error: 'Impossible de retirer Premium' });
+      if (!this.changes) return res.status(400).json({ error: "L'utilisateur n'est pas Premium" });
+
+      res.json({
+        success: true,
+        message: 'Le plan Premium a été retiré pour ce compte de test.'
+      });
+    }
+  );
 });
 
 // POST /billing/webhook — événements Stripe (raw body requis)
