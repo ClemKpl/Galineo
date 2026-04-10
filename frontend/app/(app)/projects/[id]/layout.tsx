@@ -38,6 +38,8 @@ export default function ProjectLayout({ children, params }: { children: React.Re
     try {
       const res = await api.post(`/projects/${projectId}/toggle-favorite`, {});
       setProject(prev => prev ? { ...prev, is_favorite: res.is_favorite } : null);
+      // Notifier la sidebar et le dashboard
+      window.dispatchEvent(new Event('projects-refresh'));
     } catch (err) {
       console.error('Failed to toggle favorite', err);
     }

@@ -249,7 +249,13 @@ export default function DashboardPage() {
     fetchUpcomingEvents();
     const handler = () => fetchProjects();
     window.addEventListener('project-created', handler);
-    return () => window.removeEventListener('project-created', handler);
+    window.addEventListener('project-updated', handler);
+    window.addEventListener('projects-refresh', handler);
+    return () => {
+      window.removeEventListener('project-created', handler);
+      window.removeEventListener('project-updated', handler);
+      window.removeEventListener('projects-refresh', handler);
+    };
   }, [fetchProjects, fetchAssignedTasks, fetchUpcomingEvents]);
 
   const ownedProjects  = projects.filter((p) => p.owner_id === user?.id);
