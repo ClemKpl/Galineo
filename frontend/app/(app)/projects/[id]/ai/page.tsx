@@ -296,8 +296,8 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
 
   return (
     <div className="flex flex-col h-full bg-stone-50 overflow-hidden relative text-stone-900 font-sans">
-      {/* Header Interne - Fixe au sommet sur mobile */}
-      <div className="sticky top-0 px-3 lg:px-8 py-2.5 lg:py-4 bg-white/95 backdrop-blur border-b border-stone-200 flex items-center justify-between shrink-0 shadow-sm z-40">
+      {/* Header Interne - Réellement Fixe au sommet sur mobile */}
+      <div className="fixed lg:sticky top-[64px] lg:top-0 inset-x-0 px-3 lg:px-8 py-2.5 lg:py-4 bg-white/95 backdrop-blur border-b border-stone-200 flex items-center justify-between shrink-0 shadow-sm z-40">
         <div className="flex items-center gap-2 lg:gap-3 min-w-0">
           <div className="hidden lg:flex w-10 h-10 rounded-xl bg-orange-500 items-center justify-center text-white shadow-sm">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -328,8 +328,8 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pt-4 lg:py-6 pb-36 lg:pb-6 space-y-4 lg:space-y-6 relative">
+      {/* Messages - Avec padding top compensatoire pour le header fixe sur mobile */}
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pt-20 lg:pt-6 pb-36 lg:pb-6 space-y-4 lg:space-y-6 relative">
         {aiSettings?.allow_delete === 1 && (
           <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 animate-pulse">
             <span className="text-xl">⚠️</span>
