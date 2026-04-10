@@ -1,9 +1,9 @@
 const db = require('../db');
 
 const FREE_LIMITS = {
-  projects: 3,
-  collaborators: 2,
-  ai_prompts: 10
+  projects: 10,
+  collaborators: 5,
+  ai_prompts: 50
 };
 
 // Bloque si l'user FREE a atteint sa limite de projets
@@ -13,7 +13,7 @@ function checkProjectLimit(req, res, next) {
     if (user.plan === 'premium') return next();
 
     db.get(
-      'SELECT COUNT(*) as count FROM projects WHERE owner_id = ?',
+      'SELECT COUNT(*) as count FROM projects WHERE owner_id = ? AND status != "deleted"',
       [req.user.id],
       (err2, row) => {
         if (err2) return res.status(500).json({ error: 'Erreur serveur' });
