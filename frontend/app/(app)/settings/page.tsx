@@ -66,7 +66,6 @@ export default function SettingsPage() {
   const { user, login, updateUser, logout, token, refreshUser } = useAuth();
   const searchParams = useSearchParams();
   const handledBillingSuccessRef = useRef(false);
-  const canUseTestBillingTools = process.env.NODE_ENV !== 'production';
 
   // Profil
   const [name, setName]   = useState(user?.name ?? '');
@@ -416,17 +415,15 @@ export default function SettingsPage() {
                   {billingLoading && <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
                   Gérer l&apos;abonnement
                 </button>
-                {canUseTestBillingTools && (
-                  <button
-                    type="button"
-                    onClick={handleTestDowngradePremium}
-                    disabled={testDowngradeLoading}
-                    className="w-full sm:w-auto px-5 py-2.5 border border-orange-200 bg-orange-50 text-orange-700 font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2"
-                  >
-                    {testDowngradeLoading && <div className="w-3.5 h-3.5 border-2 border-orange-300/50 border-t-orange-600 rounded-full animate-spin" />}
-                    Retirer Premium (test)
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleTestDowngradePremium}
+                  disabled={testDowngradeLoading}
+                  className="w-full sm:w-auto px-5 py-2.5 border border-orange-200 bg-orange-50 text-orange-700 font-bold rounded-xl transition-all active:scale-95 disabled:opacity-50 text-sm flex items-center justify-center gap-2"
+                >
+                  {testDowngradeLoading && <div className="w-3.5 h-3.5 border-2 border-orange-300/50 border-t-orange-600 rounded-full animate-spin" />}
+                  Retirer Premium (expérimental)
+                </button>
               </div>
             ) : (!user?.plan || user?.plan === 'free') ? (
               <button

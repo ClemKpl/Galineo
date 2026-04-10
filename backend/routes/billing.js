@@ -8,7 +8,6 @@ const mailer = require('../utils/mailer');
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 const PRICE_ID = process.env.STRIPE_PRICE_ID;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://galineo.vercel.app';
-const IS_TEST_BILLING_TOOLS_ENABLED = process.env.NODE_ENV !== 'production';
 
 if (!stripe) {
   console.warn('⚠️ [Stripe] STRIPE_SECRET_KEY manquante. Les fonctionnalités de paiement sont désactivées.');
@@ -82,10 +81,6 @@ router.get('/status', authMiddleware, (req, res) => {
 
 // POST /billing/test/downgrade — outil de test pour retirer Premium à l'utilisateur courant
 router.post('/test/downgrade', authMiddleware, (req, res) => {
-  if (!IS_TEST_BILLING_TOOLS_ENABLED) {
-    return res.status(404).json({ error: 'Route introuvable' });
-  }
-
   db.run(
     'UPDATE users SET plan = ?, stripe_subscription_id = NULL WHERE id = ? AND plan = ?',
     ['free', req.user.id, 'premium'],
