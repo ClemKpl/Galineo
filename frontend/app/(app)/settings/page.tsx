@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme, type AccentColor } from '@/components/ThemeProvider';
@@ -60,7 +61,16 @@ function Toggle({ checked, onChange, label, description }: { checked: boolean; o
 }
 
 export default function SettingsPage() {
-  const { user, login, updateUser, logout, token } = useAuth();
+  const { user, login, updateUser, logout, token, refreshUser } = useAuth();
+  const searchParams = useSearchParams();
+
+  // Retour depuis Stripe : rafraîchir le plan
+  useEffect(() => {
+    if (searchParams.get('billing') === 'success') {
+      refreshUser();
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, []);
 
   // Profil
   const [name, setName]   = useState(user?.name ?? '');

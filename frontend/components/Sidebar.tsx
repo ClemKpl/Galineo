@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
+import PricingModal from '@/components/PricingModal';
 
 function initials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -90,6 +91,7 @@ export default function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
 
+  const [showPricing, setShowPricing] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -258,9 +260,16 @@ export default function Sidebar({
       <aside className={`fixed inset-y-0 left-0 w-72 lg:w-64 bg-stone-900 flex flex-col shrink-0 select-none z-50 transition-transform duration-300 transform lg:translate-x-0 lg:static h-full ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo & Close Button */}
         <div className="px-5 h-16 flex items-center justify-between border-b border-stone-800">
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <span className="text-white font-bold text-lg tracking-tight">Galineo</span>
-            <span className="ml-2 text-xs bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-md font-medium">v1</span>
+            {user?.plan === 'premium' ? (
+              <span className="flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                Premium
+              </span>
+            ) : (
+              <span className="text-xs bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-md font-medium">v1</span>
+            )}
           </div>
           <button 
             onClick={onCloseMobile}
@@ -507,14 +516,30 @@ export default function Sidebar({
         </button>
       </nav>
 
-      {/* Logout */}
-      <div className="px-3 pb-5 pt-2 border-t border-stone-800">
+      {/* Upgrade CTA + Logout */}
+      <div className="px-3 pb-5 pt-2 border-t border-stone-800 space-y-1">
+        {user?.plan !== 'premium' && (
+          <button
+            onClick={() => setShowPricing(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-orange-500/20 to-amber-500/10 hover:from-orange-500/30 hover:to-amber-500/20 border border-orange-500/20 text-orange-400 hover:text-orange-300 transition-all text-sm font-semibold group"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="group-hover:scale-110 transition-transform"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Passer à Premium
+          </button>
+        )}
         <button onClick={logout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-500 hover:text-stone-300 hover:bg-stone-800 transition-colors text-sm font-medium">
           <IconLogout />
           Déconnexion
         </button>
       </div>
+
+      {showPricing && (
+        <PricingModal
+          onClose={() => setShowPricing(false)}
+          currentPlan={user?.plan ?? 'free'}
+        />
+      )}
 
       <style jsx>{`
         @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }

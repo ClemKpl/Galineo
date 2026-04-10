@@ -4,11 +4,12 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 
-interface User { 
-  id: number; 
-  name: string; 
-  email: string; 
+interface User {
+  id: number;
+  name: string;
+  email: string;
   avatar?: string | null;
+  plan?: 'free' | 'premium';
   notif_project_updates?: number;
   notif_added_to_project?: number;
   notif_deadlines?: number;
