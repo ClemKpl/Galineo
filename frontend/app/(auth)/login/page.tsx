@@ -38,8 +38,12 @@ function LoginForm() {
       if (joinToken) {
         router.push(`/join/${joinToken}`);
       }
-    } catch (err: unknown) {
-      setError((err as Error).message);
+    } catch (err: any) {
+      if (err.message === 'Failed to fetch') {
+        setError("Impossible de contacter le serveur. Veuillez vérifier votre connexion ou réessayer.");
+      } else {
+        setError(err.message || "Une erreur est survenue");
+      }
     } finally {
       setLoading(false);
     }
