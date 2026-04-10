@@ -97,7 +97,7 @@ export default function ProjectSettingsPage() {
     }
   }
 
-  const isOwner = project.my_role_id === 1 || project.owner_id === user?.id;
+  const isOwner = project.my_role_id === 1 || project.owner_id === user?.id || user?.plan === 'unlimited';
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 animate-[fadeIn_0.3s_ease-out]">

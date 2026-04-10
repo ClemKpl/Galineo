@@ -502,23 +502,24 @@ router.post('/:id/toggle-favorite', authMiddleware, (req, res) => {
   );
 });
 
-function canManageMembers(userId, projectId, cb) {
+/**
+ * Vérifie si un utilisateur peut gérer les membres (Propriétaire ou Admin projet ou Admin plateforme)
+ */
+function canManageMembers(userId, projectId, isAdmin, cb) {
+  if (isAdmin) return cb(null, { allowed: true, isOwner: true, isProjectAdmin: true });
+
   db.get('SELECT owner_id FROM projects WHERE id = ?', [projectId], (err, project) => {
     if (err) return cb(err);
-    if (!project) return cb(null, { allowed: false, reason: 'Projet non trouvÃ©' });
+    if (!project) return cb(null, { allowed: false, reason: 'Projet non trouvé' });
 
     if (project.owner_id === userId) return cb(null, { allowed: true, isOwner: true });
 
-    db.get(
-      'SELECT role_id FROM project_members WHERE project_id = ? AND user_id = ?',
-      [projectId, userId],
-      (err2, member) => {
-        if (err2) return cb(err2);
-        const roleId = member?.role_id;
-        const allowed = roleId === 1 || roleId === 2; // PropriÃ©taire ou Admin
-        cb(null, { allowed, isOwner: false, roleId });
-      }
-    );
+    db.get('SELECT role_id FROM project_members WHERE project_id = ? AND user_id = ?', [projectId, userId], (err2, member) => {
+      if (err2 || !member) return cb(null, { allowed: false, reason: 'Accès refusé' });
+      
+      const isProjectAdmin = member.role_id === 1 || member.role_id === 2;
+      cb(null, { allowed: isProjectAdmin, isProjectAdmin });
+    });
   });
 }
 
@@ -530,7 +531,7 @@ router.post('/:id/members', authMiddleware, ensureProjectActive, checkCollaborat
 
   if (!userId && !email) return res.status(400).json({ error: 'userId ou email requis' });
 
-  canManageMembers(currentUserId, projectId, (permErr, perm) => {
+  canManageMembers(currentUserId, projectId, req.user.isAdmin, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
     if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -633,7 +634,7 @@ router.patch('/:id/members/:userId', authMiddleware, ensureProjectActive, (req, 
 
   if (!roleId) return res.status(400).json({ error: 'roleId requis' });
 
-  canManageMembers(currentUserId, projectId, (permErr, perm) => {
+  canManageMembers(currentUserId, projectId, req.user.isAdmin, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
     if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -655,7 +656,7 @@ router.delete('/:id/members/:userId', authMiddleware, ensureProjectActive, (req,
   const targetUserId = Number(req.params.userId);
   const currentUserId = req.user.id;
 
-  canManageMembers(currentUserId, projectId, (permErr, perm) => {
+  canManageMembers(currentUserId, projectId, req.user.isAdmin, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
     if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -706,7 +707,7 @@ router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
   const userId = req.user.id;
   const { title, description, deadline, avatar } = req.body;
 
-  canManageMembers(userId, projectId, (permErr, perm) => {
+  canManageMembers(userId, projectId, req.user.isAdmin, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
     if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -840,7 +841,7 @@ router.post('/:id/share-links', authMiddleware, ensureProjectActive, (req, res) 
 router.get('/:id/share-links', authMiddleware, (req, res) => {
   const projectId = Number(req.params.id);
 
-  canManageMembers(req.user.id, projectId, (permErr, perm) => {
+  canManageMembers(req.user.id, projectId, req.user.isAdmin, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
     if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -862,7 +863,7 @@ router.delete('/share-links/:linkId', authMiddleware, (req, res) => {
   db.get('SELECT project_id FROM project_share_links WHERE id = ?', [linkId], (err, link) => {
     if (err || !link) return res.status(404).json({ error: 'Lien non trouvé' });
     
-    canManageMembers(req.user.id, link.project_id, (permErr, perm) => {
+    canManageMembers(req.user.id, link.project_id, req.user.isAdmin, (permErr, perm) => {
       if (permErr || !perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
       
       db.run('DELETE FROM project_share_links WHERE id = ?', [linkId], (errDel) => {
@@ -915,7 +916,7 @@ router.delete('/:id/invitations/:invitationId', authMiddleware, (req, res) => {
   const projectId = Number(req.params.id);
   const invitationId = Number(req.params.invitationId);
 
-  canManageMembers(req.user.id, projectId, (permErr, perm) => {
+  canManageMembers(req.user.id, projectId, req.user.isAdmin, (permErr, perm) => {
     if (permErr || !perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
     
     db.run('DELETE FROM invitations WHERE id = ? AND project_id = ?', [invitationId, projectId], (err) => {
@@ -943,7 +944,12 @@ router.patch('/:id/ai-settings', authMiddleware, (req, res) => {
 
   db.get('SELECT owner_id FROM projects WHERE id = ?', [projectId], (err, p) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (!p || p.owner_id !== userId) return res.status(403).json({ error: "Seul le propriétaire peut modifier ces réglages." });
+    if (!p) return res.status(404).json({ error: "Projet non trouvé" });
+
+    const isOwner = p.owner_id === userId;
+    const isAdmin = req.user.isAdmin;
+
+    if (!isOwner && !isAdmin) return res.status(403).json({ error: "Seul le propriétaire ou un administrateur peut modifier ces réglages." });
 
     db.run(`
       INSERT INTO project_ai_settings (project_id, allow_create, allow_modify, allow_members, allow_delete)

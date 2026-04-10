@@ -13,6 +13,9 @@ function ensureProjectActive(req, res, next) {
     if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
 
     if (project.status !== 'active') {
+      // Les administrateurs peuvent modifier même les projets inactifs (ex: pour restaurer)
+      if (req.user && req.user.isAdmin) return next();
+
       return res.status(403).json({
         error: 'PROJECT_NOT_ACTIVE',
         message: `Ce projet est ${project.status === 'completed' ? 'achevé' : 'dans la corbeille'}. Vous devez le restaurer pour pouvoir le modifier.`,

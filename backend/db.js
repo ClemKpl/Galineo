@@ -347,9 +347,29 @@ const initDb = async () => {
       )`,
       `CREATE TABLE IF NOT EXISTS ai_active_tasks (
         id ${autoInc},
-        user_id INTEGER NOT NULL REFERENCES users(id),
-        project_id INTEGER,
         status TEXT DEFAULT 'running',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS chat_groups (
+        id ${autoInc},
+        title TEXT NOT NULL,
+        description TEXT,
+        avatar TEXT,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS chat_group_members (
+        group_id INTEGER REFERENCES chat_groups(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        role TEXT DEFAULT 'member',
+        joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (group_id, user_id)
+      )`,
+      `CREATE TABLE IF NOT EXISTS chat_group_messages (
+        id ${autoInc},
+        group_id INTEGER REFERENCES chat_groups(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`
     ];
