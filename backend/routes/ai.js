@@ -586,9 +586,11 @@ router.post('/chat', authMiddleware, async (req, res) => {
 
           // Hiérarchie commune
           const hierarchyInfo = `
-HIÉRARCHIE DU PROJET :
-1. 'feature' (Fonctionnalité) : Un module majeur ou un pilier fonctionnel. C'est un élément PARENT.
-2. 'task' (Tâche) : Une action concrète ou un détail technique. C'est un élément ENFANT qui doit avoir un 'parent_title' correspondant à une 'feature'.`;
+HIÉRARCHIE DU PROJET (RÈGLE ABSOLUE) :
+1. 'feature' (Fonctionnalité) : C'est un CONTENEUR ou un MODULE MAJEUR (ex: "Authentification", "Système de Paiement", "Interface Dashboard"). Il ne peut JAMAIS être l'enfant d'un autre élément.
+2. 'task' (Tâche) : C'est une ACTION CONCRÈTE qui appartient obligatoirement à une fonctionnalité (ex: "Créer le formulaire de login" est une tâche de "Authentification"). 
+CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existante. Une tâche ne peut pas flotter seule.
+`;
 
           if (mode === 'global') {
             sysInstruct = `Tu es Galineo AI, le conseiller personnel de l'utilisateur.
