@@ -66,6 +66,8 @@ export default function ProjectSettingsPage() {
       setIsDeleting(true);
       try {
         await api.delete(`/projects/${project.id}`);
+        // Déclencher le rafraîchissement global de la sidebar
+        window.dispatchEvent(new Event('projects-refresh'));
         router.push('/dashboard');
       } catch (err) {
         alert((err as Error).message);
@@ -79,6 +81,8 @@ export default function ProjectSettingsPage() {
     if (confirmation) {
       try {
         await api.patch(`/projects/${project.id}/complete`, {});
+        // Déclencher le rafraîchissement global de la sidebar
+        window.dispatchEvent(new Event('projects-refresh'));
         router.push('/dashboard');
       } catch (err) {
         alert((err as Error).message);

@@ -197,6 +197,8 @@ export default function DashboardPage() {
     try {
       const res = await api.post(`/projects/${id}/toggle-favorite`, {});
       setProjects(prev => prev.map(p => p.id === id ? { ...p, is_favorite: res.is_favorite } : p));
+      // Notifier la sidebar pour synchroniser les favoris
+      window.dispatchEvent(new Event('projects-refresh'));
     } catch (err) {
       console.error('Failed to toggle favorite', err);
     }

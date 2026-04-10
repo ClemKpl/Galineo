@@ -216,11 +216,22 @@ export default function Sidebar({
 
   useEffect(() => {
     fetchProjects();
+    
+    // Événements globaux pour rafraîchir la liste des projets
     window.addEventListener('project-created', fetchProjects);
     window.addEventListener('project-updated', fetchProjects);
+    window.addEventListener('projects-refresh', fetchProjects);
+    window.addEventListener('new-notification', fetchProjects); // Utile car une notif peut signaler un retrait d'un projet par ex.
+
+    // Polling de sécurité toutes les 45 secondes (plus léger qu'une notif)
+    const interval = setInterval(fetchProjects, 45000);
+
     return () => {
       window.removeEventListener('project-created', fetchProjects);
       window.removeEventListener('project-updated', fetchProjects);
+      window.removeEventListener('projects-refresh', fetchProjects);
+      window.removeEventListener('new-notification', fetchProjects);
+      clearInterval(interval);
     };
   }, [fetchProjects]);
 

@@ -146,6 +146,8 @@ export default function ManageMembersModal({
       await api.delete(`/projects/${projectId}/members/${userId}`);
       await refreshMembers();
       onChanged?.();
+      // Notifier la sidebar car si l'utilisateur se retire lui-même, il faut actualiser la liste
+      window.dispatchEvent(new Event('projects-refresh'));
     } catch (e: unknown) {
       setError(getErrorMessage(e));
     } finally {
