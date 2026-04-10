@@ -173,10 +173,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         type="button"
         onClick={() => setShowSupport(true)}
         title="Contacter le support"
-        className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-white border border-stone-200 rounded-full shadow-lg flex items-center justify-center text-stone-600 hover:text-orange-500 hover:border-orange-200 transition-all active:scale-90 group sm:flex hidden"
+        className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-white border border-stone-200 rounded-full shadow-lg items-center justify-center text-stone-600 hover:text-orange-500 hover:border-orange-200 transition-all active:scale-90 group sm:flex hidden"
       >
         <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" className="group-hover:scale-110 transition-transform">
-          <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          <path d="M3 11c0-4.97 4.03-9 9-9s9 4.03 9 9" />
+          <rect x="2" y="11" width="4" height="7" rx="2" />
+          <rect x="18" y="11" width="4" height="7" rx="2" />
+          <path d="M21 16v2a2 2 0 0 1-2 2h-5" />
         </svg>
       </button>
     </div>

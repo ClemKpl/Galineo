@@ -74,7 +74,10 @@ export default function SupportModal({ onClose }: Props) {
           
           <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 rounded-full px-4 py-1.5 mb-3">
              <svg width="14" height="14" fill="none" stroke="#f97316" strokeWidth="2.5" viewBox="0 0 24 24">
-               <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>
+               <path d="M3 11c0-4.97 4.03-9 9-9s9 4.03 9 9" />
+               <rect x="2" y="11" width="4" height="7" rx="2" />
+               <rect x="18" y="11" width="4" height="7" rx="2" />
+               <path d="M21 16v2a2 2 0 0 1-2 2h-5" />
              </svg>
             <span className="text-orange-400 text-xs font-bold uppercase tracking-wider">Centre d'aide</span>
           </div>
