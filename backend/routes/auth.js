@@ -6,8 +6,8 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const db = require('../db');
 const { JWT_SECRET } = require('../middleware/auth');
-const { logActivity } = require('../utils/activityLogger');
 const { ADMIN_EMAILS } = require('../config/admins');
+const { createNotification } = require('../utils/notifService');
 
 // --- Google OAuth Strategy ---
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -85,8 +85,6 @@ router.post('/register', async (req, res) => {
               if (!invErr && invites && invites.length > 0) {
                 const stmt = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)');
                 const updateStmt = db.prepare('UPDATE invitations SET status = ? WHERE id = ?');
-                const notifStmt = db.prepare('INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)');
-                
                 invites.forEach(inv => {
                   stmt.run(inv.project_id, newUserId, inv.role_id);
                   updateStmt.run('accepted', inv.id);
@@ -94,7 +92,14 @@ router.post('/register', async (req, res) => {
                   // Récupérer le nom du projet pour la notification interne
                   db.get('SELECT title, owner_id FROM projects WHERE id = ?', [inv.project_id], (pErr, project) => {
                     if (project) {
-                      notifStmt.run(newUserId, 'project_invite', 'Projet rejoint', `Bienvenue ! Vous avez rejoint le projet "${project.title}"`, inv.project_id, inv.inviter_id || project.owner_id);
+                      createNotification({
+                        userId: newUserId,
+                        type: 'project_invite',
+                        title: 'Projet rejoint',
+                        message: `Bienvenue ! Vous avez rejoint le projet "${project.title}"`,
+                        projectId: inv.project_id,
+                        fromUserId: inv.inviter_id || project.owner_id
+                      }).catch(console.error);
                     }
                   });
                 });
@@ -155,6 +160,10 @@ router.post('/login', (req, res) => {
           notif_project_updates: user.notif_project_updates,
           notif_added_to_project: user.notif_added_to_project,
           notif_deadlines: user.notif_deadlines,
+          notif_mentions: user.notif_mentions,
+          notif_task_completed: user.notif_task_completed,
+          notif_ai_responses: user.notif_ai_responses,
+          notif_chat_messages: user.notif_chat_messages,
         },
       });
     });

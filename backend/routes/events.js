@@ -4,6 +4,7 @@ const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { ensureProjectActive } = require('../middleware/projectStatus');
 const { sendNotificationEmail } = require('../utils/mailer');
+const { createNotification } = require('../utils/notifService');
 
 // GET /projects/:projectId/events?month=YYYY-MM
 router.get('/', authMiddleware, (req, res) => {
@@ -106,13 +107,14 @@ router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
               if (attendeeId !== userId) {
                 const notifTitle = `Nouvel événement : ${title}`;
                 const notifMsg = `Tu as été invité à "${title}" le ${new Date(start_datetime).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} dans ${projectTitle}`;
-                db.run(
-                  `INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id)
-                   VALUES (?, 'event_invite', ?, ?, ?, ?)`,
-                  [attendeeId, notifTitle, notifMsg, projectId, userId],
-                  () => {}
-                );
-                sendNotificationEmail({ userId: attendeeId, type: 'event_invite', title: notifTitle, message: notifMsg, projectId });
+                createNotification({
+                  userId: attendeeId,
+                  type: 'event_invite',
+                  title: notifTitle,
+                  message: notifMsg,
+                  projectId: projectId,
+                  fromUserId: userId
+                }).catch(console.error);
               }
               done++;
               if (done === attendees.length) {

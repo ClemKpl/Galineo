@@ -78,16 +78,19 @@ async function sendProjectInvitation({ email, projectName, inviterName, token })
  */
 async function sendNotificationEmail({ userId, type, title, message, projectId, extras = {} }) {
   return new Promise((resolve) => {
-    db.get('SELECT email, notif_project_updates, notif_added_to_project, notif_deadlines FROM users WHERE id = ?', [userId], async (err, user) => {
+    db.get('SELECT email, notif_project_updates, notif_added_to_project, notif_deadlines, notif_mentions, notif_task_completed, notif_ai_responses, notif_chat_messages FROM users WHERE id = ?', [userId], async (err, user) => {
       if (err || !user) return resolve();
 
       // Respect des préférences utilisateur
-      if (type === 'project_invite' && user.notif_added_to_project === 0) return resolve();
+      if ((type === 'project_invite' || type === 'added_to_project' || type === 'group_added') && user.notif_added_to_project === 0) return resolve();
+      if (type === 'mention' && user.notif_mentions === 0) return resolve();
+      if (type === 'task_completed' && user.notif_task_completed === 0) return resolve();
+      if (type === 'ai_response' && user.notif_ai_responses === 0) return resolve();
+      if (type === 'chat_message' && user.notif_chat_messages === 0) return resolve();
+      
+      // Fallback
       if (type === 'task_assigned' && user.notif_project_updates === 0) return resolve();
-      if (type === 'mention' && user.notif_project_updates === 0) return resolve();
       if (type === 'event_invite' && user.notif_project_updates === 0) return resolve();
-      if (type === 'group_added' && user.notif_project_updates === 0) return resolve();
-      if (type === 'ai_response' && user.notif_project_updates === 0) return resolve();
 
       const projectUrl = projectId ? `${FRONTEND_URL}/projects/${projectId}` : FRONTEND_URL;
       let subject = title;
@@ -134,6 +137,20 @@ async function sendNotificationEmail({ userId, type, title, message, projectId, 
           <h2 style="margin: 0 0 8px; font-size: 20px;">Réponse de l'assistant IA</h2>
           <p style="color: #57534e;">${message}</p>
           ${projectId ? btn(`${projectUrl}/ai`, 'Voir la réponse') : ''}
+        `;
+      } else if (type === 'task_completed') {
+        subject = `Tâche terminée : ${title}`;
+        bodyContent = `
+          <h2 style="margin: 0 0 8px; font-size: 20px;">Tâche clôturée</h2>
+          <p style="color: #57534e;">${message}</p>
+          ${projectId ? btn(`${projectUrl}/tasks`, 'Voir le projet') : ''}
+        `;
+      } else if (type === 'chat_message') {
+        subject = `Nouveau message dans le projet`;
+        bodyContent = `
+          <h2 style="margin: 0 0 8px; font-size: 20px;">Nouvel échange</h2>
+          <p style="color: #57534e;">${message}</p>
+          ${projectId ? btn(`${projectUrl}/chat`, 'Voir le chat') : ''}
         `;
       } else {
         subject = title;

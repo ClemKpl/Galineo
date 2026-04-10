@@ -5,6 +5,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { logActivity } = require('../utils/activityLogger');
 const { checkAiPromptLimit } = require('../middleware/planLimits');
+const { createNotification } = require('../utils/notifService');
 
 const MODEL_NAME = "gemini-3.1-flash-lite-preview";
 
@@ -36,10 +37,13 @@ const functions = {
     await dbRun(`INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 1)`, [projectId, userId]);
 
     // Notification pour le créateur
-    await dbRun(
-      'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, 'project_access', 'Nouveau projet', `Vous avez créé le projet "${titre}". Bienvenue à bord !`, projectId, null, null]
-    );
+    await createNotification({
+      userId: userId,
+      type: 'project_invite',
+      title: 'Nouveau projet',
+      message: `Vous avez créé le projet "${titre}". Bienvenue à bord !`,
+      projectId: projectId
+    }).catch(console.error);
 
     // 2. Ajouter les membres additionnels
     if (members && Array.isArray(members)) {
@@ -48,10 +52,14 @@ const functions = {
         if (u) {
           await dbRun(`INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)`, [projectId, u.id, 3]);
           await logActivity(projectId, userId, 'member', u.id, 'added', { email: m.email, role: m.role_name || 'Collaborateur' });
-          await dbRun(
-            'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [u.id, 'project_access', 'Invitation au projet', `Vous avez été ajouté au projet "${titre}" par l'Assistant IA.`, projectId, null, userId]
-          );
+          await createNotification({
+            userId: u.id,
+            type: 'project_invite',
+            title: 'Invitation au projet',
+            message: `Vous avez été ajouté au projet "${titre}" par l'Assistant IA.`,
+            projectId: projectId,
+            fromUserId: userId
+          }).catch(console.error);
         }
       }
     }
@@ -74,10 +82,14 @@ const functions = {
         );
         featureMap[el.title] = r.lastID;
         if (assignedTo) {
-          await dbRun(
-            'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [assignedTo, 'task_assigned', 'Nouvelle fonctionnalité', `"${el.title}" vous a été assignée par l'Assistant IA.`, projectId, r.lastID, null]
-          );
+          await createNotification({
+            userId: assignedTo,
+            type: 'task_assigned',
+            title: 'Nouvelle fonctionnalité',
+            message: `"${el.title}" vous a été assignée par l'Assistant IA.`,
+            projectId: projectId,
+            taskId: r.lastID
+          }).catch(console.error);
         }
       }
 
@@ -93,10 +105,14 @@ const functions = {
           [projectId, parentId, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId, assignedTo]
         );
         if (assignedTo) {
-          await dbRun(
-            'INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [assignedTo, 'task_assigned', 'Nouvelle tâche', `"${el.title}" vous a été assignée par l'Assistant IA.`, projectId, r.lastID, null]
-          );
+          await createNotification({
+            userId: assignedTo,
+            type: 'task_assigned',
+            title: 'Nouvelle tâche',
+            message: `"${el.title}" vous a été assignée par l'Assistant IA.`,
+            projectId: projectId,
+            taskId: r.lastID
+          }).catch(console.error);
         }
       }
 
@@ -811,10 +827,13 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
           );
 
           // Notification finale
-          await dbRun(
-            'INSERT INTO notifications (user_id, type, title, message, project_id) VALUES (?, ?, ?, ?, ?)',
-            [userId, 'ai_response', 'Réponse de l\'IA prête', `L'Assistant a terminé son analyse pour le projet "${projectTitle}".`, currentProjectIdTask]
-          );
+          await createNotification({
+            userId: userId,
+            type: 'ai_response',
+            title: "Réponse de l'IA prête",
+            message: `L'Assistant a terminé son analyse pour le projet "${projectTitle}".`,
+            projectId: currentProjectIdTask
+          }).catch(console.error);
 
           success = true;
           break; // Sortie de la boucle des clés API si succès

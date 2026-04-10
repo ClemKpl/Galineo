@@ -68,6 +68,10 @@ export default function SettingsPage() {
   const [notifProject, setNotifProject]     = useState(true);
   const [notifMember, setNotifMember]       = useState(true);
   const [notifDeadline, setNotifDeadline]   = useState(true);
+  const [notifMentions, setNotifMentions]   = useState(true);
+  const [notifTaskDone, setNotifTaskDone]   = useState(true);
+  const [notifAI, setNotifAI]               = useState(true);
+  const [notifChat, setNotifChat]           = useState(true);
   const [notifLoading, setNotifLoading]     = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
   const [testDowngradeLoading, setTestDowngradeLoading] = useState(false);
@@ -79,6 +83,10 @@ export default function SettingsPage() {
       setNotifProject(user.notif_project_updates !== 0);
       setNotifMember(user.notif_added_to_project !== 0);
       setNotifDeadline(user.notif_deadlines !== 0);
+      setNotifMentions(user.notif_mentions !== 0);
+      setNotifTaskDone(user.notif_task_completed !== 0);
+      setNotifAI(user.notif_ai_responses !== 0);
+      setNotifChat(user.notif_chat_messages !== 0);
     }
   }, [user]);
 
@@ -347,22 +355,49 @@ export default function SettingsPage() {
       </Section>
 
       {/* ── Notifications ── */}
-      <Section title="Notifications" description="Choisissez ce que vous souhaitez recevoir par email">
-        <Toggle 
-          checked={notifProject}  
-          onChange={(v) => updateNotifSetting('notif_project_updates', v, setNotifProject)}
-          label="Activité sur mes projets"
-          description="Mises à jour, nouveaux messages et changements" />
-        <Toggle 
-          checked={notifMember}   
-          onChange={(v) => updateNotifSetting('notif_added_to_project', v, setNotifMember)}
-          label="Ajout à un projet"
-          description="Quand quelqu'un vous ajoute à un projet existant" />
-        <Toggle 
-          checked={notifDeadline} 
-          onChange={(v) => updateNotifSetting('notif_deadlines', v, setNotifDeadline)}
-          label="Rappels de deadline"
-          description="Alertes sur les échéances de vos projets" />
+      <Section title="Notifications" description="Personnalisez vos alertes (emails et cloche)">
+        <div className="space-y-1">
+          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Général</p>
+          <Toggle 
+            checked={notifProject}  
+            onChange={(v) => updateNotifSetting('notif_project_updates', v, setNotifProject)}
+            label="Activité sur mes projets"
+            description="Mises à jour et changements globaux" />
+          <Toggle 
+            checked={notifMember}   
+            onChange={(v) => updateNotifSetting('notif_added_to_project', v, setNotifMember)}
+            label="Ajout à un projet"
+            description="Quand on vous ajoute à un nouveau projet" />
+          <Toggle 
+            checked={notifDeadline} 
+            onChange={(v) => updateNotifSetting('notif_deadlines', v, setNotifDeadline)}
+            label="Rappels de deadline"
+            description="Alertes sur les échéances proches" />
+        </div>
+
+        <div className="mt-6 space-y-1">
+          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Interactions</p>
+          <Toggle 
+            checked={notifMentions} 
+            onChange={(v) => updateNotifSetting('notif_mentions', v, setNotifMentions)}
+            label="Mentions (@nom)"
+            description="Notifications quand vous êtes mentionné" />
+          <Toggle 
+            checked={notifTaskDone} 
+            onChange={(v) => updateNotifSetting('notif_task_completed', v, setNotifTaskDone)}
+            label="Tâches terminées"
+            description="Quand une tâche que vous avez créée est terminée" />
+          <Toggle 
+            checked={notifAI} 
+            onChange={(v) => updateNotifSetting('notif_ai_responses', v, setNotifAI)}
+            label="Réponses de l'IA"
+            description="Quand l'Assistant IA a terminé son analyse" />
+          <Toggle 
+            checked={notifChat} 
+            onChange={(v) => updateNotifSetting('notif_chat_messages', v, setNotifChat)}
+            label="Messages de groupe"
+            description="Nouveaux messages dans les discussions de groupe" />
+        </div>
       </Section>
 
       {/* ── Abonnement & Facturation ── */}

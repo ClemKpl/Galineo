@@ -4,7 +4,8 @@ const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { ensureProjectActive } = require('../middleware/projectStatus');
 const { logActivity } = require('../utils/activityLogger');
-const { sendMemberAdded, sendProjectInvitation, sendOwnershipTransferred } = require('../utils/mailer');
+const { sendMemberAdded, sendProjectInvitation, sendOwnershipTransferred, sendNotificationEmail } = require('../utils/mailer');
+const { createNotification } = require('../utils/notifService');
 const { checkProjectLimit, checkCollaboratorLimit } = require('../middleware/planLimits');
 const crypto = require('crypto');
 
@@ -138,25 +139,15 @@ router.post('/', authMiddleware, checkProjectLimit, (req, res) => {
                     
                     // Activité et Notification interne Immédiate
                     logActivity(projectId, ownerId, 'member', memberId, 'added', { roleId: roleId || 3 }).catch(e => console.error(e));
-                    db.run(
-                      'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
-                      [memberId, 'project_invite', 'Nouveau projet', `Vous avez été ajouté au projet "${title}"`, projectId, ownerId]
-                    );
-
-                    db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [memberId], (uErr, memberData) => {
-                      if (memberData && memberData.notif_added_to_project !== 0) {
-                        sendMemberAdded({
-                          email: memberData.email,
-                          projectName: title,
-                          inviterName: req.user.name,
-                          projectId: projectId
-                        }).then(() => {
-                           logActivity(projectId, ownerId, 'system', memberId, 'email_sent', { text: `Email de notification envoyé à ${memberData.email} (Création projet)` }).catch(e => console.error(e));
-                        }).catch((mErr) => {
-                          logActivity(projectId, ownerId, 'system', memberId, 'email_error', { text: `Échec envoi email à ${memberData.email}: ${mErr.message}` }).catch(e => console.error(e));
-                        });
-                      }
-                    });
+                    
+                    createNotification({
+                      userId: memberId,
+                      type: 'project_invite',
+                      title: 'Nouveau projet',
+                      message: `Vous avez été ajouté au projet "${title}"`,
+                      projectId: projectId,
+                      fromUserId: ownerId
+                    }).catch(console.error);
                   }
                 );
               }
@@ -560,25 +551,15 @@ router.post('/:id/members', authMiddleware, ensureProjectActive, checkCollaborat
             
             // 1. Actions immédiates (Domestiques)
             logActivity(projectId, currentUserId, 'member', userId, 'added_or_updated', { roleId: roleId || 3 }).catch(e => console.error(e));
-            db.run(
-              'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
-              [userId, 'project_invite', 'Invitation au projet', `Vous avez été ajouté au projet "${project.title}"`, projectId, currentUserId]
-            );
-
-            db.get('SELECT email, notif_added_to_project FROM users WHERE id = ?', [userId], (uErr, userData) => {
-              if (userData && userData.notif_added_to_project !== 0) {
-                sendMemberAdded({
-                  email: userData.email,
-                  projectName: project.title,
-                  inviterName: req.user.name,
-                  projectId: projectId
-                }).then(() => {
-                   logActivity(projectId, currentUserId, 'system', userId, 'email_sent', { text: `Email de notification envoyé à ${userData.email}` }).catch(e => console.error(e));
-                }).catch((mailErr) => {
-                   logActivity(projectId, currentUserId, 'system', userId, 'email_error', { text: `Échec envoi email à ${userData.email}: ${mailErr.message}` }).catch(e => console.error(e));
-                });
-              }
-            });
+            
+            createNotification({
+              userId: userId,
+              type: 'project_invite',
+              title: 'Invitation au projet',
+              message: `Vous avez été ajouté au projet "${project.title}"`,
+              projectId: projectId,
+              fromUserId: currentUserId
+            }).catch(console.error);
 
             // 3. Réponse immédiate
             res.json({ message: 'Membre ajouté et notifié.' });
@@ -598,21 +579,15 @@ router.post('/:id/members', authMiddleware, ensureProjectActive, checkCollaborat
                 
                 // Actions immédiates
                 logActivity(projectId, currentUserId, 'member', userExists.id, 'added', { roleId: roleId || 3 }).catch(e => console.error(e));
-                db.run(
-                  'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?)',
-                  [userExists.id, 'project_invite', 'Invitation au projet', `Vous avez été ajouté au projet "${project.title}"`, projectId, currentUserId]
-                );
-
-                sendMemberAdded({
-                  email: email,
-                  projectName: project.title,
-                  inviterName: req.user.name,
-                  projectId: projectId
-                }).then(() => {
-                   logActivity(projectId, currentUserId, 'system', userExists.id, 'email_sent', { text: `Email de notification envoyé à ${email}` }).catch(e => console.error(e));
-                }).catch((mailErr) => {
-                  logActivity(projectId, currentUserId, 'system', userExists.id, 'email_error', { text: `Échec envoi email à ${email}: ${mailErr.message}` }).catch(e => console.error(e));
-                });
+                
+                createNotification({
+                  userId: userExists.id,
+                  type: 'project_invite',
+                  title: 'Invitation au projet',
+                  message: `Vous avez été ajouté au projet "${project.title}"`,
+                  projectId: projectId,
+                  fromUserId: currentUserId
+                }).catch(console.error);
 
                 res.json({ message: 'Utilisateur trouvé et ajouté au projet.' });
               }

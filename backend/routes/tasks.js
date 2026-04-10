@@ -5,6 +5,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { ensureProjectActive } = require('../middleware/projectStatus');
 const { logActivity } = require('../utils/activityLogger');
 const { sendNotificationEmail } = require('../utils/mailer');
+const { createNotification } = require('../utils/notifService');
  
 /**
  * Helper to sync a parent task's status based on its children's status
@@ -244,9 +245,15 @@ router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
 
     if (assigned_to && assigned_to !== createdBy) {
       const notifMsg = `"${title}" vous a été assignée.`;
-      db.run('INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [assigned_to, 'task_assigned', 'Nouvelle tâche', notifMsg, projectId, taskId, createdBy]);
-      sendNotificationEmail({ userId: assigned_to, type: 'task_assigned', title: 'Nouvelle tâche', message: notifMsg, projectId });
+      createNotification({
+        userId: assigned_to,
+        type: 'task_assigned',
+        title: 'Nouvelle tâche',
+        message: notifMsg,
+        projectId: projectId,
+        taskId: taskId,
+        fromUserId: createdBy
+      }).catch(console.error);
     }
 
     if (parent_id) {
@@ -281,6 +288,23 @@ router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
     const values_final = [...values, id, projectId];
     db.run(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND project_id = ?`, values_final, async function(err) {
       if (err) return res.status(500).json({ error: err.message });
+
+      // Si la tâche est terminée, notifier le créateur
+      if (req.body.status === 'done') {
+        db.get('SELECT title, created_by, assigned_to FROM tasks WHERE id = ?', [id], (err, taskData) => {
+          if (taskData && taskData.created_by !== userId) {
+            createNotification({
+              userId: taskData.created_by,
+              type: 'task_completed',
+              title: 'Tâche terminée',
+              message: `${req.user.name} a terminé la tâche : ${taskData.title}`,
+              projectId: projectId,
+              taskId: id,
+              fromUserId: userId
+            }).catch(console.error);
+          }
+        });
+      }
 
       db.get('SELECT parent_id FROM tasks WHERE id = ?', [id], async (err2, task) => {
         if (err2) return res.status(500).json({ error: err2.message });
@@ -321,9 +345,15 @@ router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
     db.get('SELECT title, assigned_to FROM tasks WHERE id = ?', [id], (err, oldTask) => {
       if (oldTask && req.body.assigned_to && req.body.assigned_to !== oldTask.assigned_to) {
         const notifMsg = `"${oldTask.title}" vous a été assignée.`;
-        db.run('INSERT INTO notifications (user_id, type, title, message, project_id, task_id, from_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [req.body.assigned_to, 'task_assigned', 'Tâche assignée', notifMsg, projectId, id, userId]);
-        sendNotificationEmail({ userId: req.body.assigned_to, type: 'task_assigned', title: 'Tâche assignée', message: notifMsg, projectId });
+        createNotification({
+          userId: req.body.assigned_to,
+          type: 'task_assigned',
+          title: 'Tâche assignée',
+          message: notifMsg,
+          projectId: projectId,
+          taskId: id,
+          fromUserId: userId
+        }).catch(console.error);
       }
       doUpdate();
     });

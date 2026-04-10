@@ -3,6 +3,7 @@ const router = express.Router({ mergeParams: true });
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { sendNotificationEmail } = require('../utils/mailer');
+const { createNotification } = require('../utils/notifService');
 
 // GET /projects/:projectId/messages — Liste des messages du projet
 router.get('/', authMiddleware, (req, res) => {
@@ -48,17 +49,14 @@ router.post('/', authMiddleware, (req, res) => {
           members.forEach(member => {
             if (mentionNames.includes(member.name.toLowerCase())) {
               const notifMsg = req.user.name + ' vous a mentionné dans la discussion';
-              db.run(`
-                INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id)
-                VALUES (?, 'mention', ?, ?, ?, ?)
-              `, [
-                member.id,
-                'Vous avez été mentionné',
-                notifMsg,
-                projectId,
-                userId
-              ]);
-              sendNotificationEmail({ userId: member.id, type: 'mention', title: 'Vous avez été mentionné', message: notifMsg, projectId });
+              createNotification({
+                userId: member.id,
+                type: 'mention',
+                title: 'Vous avez été mentionné',
+                message: notifMsg,
+                projectId: projectId,
+                fromUserId: userId
+              }).catch(console.error);
             }
           });
         }

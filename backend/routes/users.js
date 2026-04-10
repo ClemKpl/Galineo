@@ -31,7 +31,7 @@ router.get('/me', authMiddleware, (req, res) => {
   db.run('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [userId], (updateErr) => {
     if (updateErr) console.error('❌ Erreur update last_login_at:', updateErr.message);
     
-    db.get('SELECT id, name, email, avatar, plan, notif_project_updates, notif_added_to_project, notif_deadlines, created_at FROM users WHERE id = ?', [userId], (err, row) => {
+    db.get('SELECT id, name, email, avatar, plan, notif_project_updates, notif_added_to_project, notif_deadlines, notif_mentions, notif_task_completed, notif_ai_responses, notif_chat_messages, created_at FROM users WHERE id = ?', [userId], (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!row) return res.status(404).json({ error: 'Utilisateur non trouvé' });
       
@@ -56,7 +56,11 @@ router.patch('/me', authMiddleware, (req, res) => {
     req.body.avatar === undefined && 
     req.body.notif_project_updates === undefined &&
     req.body.notif_added_to_project === undefined &&
-    req.body.notif_deadlines === undefined
+    req.body.notif_deadlines === undefined &&
+    req.body.notif_mentions === undefined &&
+    req.body.notif_task_completed === undefined &&
+    req.body.notif_ai_responses === undefined &&
+    req.body.notif_chat_messages === undefined
   ) {
     return res.status(400).json({ error: 'Aucune donnée à modifier' });
   }
@@ -71,6 +75,10 @@ router.patch('/me', authMiddleware, (req, res) => {
   if (req.body.notif_project_updates !== undefined)   { updates.push('notif_project_updates = ?');   values.push(req.body.notif_project_updates ? 1 : 0); }
   if (req.body.notif_added_to_project !== undefined)  { updates.push('notif_added_to_project = ?');  values.push(req.body.notif_added_to_project ? 1 : 0); }
   if (req.body.notif_deadlines !== undefined)         { updates.push('notif_deadlines = ?');         values.push(req.body.notif_deadlines ? 1 : 0); }
+  if (req.body.notif_mentions !== undefined)          { updates.push('notif_mentions = ?');          values.push(req.body.notif_mentions ? 1 : 0); }
+  if (req.body.notif_task_completed !== undefined)   { updates.push('notif_task_completed = ?');   values.push(req.body.notif_task_completed ? 1 : 0); }
+  if (req.body.notif_ai_responses !== undefined)      { updates.push('notif_ai_responses = ?');      values.push(req.body.notif_ai_responses ? 1 : 0); }
+  if (req.body.notif_chat_messages !== undefined)     { updates.push('notif_chat_messages = ?');     values.push(req.body.notif_chat_messages ? 1 : 0); }
 
   values.push(userId);
 
@@ -79,7 +87,7 @@ router.patch('/me', authMiddleware, (req, res) => {
       if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Email déjà utilisé' });
       return res.status(500).json({ error: err.message });
     }
-    db.get('SELECT id, name, email, avatar, plan, notif_project_updates, notif_added_to_project, notif_deadlines FROM users WHERE id = ?', [userId], (err2, row) => {
+    db.get('SELECT id, name, email, avatar, plan, notif_project_updates, notif_added_to_project, notif_deadlines, notif_mentions, notif_task_completed, notif_ai_responses, notif_chat_messages FROM users WHERE id = ?', [userId], (err2, row) => {
       if (err2) return res.status(500).json({ error: err2.message });
       
       // Override plan for whitelisted admins

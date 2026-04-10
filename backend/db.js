@@ -253,6 +253,10 @@ const initDb = async () => {
     await ensureColumn('users', 'notif_project_updates', 'INTEGER DEFAULT 1');
     await ensureColumn('users', 'notif_added_to_project', 'INTEGER DEFAULT 1');
     await ensureColumn('users', 'notif_deadlines', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'notif_mentions', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'notif_task_completed', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'notif_ai_responses', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'notif_chat_messages', 'INTEGER DEFAULT 1');
     await ensureColumn('users', 'ai_history_duration', 'INTEGER DEFAULT 60');
     await ensureColumn('users', 'stripe_customer_id', 'TEXT');
     await ensureColumn('users', 'stripe_subscription_id', 'TEXT');
