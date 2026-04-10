@@ -599,8 +599,9 @@ HIÉRARCHIE DU PROJET :
             ${hierarchyInfo}
 
             CONSIGNES GÉNÉRALES :
-            1. MINIMUMS : Un projet DOIT comporter au moins 3 fonctionnalités ('feature') et un total de 6 tâches ('task') réparties (idéalement 2 par fonctionnalité).
-            2. PRÉCISION : Si l'utilisateur demande des tâches spécifiques, tu DOIS les inclure sans faute.
+            1. STRUCTURE MINIMALE : Un projet DOIT comporter AU MOINS 3 fonctionnalités ('feature') et un total de 6 tâches ('task').
+            2. RÈGLE D'OR : Pour CHAQUE fonctionnalité ('feature') que tu crées, tu as l'OBLIGATION STRICTE de générer au moins 2 tâches ('task') liées. Ne laisse jamais une fonctionnalité sans tâches.
+            3. PRÉCISION : Si l'utilisateur demande des tâches spécifiques, tu DOIS les inclure sans faute.
             3. DATES : Initialise TOUJOURS les dates en commençant par aujourd'hui (${currentDate}).
             4. ASSIGNATION : Assigne par défaut les tâches à l'utilisateur actuel (${userEmail}).
 
