@@ -1,6 +1,6 @@
 'use client';
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,14 +65,7 @@ function Toggle({ checked, onChange, label, description }: { checked: boolean; o
 export default function SettingsPage() {
   const { user, login, updateUser, logout, token, refreshUser } = useAuth();
   const searchParams = useSearchParams();
-
-  // Retour depuis Stripe : rafraîchir le plan
-  useEffect(() => {
-    if (searchParams.get('billing') === 'success') {
-      refreshUser();
-      window.history.replaceState({}, '', '/settings');
-    }
-  }, []);
+  const handledBillingSuccessRef = useRef(false);
 
   // Profil
   const [name, setName]   = useState(user?.name ?? '');
@@ -130,6 +123,29 @@ export default function SettingsPage() {
   // Toast
   const [toast, setToast] = useState<Toast | null>(null);
   const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
+
+  // Retour depuis Stripe : rafraîchir le plan et remercier l'utilisateur
+  useEffect(() => {
+    const billingStatus = searchParams.get('billing');
+    if (billingStatus !== 'success' || handledBillingSuccessRef.current) return;
+    handledBillingSuccessRef.current = true;
+
+    let cancelled = false;
+
+    const handleBillingSuccess = async () => {
+      await refreshUser();
+      if (cancelled) return;
+
+      showToast('Merci pour votre passage en Premium. Votre soutien aide directement au développement de Galineo.');
+      window.history.replaceState({}, '', '/settings');
+    };
+
+    handleBillingSuccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshUser, searchParams]);
 
   const memberSince = (dateStr: string) => {
     const d = new Date(dateStr);
