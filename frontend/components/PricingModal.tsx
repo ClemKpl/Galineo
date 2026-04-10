@@ -124,8 +124,11 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
             </ul>
             <div className="mt-6">
               {currentPlan === 'unlimited' ? (
-                <div className="w-full text-center py-2.5 rounded-xl bg-purple-100 text-purple-600 text-sm font-semibold cursor-default">
-                  Accès Administrateur 👑
+                <div className="w-full text-center py-2.5 rounded-xl bg-purple-100 text-purple-600 text-sm font-semibold cursor-default flex items-center justify-center gap-2">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.77 3.77z"/>
+                  </svg>
+                  Accès Administrateur
                 </div>
               ) : currentPlan === 'premium' ? (
                 <div className="w-full text-center py-2.5 rounded-xl bg-orange-50 text-orange-600 text-sm font-semibold cursor-default">
