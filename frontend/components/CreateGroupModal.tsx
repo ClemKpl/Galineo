@@ -6,6 +6,7 @@ interface User {
   id: number;
   name: string;
   email: string;
+  avatar?: string | null;
 }
 
 export default function CreateGroupModal({ onClose, onCreated }: { onClose: () => void, onCreated: (groupId: number) => void }) {
@@ -131,8 +132,12 @@ export default function CreateGroupModal({ onClose, onCreated }: { onClose: () =
                         className="w-full flex items-center justify-between p-3 hover:bg-stone-50 rounded-xl transition-all"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs uppercase">
-                            {u.name.substring(0, 2)}
+                          <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs uppercase overflow-hidden border border-orange-200">
+                            {u.avatar ? (
+                              <img src={u.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              u.name.substring(0, 2)
+                            )}
                           </div>
                           <div className="text-left">
                             <p className="text-sm font-bold text-stone-900">{u.name}</p>

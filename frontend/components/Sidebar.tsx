@@ -54,7 +54,13 @@ const IconShield = () => (
   </svg>
 );
 
-function NotifIcon({ type }: { type: string }) {
+function NotifIcon({ type, avatar, name }: { type: string, avatar?: string | null, name?: string }) {
+  if (avatar) return (
+    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-stone-100 shadow-sm">
+      <img src={avatar} alt={name || ''} className="w-full h-full object-cover" />
+    </div>
+  );
+
   if (type === 'mention') return (
     <div className="w-8 h-8 rounded-full bg-blue-500/15 text-blue-500 flex items-center justify-center shrink-0">
       <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 006 0v-1a10 10 0 10-3.92 7.94"/></svg>
@@ -390,7 +396,14 @@ export default function Sidebar({
                     }`}
                     onClick={() => handleNotifClick(notif)}
                   >
-                    <NotifIcon type={notif.type} />
+                    <div className="relative shrink-0">
+                      <NotifIcon type={notif.type} avatar={notif.from_user_avatar} name={notif.from_user_name} />
+                      {notif.from_user_avatar && (
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full border border-stone-100 flex items-center justify-center text-[7px] shadow-sm">
+                           {notif.type === 'mention' ? '🔔' : notif.type === 'task_assigned' ? '✅' : '📁'}
+                        </div>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p className={`text-sm leading-snug ${notif.is_read ? 'text-stone-600' : 'text-stone-900 font-semibold'}`}>

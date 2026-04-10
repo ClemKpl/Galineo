@@ -13,7 +13,7 @@ const ACCENT_BG: Record<string, string> = {
 };
 
 interface Role { id: number; name: string; is_default: number; }
-interface User { id: number; name: string; email: string; }
+interface User { id: number; name: string; email: string; avatar?: string | null; }
 interface Member { user: User; roleId: number; }
 interface Permission { id: number; name: string; description: string; }
 
@@ -484,7 +484,13 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                           filteredUsers.map((u) => (
                             <button key={u.id} type="button" onClick={() => addMember(u)}
                               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-orange-50 transition-colors text-left group">
-                              <div className="w-9 h-9 rounded-xl bg-stone-100 group-hover:bg-orange-100 flex items-center justify-center text-stone-600 group-hover:text-orange-700 text-xs font-bold transition-colors">{initials(u.name)}</div>
+                              <div className="w-9 h-9 rounded-xl bg-stone-100 group-hover:bg-orange-100 flex items-center justify-center text-stone-600 group-hover:text-orange-700 text-xs font-bold transition-colors overflow-hidden border border-stone-200">
+                                {u.avatar ? (
+                                  <img src={u.avatar} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  initials(u.name)
+                                )}
+                              </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-bold text-stone-900 truncate">{u.name}</p>
                                 <p className="text-xs text-stone-400 truncate">{u.email}</p>
@@ -500,7 +506,13 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                     <div className="mt-4 space-y-2">
                       {members.map((m) => (
                         <div key={m.user.id} className="flex items-center gap-3 bg-stone-50 rounded-2xl px-3 py-2 border border-stone-100 animate-in slide-in-from-left-2 transition-all">
-                          <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-700 text-[10px] font-black">{initials(m.user.name)}</div>
+                          <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-700 text-[10px] font-black overflow-hidden border border-orange-200">
+                            {m.user.avatar ? (
+                              <img src={m.user.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              initials(m.user.name)
+                            )}
+                          </div>
                           <div className="flex-1 min-w-0"><p className="text-xs font-bold text-stone-900 truncate">{m.user.name}</p></div>
                           <select value={m.roleId} onChange={(e) => updateRole(m.user.id, Number(e.target.value))}
                             className="text-[10px] uppercase tracking-wider font-black border-none rounded-lg px-2 py-1 bg-white shadow-sm ring-1 ring-stone-100">

@@ -464,7 +464,7 @@ router.get('/:id', authMiddleware, (req, res) => {
     if (!project) return res.status(404).json({ error: 'Projet non trouvé' });
 
     db.all(`
-      SELECT u.id, u.name, u.email, u.last_login_at, r.name as role_name, r.id as role_id
+      SELECT u.id, u.name, u.email, u.avatar, u.last_login_at, r.name as role_name, r.id as role_id
       FROM project_members pm
       JOIN users u ON pm.user_id = u.id
       JOIN roles r ON pm.role_id = r.id
@@ -821,7 +821,7 @@ router.get('/:id/activities', authMiddleware, (req, res) => {
       }
 
       db.all(`
-        SELECT al.*, COALESCE(u.name, 'Assistant IA') as user_name
+        SELECT al.*, COALESCE(u.name, 'Assistant IA') as user_name, u.avatar as user_avatar
         FROM activity_logs al
         LEFT JOIN users u ON al.user_id = u.id
         WHERE al.project_id = ?

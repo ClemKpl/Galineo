@@ -380,7 +380,13 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             )}
             {task.assignee_name && (
               <span className="flex items-center gap-1.5">
-                <div className="w-4 h-4 rounded-full bg-stone-200 flex items-center justify-center text-[8px]">{task.assignee_name.substring(0,2)}</div>
+                <div className="w-5 h-5 rounded-full bg-stone-200 flex items-center justify-center text-[8px] overflow-hidden border border-stone-100">
+                  {task.assignee_avatar ? (
+                    <img src={task.assignee_avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    task.assignee_name.substring(0,2)
+                  )}
+                </div>
                 {task.assignee_name}
               </span>
             )}
@@ -457,7 +463,16 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
               </span>
             )}
             {task.assignee_name && (
-              <span className="rounded-full bg-stone-100 px-2 py-1 text-stone-600">{task.assignee_name}</span>
+              <span className="flex items-center gap-1.5 rounded-full bg-stone-100 pl-1 pr-2.5 py-0.5 text-stone-600 border border-stone-200">
+                <div className="w-5 h-5 rounded-full bg-stone-200 flex items-center justify-center text-[8px] font-bold overflow-hidden border border-white shrink-0">
+                  {task.assignee_avatar ? (
+                    <img src={task.assignee_avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    task.assignee_name.substring(0, 2)
+                  )}
+                </div>
+                {task.assignee_name}
+              </span>
             )}
           </div>
 
@@ -754,8 +769,17 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                       <label className="block text-sm font-medium text-stone-700 mb-1">Assigner à</label>
                       <div className="relative">
                         {assignedTo ? (
-                           <div className="flex items-center justify-between w-full px-4 py-2 border border-orange-200 bg-orange-50 rounded-xl">
-                              <span className="text-sm font-semibold text-orange-700 truncate">{getAssignedUserName(assignedTo)}</span>
+                           <div className="flex items-center justify-between w-full px-3 py-1.5 border border-orange-200 bg-orange-50 rounded-xl">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center text-[10px] font-bold text-orange-600 overflow-hidden border border-orange-200">
+                                  {members.find(x => x.id.toString() === assignedTo.toString())?.avatar ? (
+                                    <img src={members.find(x => x.id.toString() === assignedTo.toString())?.avatar} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    getAssignedUserName(assignedTo).substring(0, 2).toUpperCase()
+                                  )}
+                                </div>
+                                <span className="text-sm font-semibold text-orange-700 truncate">{getAssignedUserName(assignedTo)}</span>
+                              </div>
                               <button type="button" onClick={() => { setAssignedTo(''); setSearchUser(''); }} className="text-orange-400 hover:text-orange-600 shrink-0 ml-1">
                                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                               </button>
@@ -777,8 +801,14 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                                    ) : (
                                      filteredMembers.map(u => (
                                        <button key={u.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setAssignedTo(u.id.toString()); setShowUserList(false); setSearchUser(''); }}
-                                         className="w-full text-left px-4 py-2 text-sm hover:bg-orange-50 text-stone-700 hover:text-orange-700 font-medium flex items-center gap-2">
-                                         <div className="w-6 h-6 rounded-full bg-stone-100 flex justify-center items-center text-xs font-bold shrink-0">{u.name.substring(0,2).toUpperCase()}</div>
+                                         className="w-full text-left px-4 py-2 text-sm hover:bg-orange-50 text-stone-700 hover:text-orange-700 font-medium flex items-center gap-3">
+                                         <div className="w-7 h-7 rounded-full bg-stone-100 flex justify-center items-center text-[10px] font-bold shrink-0 overflow-hidden border border-stone-200">
+                                           {u.avatar ? (
+                                             <img src={u.avatar} alt="" className="w-full h-full object-cover" />
+                                           ) : (
+                                             u.name.substring(0,2).toUpperCase()
+                                           )}
+                                         </div>
                                          <div className="flex flex-col truncate">
                                             <span>{u.name}</span>
                                             <span className="text-[10px] text-stone-400">{u.role_name}</span>
@@ -895,8 +925,12 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                       <article key={comment.id} className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-stone-100 text-stone-700 flex items-center justify-center text-xs font-bold shrink-0">
-                              {(comment.author_name || user?.name || '?').substring(0, 2).toUpperCase()}
+                            <div className="w-8 h-8 rounded-full bg-stone-100 text-stone-700 flex items-center justify-center text-[10px] font-bold shrink-0 overflow-hidden border border-stone-200 shadow-sm">
+                              {comment.author_avatar ? (
+                                <img src={comment.author_avatar} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                (comment.author_name || user?.name || '?').substring(0, 2).toUpperCase()
+                              )}
                             </div>
                             <div className="min-w-0">
                               <p className="text-sm font-semibold text-stone-900 truncate">{comment.author_name || 'Membre'}</p>

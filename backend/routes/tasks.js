@@ -92,7 +92,7 @@ function parseCsv(csv) {
 router.get('/', authMiddleware, (req, res) => {
   const { projectId } = req.params;
   db.all(`
-    SELECT t.*, u1.name as creator_name, u2.name as assignee_name
+    SELECT t.*, u1.name as creator_name, u2.name as assignee_name, u2.avatar as assignee_avatar
     FROM tasks t
     LEFT JOIN users u1 ON t.created_by = u1.id
     LEFT JOIN users u2 ON t.assigned_to = u2.id
@@ -191,7 +191,7 @@ router.post('/import', authMiddleware, ensureProjectActive, (req, res) => {
 router.get('/:id/comments', authMiddleware, (req, res) => {
   const { id, projectId } = req.params;
   db.all(`
-    SELECT tc.*, u.name as author_name
+    SELECT tc.*, u.name as author_name, u.avatar as author_avatar
     FROM task_comments tc
     LEFT JOIN users u ON u.id = tc.user_id
     WHERE tc.task_id = ?
@@ -216,7 +216,7 @@ router.post('/:id/comments', authMiddleware, ensureProjectActive, (req, res) => 
     // Log Activity
     await logActivity(req.params.projectId, userId, 'comment', id, 'added', { commentId: lastID });
 
-    db.get('SELECT tc.*, u.name as author_name FROM task_comments tc LEFT JOIN users u ON u.id = tc.user_id WHERE tc.id = ?', [lastID], (err2, row) => {
+    db.get('SELECT tc.*, u.name as author_name, u.avatar as author_avatar FROM task_comments tc LEFT JOIN users u ON u.id = tc.user_id WHERE tc.id = ?', [lastID], (err2, row) => {
       if (err2) return res.status(500).json({ error: err2.message });
       res.json(row);
     });

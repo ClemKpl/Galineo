@@ -8,7 +8,7 @@ router.get('/', authMiddleware, (req, res) => {
   const userId = req.user.id;
   
   db.all(`
-    SELECT n.*, COALESCE(u.name, 'Assistant IA') as from_user_name, p.title as project_title
+    SELECT n.*, COALESCE(u.name, 'Assistant IA') as from_user_name, u.avatar as from_user_avatar, p.title as project_title
     FROM notifications n
     LEFT JOIN users u ON n.from_user_id = u.id
     LEFT JOIN projects p ON n.project_id = p.id

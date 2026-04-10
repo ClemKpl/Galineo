@@ -15,7 +15,7 @@ router.get('/search', authMiddleware, (req, res) => {
   if (!q || q.trim().length < 1) return res.json([]);
 
   db.all(
-    'SELECT id, name, email FROM users WHERE (name LIKE ? OR email LIKE ?) AND id != ? LIMIT 10',
+    'SELECT id, name, email, avatar FROM users WHERE (name LIKE ? OR email LIKE ?) AND id != ? LIMIT 10',
     [`%${q}%`, `%${q}%`, userId],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -263,7 +263,7 @@ router.post('/me/reset', authMiddleware, (req, res) => {
 
 // GET /users — liste de tous les utilisateurs
 router.get('/', authMiddleware, (_req, res) => {
-  db.all('SELECT id, name, email, created_at FROM users', [], (err, rows) => {
+  db.all('SELECT id, name, email, avatar, created_at FROM users', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });

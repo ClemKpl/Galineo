@@ -8,6 +8,7 @@ interface Activity {
   id: number;
   user_id: number;
   user_name: string;
+  user_avatar: string | null;
   entity_type: string;
   entity_id: number;
   action_type: string;
@@ -128,8 +129,18 @@ export default function ProjectActivityLog({ projectId }: Props) {
       <div className="relative group/scroll flex flex-col gap-3">
         {activities.slice(0, isExpanded ? undefined : 5).map((a, idx) => (
           <div key={a.id} className="relative flex items-start gap-4 p-4 bg-white border border-stone-100 rounded-2xl hover:border-orange-200 hover:shadow-sm transition-all animate-in slide-in-from-bottom-2" style={{ animationDelay: `${idx * 0.05}s` }}>
-            <div className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center text-lg shrink-0 border border-stone-50">
-              {getIcon(a.entity_type)}
+            <div className="w-10 h-10 rounded-xl bg-stone-50 flex items-center justify-center shrink-0 border border-stone-100 overflow-hidden relative group/avatar">
+              {a.user_avatar ? (
+                <img src={a.user_avatar} alt={a.user_name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xl">{getIcon(a.entity_type)}</span>
+              )}
+              {/* Petit badge icone d'action en bas à droite si on a l'avatar */}
+              {a.user_avatar && (
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full border border-stone-100 flex items-center justify-center text-[10px] shadow-sm">
+                  {getIcon(a.entity_type)}
+                </div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm text-stone-600 leading-relaxed">

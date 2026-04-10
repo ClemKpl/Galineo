@@ -1,6 +1,6 @@
-'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Role = 'user' | 'assistant';
 type Message = { role: Role; content: string };
@@ -53,6 +53,7 @@ function formatInline(text: string): React.ReactNode {
 }
 
 export default function AiChat() {
+  const { user } = useAuth();
   const params = useParams();
   const currentProjectId = params?.id;
   const [open, setOpen] = useState(false);
@@ -188,6 +189,15 @@ export default function AiChat() {
                     <p className="whitespace-pre-wrap">{m.content}</p>
                   )}
                 </div>
+                {m.role === 'user' && (
+                  <div className="hidden lg:flex w-8 h-8 rounded-xl bg-orange-100 border border-orange-200 text-orange-600 items-center justify-center text-[10px] font-black shrink-0 ml-3 mt-1 shadow-sm overflow-hidden">
+                    {user?.avatar ? (
+                      <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      user?.name.slice(0, 2).toUpperCase()
+                    )}
+                  </div>
+                )}
               </div>
             ))}
 

@@ -6,6 +6,7 @@ interface User {
   id: number;
   name: string;
   email: string;
+  avatar?: string | null;
   role: string;
 }
 
@@ -141,8 +142,12 @@ export default function ManageGroupMembersModal({
                         className="w-full flex items-center justify-between p-3 hover:bg-stone-50 rounded-xl transition-all"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs uppercase">
-                            {u.name.substring(0, 2)}
+                          <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs uppercase overflow-hidden border border-orange-200">
+                            {u.avatar ? (
+                              <img src={u.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              u.name.substring(0, 2)
+                            )}
                           </div>
                           <div className="text-left">
                             <p className="text-sm font-bold text-stone-900">{u.name}</p>
@@ -166,8 +171,12 @@ export default function ManageGroupMembersModal({
               ) : members.map(m => (
                 <div key={m.id} className="flex items-center justify-between p-4 bg-stone-50 border border-stone-100 rounded-2xl group transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-700 font-bold text-sm shadow-sm">
-                      {m.name.substring(0, 2).toUpperCase()}
+                    <div className="w-10 h-10 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-700 font-bold text-sm shadow-sm overflow-hidden">
+                      {m.avatar ? (
+                        <img src={m.avatar} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        m.name.substring(0, 2).toUpperCase()
+                      )}
                     </div>
                     <div>
                       <p className="text-sm font-bold text-stone-900">{m.name}</p>

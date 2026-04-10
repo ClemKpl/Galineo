@@ -5,8 +5,8 @@ import { api } from '@/lib/api';
 import { useToast } from '@/contexts/ToastContext';
 
 type Role = { id: number; name: string };
-type UserLite = { id: number; name: string; email: string };
-type Member = { id: number; name: string; email: string; role_id: number; role_name: string; last_login_at?: string | null };
+type UserLite = { id: number; name: string; email: string; avatar?: string | null };
+type Member = { id: number; name: string; email: string; avatar?: string | null; role_id: number; role_name: string; last_login_at?: string | null };
 type Invitation = { id: number; email: string; role_id: number; role_name: string; status: 'pending' };
 
 export default function ManageMembersModal({
@@ -204,9 +204,18 @@ export default function ManageMembersModal({
 
               {selectedUser ? (
                 <div className="rounded-xl border border-stone-200 p-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-stone-900 truncate">{selectedUser.name}</p>
-                    <p className="text-xs text-stone-400 truncate">{selectedUser.email}</p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 overflow-hidden border border-stone-200">
+                      {selectedUser.avatar ? (
+                        <img src={selectedUser.avatar} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-[10px] font-bold text-stone-400">{selectedUser.name.slice(0, 2).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-stone-900 truncate">{selectedUser.name}</p>
+                      <p className="text-xs text-stone-400 truncate">{selectedUser.email}</p>
+                    </div>
                   </div>
                   <button
                     onClick={() => setSelectedUser(null)}
@@ -234,10 +243,19 @@ export default function ManageMembersModal({
                     <button
                       key={u.id}
                       onClick={() => setSelectedUser(u)}
-                      className="w-full text-left px-4 py-3 hover:bg-stone-50 border-b border-stone-100 last:border-b-0"
+                      className="w-full text-left px-4 py-3 hover:bg-stone-50 border-b border-stone-100 last:border-b-0 flex items-center gap-3"
                     >
-                      <p className="text-sm font-semibold text-stone-900 truncate">{u.name}</p>
-                      <p className="text-xs text-stone-400 truncate">{u.email}</p>
+                      <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 overflow-hidden border border-stone-200">
+                        {u.avatar ? (
+                          <img src={u.avatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[10px] font-bold text-stone-400">{u.name.slice(0, 2).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-stone-900 truncate">{u.name}</p>
+                        <p className="text-xs text-stone-400 truncate">{u.email}</p>
+                        </div>
                     </button>
                   ))}
                 </div>
@@ -301,10 +319,19 @@ export default function ManageMembersModal({
                 {members.map((m) => (
                   <div key={m.id} className="rounded-2xl border border-stone-200 bg-white p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-stone-900 truncate">{m.name}</p>
-                        <p className="text-xs text-stone-400 truncate">{m.email}</p>
-                        <p className="text-xs text-stone-500 mt-1 uppercase tracking-tighter font-bold">Dernière connexion : {formatLastLogin(m.last_login_at)}</p>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center shrink-0 overflow-hidden border border-stone-200 shadow-sm">
+                          {m.avatar ? (
+                            <img src={m.avatar} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-bold text-stone-400">{m.name.slice(0, 2).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-stone-900 truncate">{m.name}</p>
+                          <p className="text-xs text-stone-400 truncate">{m.email}</p>
+                          <p className="text-[9px] text-stone-400 mt-1 uppercase tracking-tighter font-black">Co : {formatLastLogin(m.last_login_at)}</p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <select
