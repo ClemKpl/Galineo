@@ -281,23 +281,39 @@ router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
     const values_final = [...values, id, projectId];
     db.run(`UPDATE tasks SET ${updates.join(', ')} WHERE id = ? AND project_id = ?`, values_final, async function(err) {
       if (err) return res.status(500).json({ error: err.message });
-      
-      // If we updated a task, sync its parent
-      db.get('SELECT parent_id FROM tasks WHERE id = ?', [id], (err2, task) => {
+
+      db.get('SELECT parent_id FROM tasks WHERE id = ?', [id], async (err2, task) => {
+        if (err2) return res.status(500).json({ error: err2.message });
+
+        // If a feature is manually marked done/todo, apply the same status to all its children.
+        if (task && task.parent_id == null && req.body.status !== undefined) {
+          const childUpdateError = await new Promise((resolve) => {
+            db.run(
+              'UPDATE tasks SET status = ? WHERE parent_id = ? AND project_id = ?',
+              [req.body.status, id, projectId],
+              (childErr) => resolve(childErr || null)
+            );
+          });
+
+          if (childUpdateError) {
+            return res.status(500).json({ error: childUpdateError.message });
+          }
+        }
+
+        // If we updated a task, sync its parent
         if (task && task.parent_id) {
           syncParentStatus(task.parent_id, projectId);
         }
+
+        // If we moved a task to a DIFFERENT parent, sync the OLD parent too if needed
+        const oldParentId = req.body.old_parent_id;
+        if (oldParentId) syncParentStatus(oldParentId, projectId);
+
+        // Log critical updates
+        await logActivity(projectId, userId, 'task', id, 'updated', req.body);
+
+        res.json({ message: 'Tâche modifiée' });
       });
-
-      // If we moved a task to a DIFFERENT parent, sync the OLD parent too if needed
-      // (This is advanced but good to have)
-      const oldParentId = req.body.old_parent_id; 
-      if (oldParentId) syncParentStatus(oldParentId, projectId);
-
-      // Log critical updates
-      await logActivity(projectId, userId, 'task', id, 'updated', req.body);
-      
-      res.json({ message: 'Tâche modifiée' });
     });
   };
 
