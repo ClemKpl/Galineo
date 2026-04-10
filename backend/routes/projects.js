@@ -191,25 +191,23 @@ router.get('/history', authMiddleware, (req, res) => {
 router.get('/trash', authMiddleware, (req, res) => {
   const userId = req.user.id;
   db.all(`
-    SELECT DISTINCT p.*, u.name as owner_name,
+    SELECT p.*, u.name as owner_name,
       (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
     FROM projects p
     LEFT JOIN users u ON p.owner_id = u.id
-    LEFT JOIN project_members pm ON pm.project_id = p.id
-    WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'deleted'
+    WHERE p.owner_id = ? AND p.status = 'deleted'
     ORDER BY p.created_at DESC
-  `, [userId, userId], (err, rows) => {
+  `, [userId], (err, rows) => {
     // Si updated_at n'existe pas, on trie par created_at
     if (err) {
       db.all(`
-        SELECT DISTINCT p.*, u.name as owner_name,
+        SELECT p.*, u.name as owner_name,
           (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
         FROM projects p
         LEFT JOIN users u ON p.owner_id = u.id
-        LEFT JOIN project_members pm ON pm.project_id = p.id
-        WHERE (p.owner_id = ? OR pm.user_id = ?) AND p.status = 'deleted'
+        WHERE p.owner_id = ? AND p.status = 'deleted'
         ORDER BY p.created_at DESC
-      `, [userId, userId], (err2, rows2) => {
+      `, [userId], (err2, rows2) => {
         if (err2) return res.status(500).json({ error: err2.message });
         res.json(rows2);
       });
