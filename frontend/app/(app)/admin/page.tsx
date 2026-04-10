@@ -12,6 +12,7 @@ type User = {
   created_at: string;
   last_login_at: string | null;
   project_count: number;
+  banned: number;
 };
 
 type Project = {
@@ -101,6 +102,18 @@ export default function AdminPage() {
     }
     loadData();
   }, [user, router, loadData]);
+
+  const handleToggleBan = async (u: User) => {
+    const action = u.banned ? 'débannir' : 'bannir';
+    if (!confirm(`${u.banned ? 'Débannir' : 'Bannir'} le compte de ${u.name} (${u.email}) ?`)) return;
+    try {
+      await api.patch(`/admin/users/${u.id}/ban`, { banned: !u.banned });
+      setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, banned: u.banned ? 0 : 1 } : x));
+      showToast(`Compte de ${u.name} ${action === 'bannir' ? 'banni' : 'débanni'}.`);
+    } catch (e) {
+      showToast((e as Error).message, true);
+    }
+  };
 
   const handleDeleteUser = async (u: User) => {
     if (!confirm(`Supprimer le compte de ${u.name} (${u.email}) ? Cette action est irréversible.`)) return;
@@ -277,9 +290,12 @@ export default function AdminPage() {
             </thead>
             <tbody className="divide-y divide-stone-50">
               {filteredUsers.map((u) => (
-                <tr key={u.id} className="hover:bg-stone-50/50 transition-colors">
+                <tr key={u.id} className={`hover:bg-stone-50/50 transition-colors ${u.banned ? 'bg-red-50/40' : ''}`}>
                   <td className="px-5 py-3.5">
-                    <div className="font-medium text-stone-900">{u.name}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-stone-900">{u.name}</span>
+                      {!!u.banned && <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase">Banni</span>}
+                    </div>
                     <div className="text-xs text-stone-400">{u.email}</div>
                   </td>
                   <td className="px-5 py-3.5">
@@ -298,13 +314,29 @@ export default function AdminPage() {
                   <td className="px-5 py-3.5 hidden md:table-cell text-stone-400 text-xs">{fmt(u.created_at)}</td>
                   <td className="px-5 py-3.5 text-right">
                     {u.email !== user?.email && (
-                      <button
-                        onClick={() => handleDeleteUser(u)}
-                        className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-red-50 flex items-center justify-center"
-                      >
-                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" className="sm:hidden"><path d="M19 7l-1 12H6L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/></svg>
-                        <span className="hidden sm:inline">Supprimer</span>
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleToggleBan(u)}
+                          title={u.banned ? 'Débannir' : 'Bannir'}
+                          className={`text-xs font-medium transition-colors px-2 py-1 rounded-lg flex items-center justify-center gap-1 ${u.banned ? 'text-amber-600 bg-amber-50 hover:bg-amber-100' : 'text-stone-400 hover:text-amber-600 hover:bg-amber-50'}`}
+                        >
+                          {u.banned ? (
+                            /* unlock icon */
+                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                          ) : (
+                            /* lock icon */
+                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                          )}
+                          <span className="hidden sm:inline">{u.banned ? 'Débannir' : 'Bannir'}</span>
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(u)}
+                          className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors px-2 py-1 rounded-lg hover:bg-red-50 flex items-center justify-center"
+                        >
+                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" className="sm:hidden"><path d="M19 7l-1 12H6L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/></svg>
+                          <span className="hidden sm:inline">Supprimer</span>
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>

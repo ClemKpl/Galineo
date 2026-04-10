@@ -90,6 +90,21 @@ router.delete('/users/:id', authMiddleware, adminMiddleware, (req, res) => {
   })();
 });
 
+// PATCH /admin/users/:id/ban — bannir ou débannir un utilisateur
+router.patch('/users/:id/ban', authMiddleware, adminMiddleware, (req, res) => {
+  const { banned } = req.body;
+  if (typeof banned !== 'boolean') {
+    return res.status(400).json({ error: 'Valeur banned invalide.' });
+  }
+  if (String(req.params.id) === String(req.user.id)) {
+    return res.status(400).json({ error: 'Impossible de vous bannir vous-même.' });
+  }
+  db.run('UPDATE users SET banned = ? WHERE id = ?', [banned ? 1 : 0, req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
 // PATCH /admin/users/:id/plan — changer le plan d'un utilisateur
 router.patch('/users/:id/plan', authMiddleware, adminMiddleware, (req, res) => {
   const { plan } = req.body;
