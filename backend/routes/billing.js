@@ -3,6 +3,7 @@ const router = express.Router();
 const Stripe = require('stripe');
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
+const mailer = require('../utils/mailer');
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 const PRICE_ID = process.env.STRIPE_PRICE_ID;
@@ -97,9 +98,19 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     if (userId) {
       db.run(
         'UPDATE users SET plan = ?, stripe_subscription_id = ? WHERE id = ?',
-        ['premium', session.subscription || session.payment_intent, userId]
+        ['premium', session.subscription || session.payment_intent, userId],
+        (err) => {
+          if (!err) {
+            console.log(`✅ [billing] User ${userId} passé en Premium`);
+            // Récupérer les infos pour l'email
+            db.get('SELECT name, email FROM users WHERE id = ?', [userId], (err2, user) => {
+              if (!err2 && user) {
+                mailer.sendPremiumWelcome({ email: user.email, name: user.name }).catch(console.error);
+              }
+            });
+          }
+        }
       );
-      console.log(`✅ [billing] User ${userId} passé en Premium`);
     }
   }
 

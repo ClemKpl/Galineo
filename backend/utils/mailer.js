@@ -177,9 +177,33 @@ async function sendOwnershipTransferred({ email, projectName, prevOwnerName, pro
   });
 }
 
+/**
+ * Email de remerciement lors du passage au Premium
+ */
+async function sendPremiumWelcome({ email, name }) {
+  return sendMail({
+    to: email,
+    subject: `Bienvenue chez Galineo Premium ! ✨`,
+    html: baseTemplate(`
+      <h2 style="margin: 0 0 8px; font-size: 20px;">Merci pour votre confiance, ${name} !</h2>
+      <p style="color: #57534e; font-size: 15px; line-height: 1.6;">Nous sommes ravis de vous compter parmi nos membres <strong style="color: #f97316;">Premium</strong>.</p>
+      <p style="color: #57534e; font-size: 15px; line-height: 1.6;">Votre compte a été mis à jour et vous avez désormais un accès illimité à toutes nos fonctionnalités :</p>
+      <ul style="color: #57534e; font-size: 14px; line-height: 1.8; margin: 16px 0; padding-left: 20px;">
+        <li>🚀 Projets et collaborateurs illimités</li>
+        <li>🤖 Assistant IA disponible sans limite</li>
+        <li>📂 Historique complet et stockage étendu</li>
+        <li>⚡️ Support prioritaire</li>
+      </ul>
+      <p style="color: #57534e; font-size: 15px; line-height: 1.6;">Toute l'équipe de Galineo vous souhaite une excellente productivité !</p>
+      ${btn(FRONTEND_URL, 'Accéder à mon espace')}
+    `)
+  });
+}
+
 module.exports = {
   sendMemberAdded,
   sendProjectInvitation,
   sendNotificationEmail,
-  sendOwnershipTransferred
+  sendOwnershipTransferred,
+  sendPremiumWelcome
 };
