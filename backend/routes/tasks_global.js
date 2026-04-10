@@ -21,12 +21,13 @@ router.get('/assigned', authMiddleware, (req, res) => {
       LEFT JOIN users u2 ON t.assigned_to = u2.id
       WHERE t.assigned_to = ?
         AND p.status = 'active'
+        AND EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.user_id = ?)
       ORDER BY
         CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END,
         t.due_date ASC,
         t.created_at DESC
     `,
-    [userId],
+    [userId, userId],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json(rows);
