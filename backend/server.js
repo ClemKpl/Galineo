@@ -20,9 +20,17 @@ const billingRoutes     = require('./routes/billing');
 
 const app = express();
 
-// 1. Webhook Stripe : traitement RAW prioritaire (avant CORS et JSON)
+// --- LOGGING DE RÉCEPTION (DEBUG PRODUCTION) ---
 app.use((req, res, next) => {
-  if (req.originalUrl === '/billing/webhook') {
+  console.log(`📡 [INBOUND] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// 1. Webhook Stripe : ISOLEMENT TOTAL (avant tout autre parseur)
+// On utilise startsWith pour capturer /billing/webhook et /billing/webhook/
+app.use((req, res, next) => {
+  if (req.path.startsWith('/billing/webhook')) {
+    console.log(`🎯 [STREAMS] Webhook détecté sur ${req.path}. Activation du parseur RAW.`);
     express.raw({ type: '*/*' })(req, res, next);
   } else {
     next();
@@ -32,7 +40,8 @@ app.use((req, res, next) => {
 // 2. Middlewares globaux
 app.use(cors());
 app.use((req, res, next) => {
-  if (req.originalUrl !== '/billing/webhook') {
+  // On s'assure que le parser JSON ne s'exécute JAMAIS pour le webhook
+  if (!req.path.startsWith('/billing/webhook')) {
     express.json()(req, res, next);
   } else {
     next();

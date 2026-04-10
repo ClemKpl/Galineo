@@ -112,9 +112,16 @@ router.post('/webhook', async (req, res) => {
   }
 
   try {
-    // req.body est un Buffer car géré par express.raw dans server.js
-    console.log(`📦 [billing/webhook] Raw body length: ${req.body?.length || 0} bytes`);
-    console.log(`🔑 [billing/webhook] Secret defini: ${!!webhookSecret}`);
+    // req.body doit être un Buffer (RAW) pour constructEvent
+    const isBuffer = Buffer.isBuffer(req.body);
+    console.log(`📦 [billing/webhook] Type de Body: ${typeof req.body} (Buffer: ${isBuffer})`);
+    console.log(`📊 [billing/webhook] Body length: ${req.body?.length || 0} bytes`);
+    
+    if (!isBuffer) {
+      console.warn('⚠️ [billing/webhook] ATTENTION: Le corps n\'est pas un Buffer. La signature risque d\'échouer.');
+      console.log('📝 [billing/webhook] Aperçu corps:', JSON.stringify(req.body).substring(0, 100));
+    }
+
     event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
     console.log(`🔔 [billing/webhook] Événement valide reçu: ${event.type}`);
   } catch (e) {
