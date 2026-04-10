@@ -411,7 +411,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Input - Fixé au dessus du menu mobile */}
-      <div className="absolute lg:relative bottom-[90px] lg:bottom-0 inset-x-0 p-3 lg:p-8 bg-white/95 backdrop-blur border-t border-stone-200 shrink-0 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+      <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 p-3 lg:p-8 bg-white/95 backdrop-blur border-t border-stone-200 shrink-0 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
         <div className="max-w-[1000px] mx-auto relative">
           <textarea
             value={input}

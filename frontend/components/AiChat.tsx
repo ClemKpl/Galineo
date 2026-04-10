@@ -209,7 +209,7 @@ export default function AiChat() {
           </div>
 
           {/* Input - Fixé au dessus de la nav mobile */}
-          <div className="absolute lg:relative bottom-[90px] lg:bottom-0 inset-x-0 px-4 py-4 lg:py-5 border-t border-stone-100 bg-white/95 backdrop-blur shrink-0 z-50">
+          <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 mx-auto w-full lg:w-auto px-4 py-4 lg:py-5 border-t border-stone-100 bg-white/95 backdrop-blur shrink-0 z-[70] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
             <div className="flex items-end gap-3 max-w-full">
               <textarea
                 ref={inputRef}
