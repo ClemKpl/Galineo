@@ -445,7 +445,7 @@ router.get('/history/:projectId', authMiddleware, async (req, res) => {
        FROM ai_messages m 
        LEFT JOIN users u ON u.id = m.user_id 
        WHERE ${isWizard ? 'm.project_id IS NULL AND m.user_id = ?' : 'm.project_id = ?'}
-       AND m.created_at >= datetime('now', '-' || ? || ' minute')
+       AND m.created_at >= datetime('now', '-' || ? || ' minute', '-10 second')
        ORDER BY m.id ASC`,
       isWizard ? [userId, durationMin] : [projectId, durationMin]
     );
@@ -500,6 +500,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
   }
 
   const userText = messages[messages.length - 1].content;
+  const dbProjectId = (projectId === 'wizard' || mode === 'wizard') ? null : projectId;
   let projectTitle = 'ce projet';
 
   try {
@@ -518,7 +519,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
     // Sauvegarde immédiate du message utilisateur (si mode projet ou wizard)
     await dbRun(
       `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'user', ?)`,
-      [projectId || null, userId, userText]
+      [dbProjectId, userId, userText]
     );
   } catch (err) {
     console.error('Initial DB ops error', err);
@@ -530,8 +531,8 @@ router.post('/chat', authMiddleware, async (req, res) => {
     await dbRun(
       `UPDATE ai_active_tasks SET status = 'failed' 
        WHERE user_id = ? AND status = 'running' 
-       AND ${isWizard ? 'project_id IS NULL' : 'project_id = ?'}`,
-      isWizard ? [userId] : [userId, projectId]
+       AND ${dbProjectId === null ? 'project_id IS NULL' : 'project_id = ?'}`,
+      dbProjectId === null ? [userId] : [userId, dbProjectId]
     );
   } catch (err) {
     console.error('Failed to clean up old tasks', err);
@@ -542,7 +543,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
   try {
     const taskRes = await dbRun(
       `INSERT INTO ai_active_tasks (user_id, project_id, status) VALUES (?, ?, 'running')`,
-      [userId, projectId || null]
+      [userId, dbProjectId]
     );
     taskId = taskRes.lastID;
   } catch (err) {
@@ -733,7 +734,7 @@ HIÉRARCHIE DU PROJET :
 
           // Sauvegarde de la réponse de l'IA (si projet existant ou nouvellement créé ou wizard)
           // Pour le wizard, on garde project_id = null (ou l'ID original passé) pour que l'interface wizard puisse le lire.
-          const saveProjectId = (mode === 'wizard') ? (projectId || null) : (currentProjectIdTask || projectId || null);
+          const saveProjectId = (mode === 'wizard') ? null : (currentProjectIdTask || dbProjectId);
 
           await dbRun(
             `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'model', ?)`,

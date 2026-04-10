@@ -153,8 +153,14 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
               created_at: h.created_at,
             }));
             
-            // On préserve le message de bienvenue initial via une mise à jour fonctionnelle
-            setMessages(prev => [prev[0], ...mapped]);
+            // On ne remplace que si l'historique serveur est cohérent avec l'état local
+            setMessages(prev => {
+              // Si le serveur a moins de messages que nous (sans compter le welcome), on attend le prochain poll
+              // car le message utilisateur vient d'être envoyé mais peut-être pas encore indexé par le GET
+              if (mapped.length < prev.length - 1) return prev;
+              
+              return [prev[0], ...mapped];
+            });
             setLoading(false);
           }
         }
@@ -212,7 +218,11 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
           created_at: h.created_at
         }));
         
-        setMessages(prev => [prev[0], ...mapped]);
+        setMessages(prev => {
+          // Sécurité identique : on ne réduit pas l'historique brutalement si un message vient d'être envoyé
+          if (mapped.length < prev.length - 1 && loading) return prev;
+          return [prev[0], ...mapped];
+        });
       }
     } catch (err) {
       console.error('Failed to load history', err);
