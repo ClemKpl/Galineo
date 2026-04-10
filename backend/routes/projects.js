@@ -360,7 +360,7 @@ router.patch('/:id/restore', authMiddleware, (req, res) => {
   const projectId = Number(req.params.id);
   const userId = req.user.id;
 
-  canManageMembers(userId, projectId, (permErr, perm) => {
+  canManageMembers(userId, projectId, req.user.isAdmin, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
     if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -619,7 +619,7 @@ router.patch('/:id/complete', authMiddleware, ensureProjectActive, (req, res) =>
   const projectId = Number(req.params.id);
   const userId = req.user.id;
 
-  canManageMembers(userId, projectId, (permErr, perm) => {
+  canManageMembers(userId, projectId, req.user.isAdmin, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
     if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -752,7 +752,7 @@ router.post('/:id/share-links', authMiddleware, ensureProjectActive, (req, res) 
   const projectId = Number(req.params.id);
   const { roleId } = req.body || {};
 
-  canManageMembers(req.user.id, projectId, (permErr, perm) => {
+  canManageMembers(req.user.id, projectId, req.user.isAdmin, (permErr, perm) => {
     if (permErr) return res.status(500).json({ error: permErr.message });
     if (!perm.allowed) return res.status(403).json({ error: 'Accès refusé' });
 

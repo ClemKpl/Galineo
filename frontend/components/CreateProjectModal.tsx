@@ -405,24 +405,29 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
               </div>
               <div className="p-4 bg-white border-t border-stone-100 shrink-0">
                 <div className="relative">
-                  <input
-                    type="text"
+                  <textarea
+                    rows={1}
                     autoFocus
                     value={wizardInput}
-                    onChange={(e) => setWizardInput(e.target.value)}
+                    onChange={(e) => {
+                      setWizardInput(e.target.value);
+                      e.target.style.height = 'auto';
+                      e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+                    }}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         handleWizardSend();
                       }
                     }}
                     placeholder="Répondez à l'assistant..."
-                    className="w-full pl-4 pr-12 py-3.5 rounded-2xl bg-stone-100 border-none text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all"
+                    className="w-full pl-4 pr-12 py-3.5 rounded-2xl bg-stone-100 border-none text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all resize-none leading-relaxed"
+                    style={{ minHeight: '48px', maxHeight: '100px' }}
                   />
                   <button
                     onClick={handleWizardSend}
                     disabled={!wizardInput.trim() || wizardLoading}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center disabled:opacity-30 disabled:grayscale transition-all shadow-md shadow-orange-500/20"
+                    className="absolute right-2 bottom-2 w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center disabled:opacity-30 disabled:grayscale transition-all shadow-md shadow-orange-500/20"
                   >
                     <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
                       <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />

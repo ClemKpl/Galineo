@@ -198,13 +198,24 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
       {/* Message Input */}
       <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-20 border-t border-stone-100 bg-white/95 px-4 py-4 backdrop-blur md:relative md:bottom-0 md:z-auto md:bg-white md:px-8 md:py-8">
         <form onSubmit={handleSendMessage} className="relative mx-auto max-w-4xl group">
-          <input 
-            type="text" 
+          <textarea 
+            rows={1}
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage(e as any);
+              }
+            }}
             disabled={sending}
-            placeholder="Bonjour !"
-            className="w-full pl-6 pr-16 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 text-stone-900 transition-all font-medium placeholder:text-stone-300"
+            placeholder="Tapez votre message..."
+            className="w-full pl-6 pr-16 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 text-stone-900 transition-all font-medium placeholder:text-stone-300 resize-none leading-relaxed overflow-hidden"
+            style={{ minHeight: '56px', maxHeight: '150px' }}
           />
           <button 
             type="submit"
