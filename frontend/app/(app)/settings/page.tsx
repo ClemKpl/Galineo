@@ -273,7 +273,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-8 max-w-2xl mx-auto space-y-6">
+    <div className="p-4 sm:p-8 max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-stone-900">Paramètres</h1>
@@ -333,7 +333,7 @@ export default function SettingsPage() {
               className="w-full px-4 py-2.5 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all"
               placeholder="••••••••" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-stone-700 mb-1.5">Nouveau mot de passe</label>
               <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} required minLength={6}
@@ -518,7 +518,7 @@ export default function SettingsPage() {
           <p className="text-xs text-stone-500 mb-4">
             Vous quitterez tous vos projets. Pour ceux dont vous êtes propriétaire, la gestion sera transférée au membre le plus ancien ou le projet sera supprimé si vous êtes seul.
           </p>
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               value={resetConfirm}
@@ -530,7 +530,7 @@ export default function SettingsPage() {
               type="button"
               onClick={handleResetAccount}
               disabled={resetLoading || resetConfirm !== 'RESET'}
-              className="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-40 flex items-center gap-2 shrink-0">
+              className="w-full sm:w-auto px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-40 flex items-center justify-center gap-2">
               {resetLoading && <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
               Réinitialiser
             </button>
@@ -542,7 +542,7 @@ export default function SettingsPage() {
           <p className="text-sm text-stone-600 mb-4">
             La suppression de votre compte est <strong>définitive</strong>. Toutes vos données personnelles seront effacées.
           </p>
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               value={deleteConfirm}
@@ -554,7 +554,7 @@ export default function SettingsPage() {
               type="button"
               onClick={handleDeleteAccount}
               disabled={deleteLoading || deleteConfirm !== 'SUPPRIMER'}
-              className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-40 flex items-center gap-2 shrink-0">
+              className="w-full sm:w-auto px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors text-sm disabled:opacity-40 flex items-center justify-center gap-2">
               {deleteLoading && <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
               Supprimer
             </button>

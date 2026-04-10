@@ -42,7 +42,7 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
       {/* Modal */}
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-[fadeUp_0.3s_ease-out]">
         {/* Header */}
-        <div className="bg-stone-900 px-8 py-8 text-center relative">
+        <div className="bg-stone-900 px-5 py-6 sm:px-8 sm:py-8 text-center relative">
           <button onClick={onClose} className="absolute top-4 right-4 text-stone-500 hover:text-stone-300 transition-colors p-1">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -57,7 +57,7 @@ export default function PricingModal({ onClose, currentPlan = 'free' }: Props) {
         </div>
 
         {/* Plans */}
-        <div className="p-8 grid grid-cols-2 gap-5">
+        <div className="p-4 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           {/* FREE */}
           <div className={`rounded-2xl border-2 p-6 flex flex-col ${currentPlan === 'free' ? 'border-stone-300 bg-stone-50' : 'border-stone-100 bg-white'}`}>
             <div className="flex items-center justify-between mb-1">
