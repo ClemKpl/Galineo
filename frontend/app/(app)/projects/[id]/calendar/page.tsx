@@ -161,7 +161,10 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
       .then((data) => setMonthNotes(Array.isArray(data) ? data : []))
       .catch(() => {});
     api.get(`/projects/${projectId}/events?month=${month}`)
-      .then((data) => setMonthEvents(Array.isArray(data) ? data : []))
+      .then((data) => {
+        console.log(`[GANTT] Fetched ${data?.length || 0} events for ${month}`, data);
+        setMonthEvents(Array.isArray(data) ? data : []);
+      })
       .catch((err) => console.error('Events fetch error:', err));
   }, [projectId, currentDate]);
 
@@ -218,7 +221,13 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     try {
       const notesData = await api.get(`/projects/${projectId}/events/date-notes/${dateKey}`);
       setDayNotes(Array.isArray(notesData) ? notesData : []);
-      setDayEvents(monthEvents.filter(e => e.start_datetime?.startsWith(dateKey)));
+      // Robust filtering: handle both T and space, and ensure start_datetime exists
+      const filtered = monthEvents.filter(e => {
+        if (!e.start_datetime) return false;
+        const normalized = e.start_datetime.replace(' ', 'T');
+        return normalized.startsWith(dateKey);
+      });
+      setDayEvents(filtered);
     } catch (err) {
       console.error(err);
     } finally {
@@ -753,7 +762,10 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                       const isDragOver = dragOverDateKey === dateKey;
 
                       const notesForDay = monthNotes.filter(n => n.date === dateKey);
-                      const eventsForDay = monthEvents.filter(e => e.start_datetime?.startsWith(dateKey));
+                      const eventsForDay = monthEvents.filter(e => {
+                        if (!e.start_datetime) return false;
+                        return e.start_datetime.replace(' ', 'T').startsWith(dateKey);
+                      });
 
                       return (
                         <div
@@ -1007,7 +1019,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                                 </a>
                               )}
                             </div>
-                            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity mt-0.5">
+                            <div className="flex items-center gap-1 shrink-0 mt-0.5">
                               <button onClick={() => startEditEvent(ev)} className="p-1.5 text-stone-300 hover:text-violet-500 rounded-lg hover:bg-violet-50 transition-all">
                                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                               </button>
@@ -1120,7 +1132,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                           <div className="p-4 flex items-start gap-3">
                             <p className="text-sm text-stone-800 leading-relaxed break-words whitespace-pre-wrap min-w-0 flex-1">{note.content}</p>
                             {user && note.user_id === user.id && (
-                              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="flex items-center gap-1 shrink-0">
                                 <button onClick={() => { setEditingNoteId(note.id); setEditNoteContent(note.content); }}
                                   className="p-1.5 text-stone-300 hover:text-amber-500 rounded-lg hover:bg-amber-50 transition-all">
                                   <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
