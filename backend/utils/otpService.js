@@ -14,16 +14,17 @@ function generateCode() {
  */
 async function createVerificationCode(email) {
   const code = generateCode();
+  const lowerEmail = email.toLowerCase();
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
   return new Promise((resolve, reject) => {
-    // Supprimer les anciens codes pour cet email
-    db.run('DELETE FROM email_verifications WHERE email = ?', [email], (delErr) => {
+    // Supprimer les anciens codes pour cet email (minuscules forcées)
+    db.run('DELETE FROM email_verifications WHERE LOWER(email) = ?', [lowerEmail], (delErr) => {
       if (delErr) return reject(delErr);
 
       db.run(
         'INSERT INTO email_verifications (email, code, expires_at) VALUES (?, ?, ?)',
-        [email.toLowerCase(), code, expiresAt],
+        [lowerEmail, code, expiresAt],
         function (err) {
           if (err) return reject(err);
           resolve(code);
@@ -41,28 +42,37 @@ async function verifyCode(email, code) {
 
   return new Promise((resolve, reject) => {
     db.get(
-      'SELECT id, code, attempts FROM email_verifications WHERE email = ? AND expires_at > CURRENT_TIMESTAMP',
+      'SELECT id, code, attempts, expires_at FROM email_verifications WHERE LOWER(email) = ?',
       [email.toLowerCase()],
       (err, row) => {
         if (err) return reject(err);
-        if (!row) return resolve({ valid: false, error: 'Code inexistant ou expiré.' });
+        if (!row) return resolve({ valid: false, error: 'Aucun code de vérification trouvé pour cet email.' });
+
+        // Vérification de l'expiration en JS (plus fiable que SQL selon l'heure serveur)
+        const now = new Date();
+        const expiresAt = new Date(row.expires_at);
+        if (now > expiresAt) {
+          db.run('DELETE FROM email_verifications WHERE id = ?', [row.id]);
+          return resolve({ valid: false, error: 'Ce code a expiré (validité 15 min). Veuillez en demander un nouveau.' });
+        }
 
         // Vérifier si trop de tentatives
         if (row.attempts >= MAX_ATTEMPTS) {
           db.run('DELETE FROM email_verifications WHERE id = ?', [row.id]);
-          return resolve({ valid: false, error: 'Trop de tentatives infructueuses. Le code a été invalidé par sécurité.' });
+          return resolve({ valid: false, error: 'Trop de tentatives infructueuses. Veuillez redemander un code.' });
         }
 
         if (row.code === code) {
           resolve({ valid: true });
         } else {
           // Incrémenter les tentatives
-          db.run('UPDATE email_verifications SET attempts = attempts + 1 WHERE id = ?', [row.id], () => {
-            if (row.attempts + 1 >= MAX_ATTEMPTS) {
+          const newAttempts = (row.attempts || 0) + 1;
+          db.run('UPDATE email_verifications SET attempts = ? WHERE id = ?', [newAttempts, row.id], () => {
+            if (newAttempts >= MAX_ATTEMPTS) {
               db.run('DELETE FROM email_verifications WHERE id = ?', [row.id]);
-              resolve({ valid: false, error: 'Code erroné. Trop de tentatives, veuillez redemander un nouveau code.' });
+              resolve({ valid: false, error: 'Code erroné. Limite de tentatives atteinte, veuillez redemander un nouveau code.' });
             } else {
-              resolve({ valid: false, error: `Code incorrect (${MAX_ATTEMPTS - (row.attempts + 1)} tentatives restantes).` });
+              resolve({ valid: false, error: `Code incorrect (${MAX_ATTEMPTS - newAttempts} tentatives restantes).` });
             }
           });
         }

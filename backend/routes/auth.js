@@ -116,41 +116,40 @@ router.post('/register', async (req, res) => {
             return res.status(409).json({ error: 'Email déjà utilisé' });
           return res.status(500).json({ error: err.message });
         }
-        const token = jwt.sign({ id: this.lastID, name, email }, JWT_SECRET, { expiresIn: '7d' });
         const newUserId = this.lastID;
+        const token = jwt.sign({ id: newUserId, name, email }, JWT_SECRET, { expiresIn: '7d' });
 
-            // Auto-join projects if invited
-            db.all('SELECT * FROM invitations WHERE email = ? AND status = ?', [email, 'pending'], (invErr, invites) => {
-              if (!invErr && invites && invites.length > 0) {
-                const stmt = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)');
-                const updateStmt = db.prepare('UPDATE invitations SET status = ? WHERE id = ?');
-                invites.forEach(inv => {
-                  stmt.run(inv.project_id, newUserId, inv.role_id);
-                  updateStmt.run('accepted', inv.id);
-                  
-                  // Récupérer le nom du projet pour la notification interne
-                  db.get('SELECT title, owner_id FROM projects WHERE id = ?', [inv.project_id], (pErr, project) => {
-                    if (project) {
-                      createNotification({
-                        userId: newUserId,
-                        type: 'project_invite',
-                        title: 'Projet rejoint',
-                        message: `Bienvenue ! Vous avez rejoint le projet "${project.title}"`,
-                        projectId: inv.project_id,
-                        fromUserId: inv.inviter_id || project.owner_id
-                      }).catch(console.error);
-                    }
-                  });
-                });
-                
-                stmt.finalize();
-                updateStmt.finalize();
-                consumeCode(email);
-               // note: notifStmt is async and might finish after response, but ok for this simple use case
-              }
-              const plan = ADMIN_EMAILS.includes(email.toLowerCase()) ? 'unlimited' : 'free';
-              res.json({ token, user: { id: newUserId, name, email, avatar: null, plan } });
+        // Consommer le code dès que l'inscription est validée en DB
+        consumeCode(email).catch(console.error);
+
+        // Auto-join projects if invited
+        db.all('SELECT * FROM invitations WHERE email = ? AND status = ?', [email.toLowerCase(), 'pending'], (invErr, invites) => {
+          if (!invErr && invites && invites.length > 0) {
+            const stmt = db.prepare('INSERT OR IGNORE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)');
+            const updateStmt = db.prepare('UPDATE invitations SET status = ? WHERE id = ?');
+            invites.forEach(inv => {
+              stmt.run(inv.project_id, newUserId, inv.role_id);
+              updateStmt.run('accepted', inv.id);
+              
+              db.get('SELECT title FROM projects WHERE id = ?', [inv.project_id], (pErr, project) => {
+                if (project) {
+                  createNotification({
+                    userId: newUserId,
+                    type: 'project_invite',
+                    title: 'Projet rejoint',
+                    message: `Bienvenue ! Vous avez rejoint le projet "${project.title}"`,
+                    projectId: inv.project_id,
+                    fromUserId: inv.inviter_id
+                  }).catch(console.error);
+                }
+              });
             });
+            stmt.finalize();
+            updateStmt.finalize();
+          }
+          const plan = ADMIN_EMAILS.includes(email.toLowerCase()) ? 'unlimited' : 'free';
+          res.json({ token, user: { id: newUserId, name, email, avatar: null, plan } });
+        });
       }
     );
   } catch (err) {
