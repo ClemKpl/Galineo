@@ -49,6 +49,7 @@ type CalendarEvent = {
   start_datetime: string;
   end_datetime: string;
   location: string | null;
+  link: string | null;
   creator_name: string;
 };
 
@@ -109,8 +110,9 @@ export default function ProjectDashboardPage() {
   // Event creation state
   const [showEventModal, setShowEventModal] = useState(false);
   const [eventTitle, setEventTitle] = useState('');
-  const [eventDate, setEventDate] = useState(new Date().toISOString().split('T')[0]);
-  const [eventTime, setEventTime] = useState('09:00');
+  const [eventStart, setEventStart] = useState('');
+  const [eventEnd, setEventEnd] = useState('');
+  const [eventLink, setEventLink] = useState('');
   const [eventSaving, setEventSaving] = useState(false);
 
   const canManageProject = project.my_role_id === 1 || project.my_role_id === 2 || project.owner_id === user?.id;
@@ -152,13 +154,14 @@ export default function ProjectDashboardPage() {
     try {
       await api.post(`/projects/${project.id}/events`, {
         title: eventTitle,
-        start_datetime: `${eventDate}T${eventTime}`,
-        end_datetime: `${eventDate}T${parseInt(eventTime) + 1}:00`,
-        description: '',
-        location: '',
-        attendees: [user?.id]
+        start_datetime: eventStart,
+        end_datetime: eventEnd,
+        link: eventLink.trim() || null,
       });
       setEventTitle('');
+      setEventStart('');
+      setEventEnd('');
+      setEventLink('');
       setShowEventModal(false);
       fetchEvents();
     } catch (err) {
@@ -275,7 +278,7 @@ export default function ProjectDashboardPage() {
 
             <div className="flex flex-wrap gap-3">
               {!isReadOnly && (
-                <button onClick={() => setShowEventModal(true)} className="rounded-2xl bg-stone-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-stone-800 shadow-lg shadow-stone-200">
+                <button onClick={() => { const d = new Date(); const pad = (n: number) => String(n).padStart(2,'0'); const base = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T09:00`; setEventStart(base); setEventEnd(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T10:00`); setShowEventModal(true); }} className="rounded-2xl bg-stone-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-stone-800 shadow-lg shadow-stone-200">
                   Nouvel Événement
                 </button>
               )}
@@ -337,7 +340,7 @@ export default function ProjectDashboardPage() {
             <div className="flex items-center justify-between mb-6">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-stone-500">Événements</p>
               {!isReadOnly && (
-                <button onClick={() => setShowEventModal(true)} className="text-orange-500 hover:text-orange-600 transition-colors">
+                <button onClick={() => { const d = new Date(); const pad = (n: number) => String(n).padStart(2,'0'); const base = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T09:00`; setEventStart(base); setEventEnd(`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T10:00`); setShowEventModal(true); }} className="text-orange-500 hover:text-orange-600 transition-colors">
                   <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M12 4v16m8-8H4"/></svg>
                 </button>
               )}
@@ -351,13 +354,25 @@ export default function ProjectDashboardPage() {
                 </div>
               ) : (
                 events.map(ev => (
-                  <div key={ev.id} className="group relative rounded-2xl border border-stone-100 bg-white p-4 shadow-sm hover:shadow-md transition-all hover:border-orange-200">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="text-sm font-bold text-stone-900 group-hover:text-orange-600 transition-colors">{ev.title}</h4>
-                        <p className="text-[11px] text-stone-500 mt-1 font-medium">{formatDateTime(ev.start_datetime)}</p>
+                  <div key={ev.id} className="group relative rounded-2xl border border-violet-100 bg-violet-50/50 p-4 shadow-sm hover:shadow-md transition-all hover:bg-violet-50">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-stone-900 truncate">{ev.title}</h4>
+                        <p className="text-[11px] text-stone-500 mt-0.5 font-medium">
+                          {new Date(ev.start_datetime).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {' → '}
+                          {new Date(ev.end_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        {ev.link && (
+                          <a href={ev.link} target="_blank" rel="noopener noreferrer"
+                            className="mt-1 flex items-center gap-1 text-[11px] text-violet-600 hover:text-violet-800 font-semibold truncate max-w-[200px]"
+                          >
+                            <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            {ev.link.replace(/^https?:\/\//, '')}
+                          </a>
+                        )}
                       </div>
-                      <button onClick={() => deleteEvent(ev.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-stone-300 hover:text-red-500 transition-all rounded-lg hover:bg-red-50">
+                      <button onClick={() => deleteEvent(ev.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-stone-300 hover:text-red-500 transition-all rounded-lg hover:bg-red-50 shrink-0">
                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M19 7l-1 12H6L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/></svg>
                       </button>
                     </div>
@@ -557,32 +572,47 @@ export default function ProjectDashboardPage() {
 
       {/* New Event Modal */}
       {showEventModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/40 backdrop-blur-md animate-fadeIn">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-md animate-fadeIn">
           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-fadeUp">
-            <header className="px-8 py-6 border-b border-stone-100 flex items-center justify-between">
-              <h3 className="font-bold text-xl text-stone-900">Nouvel Événement</h3>
-              <button onClick={() => setShowEventModal(false)} className="text-stone-400 hover:text-stone-900"><svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-            </header>
-            <form onSubmit={handleCreateEvent} className="p-8 space-y-5">
+            <header className="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Titre de la réunion / événement</label>
-                <input type="text" value={eventTitle} onChange={e => setEventTitle(e.target.value)} required placeholder="ex: Point projet hebdomadaire" className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-violet-500 mb-1 block">Agenda</span>
+                <h3 className="font-bold text-xl text-stone-900">Nouvel événement</h3>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => setShowEventModal(false)} className="text-stone-400 hover:text-stone-900 p-2 hover:bg-stone-100 rounded-full transition-colors">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </header>
+            <form onSubmit={handleCreateEvent} className="p-6 space-y-4">
+              <input
+                type="text"
+                value={eventTitle}
+                onChange={e => setEventTitle(e.target.value)}
+                required
+                placeholder="Titre de l'événement"
+                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30"
+              />
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Date</label>
-                  <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} required className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20" />
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Début</label>
+                  <input type="datetime-local" value={eventStart} onChange={e => setEventStart(e.target.value)} required
+                    className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Heure</label>
-                  <input type="time" value={eventTime} onChange={e => setEventTime(e.target.value)} required className="w-full rounded-xl border border-stone-200 px-4 py-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20" />
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Fin</label>
+                  <input type="datetime-local" value={eventEnd} onChange={e => setEventEnd(e.target.value)} required
+                    className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
                 </div>
               </div>
-              <div className="pt-4">
-                <button type="submit" disabled={eventSaving} className="w-full rounded-2xl bg-orange-500 py-4 text-sm font-bold text-white transition hover:bg-orange-600 shadow-lg shadow-orange-100">
-                  {eventSaving ? 'Création...' : 'Planifier l\'événement'}
-                </button>
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-300" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                <input type="url" value={eventLink} onChange={e => setEventLink(e.target.value)}
+                  placeholder="Lien (optionnel)"
+                  className="w-full rounded-xl border border-stone-200 bg-white pl-9 pr-3 py-2.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
               </div>
+              <button type="submit" disabled={eventSaving} className="w-full rounded-2xl bg-violet-600 hover:bg-violet-700 py-3.5 text-sm font-black text-white transition-all shadow-lg shadow-violet-100 disabled:opacity-50 active:scale-95 uppercase tracking-widest">
+                {eventSaving ? 'Création...' : 'Ajouter l\'événement'}
+              </button>
             </form>
           </div>
         </div>
