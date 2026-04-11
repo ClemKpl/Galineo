@@ -120,12 +120,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <main className={`min-h-0 flex-1 overflow-x-hidden ${pathname.includes('/ai') || (pathname.includes('/messages') && pathname !== '/messages') || pathname.includes('/chat') ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-32 lg:pb-0'}`}>
+          <main className={`min-h-0 flex-1 overflow-x-hidden ${pathname.includes('/ai') || (pathname.includes('/messages') && pathname !== '/messages') || pathname.includes('/chat') ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-24 lg:pb-0'}`}>
             {children}
           </main>
 
-          <nav className="fixed inset-x-4 bottom-4 z-30 lg:hidden">
-            <div className="bg-white/60 backdrop-blur-md border border-stone-200 shadow-xl shadow-stone-200/50 rounded-3xl p-1.5 grid grid-cols-5 gap-1">
+          <nav className="fixed inset-x-0 bottom-0 z-30 lg:hidden pointer-events-none">
+            <div className="pointer-events-auto mx-4 mb-4 bg-white/40 backdrop-blur-xl border border-white/60 shadow-xl shadow-black/10 rounded-3xl p-1.5 grid grid-cols-5 gap-1">
               {[
                 { href: '/dashboard', label: 'Accueil', icon: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5Z" /> },
                 { href: '/messages', label: 'Chats', icon: <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /> },
