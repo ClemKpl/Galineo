@@ -368,9 +368,9 @@ export default function ProjectDashboardPage() {
                       <div className="min-w-0">
                         <h4 className="text-sm font-bold text-stone-900 truncate">{ev.title}</h4>
                         <p className="text-[11px] text-stone-500 mt-0.5 font-medium">
-                          {new Date(ev.start_datetime).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {new Date(ev.start_datetime.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                           {' → '}
-                          {new Date(ev.end_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(ev.end_datetime.replace(' ', 'T')).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
                         {ev.description && (
                           <p className="text-xs text-stone-500 mt-1 break-words whitespace-pre-wrap">{ev.description}</p>
