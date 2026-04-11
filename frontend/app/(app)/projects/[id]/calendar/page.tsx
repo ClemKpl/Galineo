@@ -162,7 +162,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
       .catch(() => {});
     api.get(`/projects/${projectId}/events?month=${month}`)
       .then((data) => setMonthEvents(Array.isArray(data) ? data : []))
-      .catch(() => {});
+      .catch((err) => console.error('Events fetch error:', err));
   }, [projectId, currentDate]);
 
   useEffect(() => {
@@ -184,13 +184,18 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     else setLoading(true);
 
     try {
-      const [tasksRes, projectRes] = await Promise.all([
+      const month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+      const [tasksRes, projectRes, notesRes, eventsRes] = await Promise.all([
         api.get(`/projects/${projectId}/tasks`),
         api.get(`/projects/${projectId}`),
+        api.get(`/projects/${projectId}/events/date-notes?month=${month}`),
+        api.get(`/projects/${projectId}/events?month=${month}`),
       ]);
 
       setTasks(Array.isArray(tasksRes) ? tasksRes : []);
       setMembers(Array.isArray(projectRes?.members) ? projectRes.members : []);
+      setMonthNotes(Array.isArray(notesRes) ? notesRes : []);
+      setMonthEvents(Array.isArray(eventsRes) ? eventsRes : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -983,7 +988,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                         ) : (
                           <div className="p-4 flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="text-sm font-bold text-stone-900 truncate">{ev.title}</p>
+                              <p className="text-sm font-bold text-stone-900 break-words">{ev.title}</p>
                               <p className="text-[10px] text-stone-400 mt-0.5">
                                 {new Date(toDatetimeLocal(ev.start_datetime)).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                                 {' → '}
@@ -994,7 +999,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                               )}
                               {ev.link && (
                                 <a href={ev.link} target="_blank" rel="noopener noreferrer"
-                                  className="mt-1.5 flex items-center gap-1 text-[11px] text-violet-600 hover:text-violet-800 font-semibold truncate max-w-xs"
+                                  className="mt-1.5 flex items-center gap-1 text-[11px] text-violet-600 hover:text-violet-800 font-semibold break-all"
                                   onClick={e => e.stopPropagation()}
                                 >
                                   <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>

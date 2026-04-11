@@ -366,7 +366,7 @@ export default function ProjectDashboardPage() {
                   <div key={ev.id} className="group relative rounded-2xl border border-violet-100 bg-violet-50/50 p-4 shadow-sm hover:shadow-md transition-all hover:bg-violet-50">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h4 className="text-sm font-bold text-stone-900 truncate">{ev.title}</h4>
+                        <h4 className="text-sm font-bold text-stone-900 break-words">{ev.title}</h4>
                         <p className="text-[11px] text-stone-500 mt-0.5 font-medium">
                           {ev.start_datetime ? new Date(ev.start_datetime.replace(' ', 'T')).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
                           {' → '}

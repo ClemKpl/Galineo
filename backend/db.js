@@ -340,6 +340,14 @@ const initDb = async () => {
         notified INTEGER DEFAULT 0,
         PRIMARY KEY (event_id, user_id)
       )`,
+      `CREATE TABLE IF NOT EXISTS calendar_date_notes (
+        id ${autoInc},
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        content TEXT NOT NULL,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
       `CREATE TABLE IF NOT EXISTS invitations (
         id ${autoInc},
         project_id INTEGER NOT NULL REFERENCES projects(id),
