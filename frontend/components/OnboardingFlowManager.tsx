@@ -202,7 +202,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
   await loadScript('https://cdn.jsdelivr.net/npm/driver.js@1.4.0/dist/driver.js.iife.js', 'driver-js');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { driver } = (window as any).driver as { driver: typeof import('driver.js').driver };
+  const { driver } = (window as any).driver as any;
 
   const driverObj = driver({
     showProgress: true,
