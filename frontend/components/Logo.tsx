@@ -5,17 +5,19 @@ import React from 'react';
 interface LogoProps {
   className?: string;
   size?: number | string;
+  style?: React.CSSProperties;
 }
 
-export default function Logo({ className = '', size = 24 }: LogoProps) {
+export default function Logo({ className = '', size = 24, style }: LogoProps) {
   return (
-    <svg 
-      width={size} 
-      height={size} 
-      viewBox="0 0 100 100" 
-      fill="none" 
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      style={style}
     >
       {/* 
         Pictogramme stylisé composé de 4 segments parallèles inclinés 
