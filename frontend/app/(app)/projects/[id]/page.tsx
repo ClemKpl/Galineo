@@ -113,6 +113,8 @@ export default function ProjectDashboardPage() {
   const [eventStart, setEventStart] = useState('');
   const [eventEnd, setEventEnd] = useState('');
   const [eventLink, setEventLink] = useState('');
+  const [eventRecurrence, setEventRecurrence] = useState('none');
+  const [eventRecurrenceEnd, setEventRecurrenceEnd] = useState('');
   const [eventSaving, setEventSaving] = useState(false);
 
   const canManageProject = project.my_role_id === 1 || project.my_role_id === 2 || project.owner_id === user?.id;
@@ -157,11 +159,15 @@ export default function ProjectDashboardPage() {
         start_datetime: eventStart,
         end_datetime: eventEnd,
         link: eventLink.trim() || null,
+        recurrence: eventRecurrence,
+        recurrence_end: eventRecurrenceEnd || null,
       });
       setEventTitle('');
       setEventStart('');
       setEventEnd('');
       setEventLink('');
+      setEventRecurrence('none');
+      setEventRecurrenceEnd('');
       setShowEventModal(false);
       fetchEvents();
     } catch (err) {
@@ -610,8 +616,25 @@ export default function ProjectDashboardPage() {
                   placeholder="Lien (optionnel)"
                   className="w-full rounded-xl border border-stone-200 bg-white pl-9 pr-3 py-2.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
               </div>
-              <button type="submit" disabled={eventSaving} className="w-full rounded-2xl bg-violet-600 hover:bg-violet-700 py-3.5 text-sm font-black text-white transition-all shadow-lg shadow-violet-100 disabled:opacity-50 active:scale-95 uppercase tracking-widest">
-                {eventSaving ? 'Création...' : 'Ajouter l\'événement'}
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Récurrence</label>
+                <select value={eventRecurrence} onChange={e => setEventRecurrence(e.target.value)}
+                  className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30 appearance-none">
+                  <option value="none">Aucune</option>
+                  <option value="daily">Quotidienne</option>
+                  <option value="weekly">Hebdomadaire</option>
+                  <option value="monthly">Mensuelle</option>
+                </select>
+              </div>
+              {eventRecurrence !== 'none' && (
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-stone-400 mb-2">Répéter jusqu'au</label>
+                  <input type="date" value={eventRecurrenceEnd} onChange={e => setEventRecurrenceEnd(e.target.value)}
+                    className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
+                </div>
+              )}
+              <button type="submit" disabled={eventSaving || (eventRecurrence !== 'none' && !eventRecurrenceEnd)} className="w-full rounded-2xl bg-violet-600 hover:bg-violet-700 py-3.5 text-sm font-black text-white transition-all shadow-lg shadow-violet-100 disabled:opacity-50 active:scale-95 uppercase tracking-widest">
+                {eventSaving ? 'Création...' : eventRecurrence !== 'none' ? 'Créer les occurrences' : 'Ajouter l\'événement'}
               </button>
             </form>
           </div>

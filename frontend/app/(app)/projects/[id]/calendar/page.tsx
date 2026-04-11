@@ -114,6 +114,8 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   const [eventStart, setEventStart] = useState('');
   const [eventEnd, setEventEnd] = useState('');
   const [eventLink, setEventLink] = useState('');
+  const [eventRecurrence, setEventRecurrence] = useState('none');
+  const [eventRecurrenceEnd, setEventRecurrenceEnd] = useState('');
   const [eventLoading, setEventLoading] = useState(false);
 
   // Task edit form
@@ -185,6 +187,8 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     setEventStart(`${dateKey}T09:00`);
     setEventEnd(`${dateKey}T10:00`);
     setEventLink('');
+    setEventRecurrence('none');
+    setEventRecurrenceEnd('');
     setNoteLoading(true);
     try {
       const notesData = await api.get(`/projects/${projectId}/events/date-notes/${dateKey}`);
@@ -224,6 +228,8 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
         start_datetime: eventStart,
         end_datetime: eventEnd,
         link: eventLink.trim() || null,
+        recurrence: eventRecurrence,
+        recurrence_end: eventRecurrenceEnd || null,
       });
       const month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
       const updated = await api.get(`/projects/${projectId}/events?month=${month}`);
@@ -929,13 +935,30 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                       placeholder="Lien (optionnel)"
                       className="w-full rounded-xl border border-stone-200 bg-white pl-8 pr-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
                   </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Récurrence</label>
+                    <select value={eventRecurrence} onChange={e => setEventRecurrence(e.target.value)}
+                      className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30 appearance-none">
+                      <option value="none">Aucune</option>
+                      <option value="daily">Quotidienne</option>
+                      <option value="weekly">Hebdomadaire</option>
+                      <option value="monthly">Mensuelle</option>
+                    </select>
+                  </div>
+                  {eventRecurrence !== 'none' && (
+                    <div>
+                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Répéter jusqu'au</label>
+                      <input type="date" value={eventRecurrenceEnd} onChange={e => setEventRecurrenceEnd(e.target.value)}
+                        className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={submitEvent}
-                    disabled={!eventTitle.trim() || !eventStart || !eventEnd || eventLoading}
+                    disabled={!eventTitle.trim() || !eventStart || !eventEnd || (eventRecurrence !== 'none' && !eventRecurrenceEnd) || eventLoading}
                     className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-30 active:scale-95"
                   >
-                    {eventLoading ? '...' : 'Ajouter l\'événement'}
+                    {eventLoading ? '...' : eventRecurrence !== 'none' ? 'Créer les occurrences' : 'Ajouter l\'événement'}
                   </button>
                 </div>
               </section>

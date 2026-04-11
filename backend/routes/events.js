@@ -70,62 +70,59 @@ router.get('/', authMiddleware, (req, res) => {
 router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId } = req.params;
   const userId = req.user.id;
-  const { title, description, start_datetime, end_datetime, location, link, attendee_ids } = req.body;
+  const { title, description, start_datetime, end_datetime, location, link, attendee_ids, recurrence, recurrence_end } = req.body;
 
   if (!title || !start_datetime || !end_datetime) {
     return res.status(400).json({ error: 'Titre, date de début et date de fin requis' });
   }
 
-  db.run(
-    `INSERT INTO calendar_events (project_id, title, description, start_datetime, end_datetime, location, link, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [Number(projectId), title, description || null, start_datetime, end_datetime, location || null, link || null, userId],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      const eventId = this.lastID;
+  // Build list of occurrences
+  const occurrences = [];
+  const duration = new Date(end_datetime).getTime() - new Date(start_datetime).getTime();
+  const recurrenceGroup = (recurrence && recurrence !== 'none') ? `${projectId}-${Date.now()}` : null;
+  const recurrenceEndMs = recurrence_end ? new Date(recurrence_end).getTime() : null;
+  const MAX_OCC = 52;
 
-      const attendees = Array.isArray(attendee_ids) ? attendee_ids : [];
+  occurrences.push({ start: start_datetime, end: end_datetime });
 
-      // Always add creator as attendee
-      if (!attendees.includes(userId)) attendees.push(userId);
-
-      if (attendees.length === 0) {
-        return res.status(201).json({ id: eventId, message: 'Événement créé' });
-      }
-
-      // Get project title for notification
-      db.get(`SELECT title FROM projects WHERE id = ?`, [projectId], (pErr, project) => {
-        const projectTitle = project ? project.title : 'Projet';
-
-        let done = 0;
-        for (const attendeeId of attendees) {
-          db.run(
-            `INSERT OR IGNORE INTO event_attendees (event_id, user_id) VALUES (?, ?)`,
-            [eventId, attendeeId],
-            () => {
-              // Notify attendee (except creator who already knows)
-              if (attendeeId !== userId) {
-                const notifTitle = `Nouvel événement : ${title}`;
-                const notifMsg = `Tu as été invité à "${title}" le ${new Date(start_datetime).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} dans ${projectTitle}`;
-                createNotification({
-                  userId: attendeeId,
-                  type: 'event_invite',
-                  title: notifTitle,
-                  message: notifMsg,
-                  projectId: projectId,
-                  fromUserId: userId
-                }).catch(console.error);
-              }
-              done++;
-              if (done === attendees.length) {
-                res.status(201).json({ id: eventId, message: 'Événement créé' });
-              }
-            }
-          );
-        }
-      });
+  if (recurrence && recurrence !== 'none' && recurrenceEndMs) {
+    const current = new Date(start_datetime);
+    let count = 1;
+    while (count < MAX_OCC) {
+      if (recurrence === 'daily') current.setDate(current.getDate() + 1);
+      else if (recurrence === 'weekly') current.setDate(current.getDate() + 7);
+      else if (recurrence === 'monthly') current.setMonth(current.getMonth() + 1);
+      if (current.getTime() > recurrenceEndMs) break;
+      const s = current.toISOString().slice(0, 16);
+      const e = new Date(current.getTime() + duration).toISOString().slice(0, 16);
+      occurrences.push({ start: s, end: e });
+      count++;
     }
-  );
+  }
+
+  // Insert occurrences sequentially, respond after all done
+  let insertedCount = 0;
+  let firstId = null;
+
+  function insertNext(i) {
+    if (i >= occurrences.length) {
+      return res.status(201).json({ id: firstId, count: occurrences.length, message: 'Événement(s) créé(s)' });
+    }
+    const occ = occurrences[i];
+    db.run(
+      `INSERT INTO calendar_events (project_id, title, description, start_datetime, end_datetime, location, link, recurrence_group, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [Number(projectId), title, description || null, occ.start, occ.end, location || null, link || null, recurrenceGroup, userId],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (i === 0) firstId = this.lastID;
+        insertedCount++;
+        insertNext(i + 1);
+      }
+    );
+  }
+
+  insertNext(0);
 });
 
 // PATCH /projects/:projectId/events/:id

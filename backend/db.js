@@ -305,6 +305,7 @@ const initDb = async () => {
     await ensureColumn('tasks', 'phase', 'TEXT');
     await ensureColumn('tasks', 'start_date', 'TEXT');
     await ensureColumn('calendar_events', 'link', 'TEXT');
+    await ensureColumn('calendar_events', 'recurrence_group', 'TEXT');
     
     // 3. Tables additionnelles
     const extraTables = [
