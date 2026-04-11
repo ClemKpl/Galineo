@@ -262,11 +262,11 @@ export default function Sidebar({
   }, [fetchProjects]);
 
   const navItems = [
-    { href: '/dashboard', label: 'Tableau de bord', icon: <IconGrid /> },
-    { href: '/messages', label: 'Discussions', icon: <IconChat /> },
-    { href: '/history', label: 'Historique', icon: <IconFolder /> },
-    { href: '/trash', label: 'Corbeille', icon: <IconTrash /> },
-    ...(user?.plan === 'unlimited' ? [{ href: '/admin', label: 'Panel Admin', icon: <IconShield /> }] : []),
+    { href: '/dashboard', label: 'Tableau de bord', icon: <IconGrid />, tourAttr: 'dashboard' },
+    { href: '/messages', label: 'Discussions', icon: <IconChat />, tourAttr: 'sidebar-messages' },
+    { href: '/history', label: 'Historique', icon: <IconFolder />, tourAttr: undefined },
+    { href: '/trash', label: 'Corbeille', icon: <IconTrash />, tourAttr: 'sidebar-trash' },
+    ...(user?.plan === 'unlimited' ? [{ href: '/admin', label: 'Panel Admin', icon: <IconShield />, tourAttr: undefined }] : []),
   ];
 
   const sortedProjects = [...projects].sort((a, b) => 
@@ -336,7 +336,7 @@ export default function Sidebar({
       </div>
 
       {/* Notifications */}
-      <div className="px-3 py-2.5 border-b border-stone-800 relative" ref={panelRef}>
+      <div className="px-3 py-2.5 border-b border-stone-800 relative" ref={panelRef} data-tour="sidebar-notifications">
         <button
           onClick={() => {
             if (window.innerWidth < 1024) {
@@ -442,6 +442,7 @@ export default function Sidebar({
           const active = pathname === item.href;
           return (
             <Link key={item.href} href={item.href}
+              {...(item.tourAttr ? { 'data-tour': item.tourAttr } : {})}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active ? 'bg-orange-500 text-white shadow-sm' : 'text-stone-400 hover:text-stone-100 hover:bg-stone-800'}`}>
               {item.icon}
               {item.label}
@@ -450,7 +451,7 @@ export default function Sidebar({
         })}
 
         {/* Projects section */}
-        <div className="mt-6 mb-2 px-3 flex items-center justify-between group/title">
+        <div className="mt-6 mb-2 px-3 flex items-center justify-between group/title" data-tour="projects-nav">
           <p className="text-stone-600 text-[10px] font-bold uppercase tracking-[0.2em]">Mes Projets</p>
           <button 
             onClick={() => setGroupByRole(!groupByRole)}

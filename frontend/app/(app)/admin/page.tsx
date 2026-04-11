@@ -33,7 +33,16 @@ type Stats = {
   tasks: number;
 };
 
-type Tab = 'users' | 'projects' | 'support';
+type Tab = 'users' | 'projects' | 'support' | 'marketing';
+
+type OnboardingStats = {
+  total: number;
+  answered: number;
+  completed: number;
+  sources: { value: string; count: number }[];
+  types: { value: string; count: number }[];
+  intents: { value: string; count: number }[];
+};
 
 type SupportTicket = {
   id: number;
@@ -68,6 +77,7 @@ export default function AdminPage() {
   const [toast, setToast] = useState<{ message: string; error?: boolean } | null>(null);
   const [search, setSearch] = useState('');
   const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({});
+  const [onboardingStats, setOnboardingStats] = useState<OnboardingStats | null>(null);
 
   const showToast = (message: string, error = false) => {
     setToast({ message, error });
@@ -77,16 +87,18 @@ export default function AdminPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, u, p, t] = await Promise.all([
+      const [s, u, p, t, ob] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/users'),
         api.get('/admin/projects'),
         api.get('/support/admin'),
+        api.get('/admin/onboarding-stats'),
       ]);
       setStats(s);
       setUsers(u);
       setProjects(p);
       setTickets(t as SupportTicket[]);
+      setOnboardingStats(ob as OnboardingStats);
     } catch {
       showToast('Accès refusé ou erreur serveur.', true);
       router.push('/dashboard');
@@ -240,13 +252,16 @@ export default function AdminPage() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex flex-col gap-3">
           <div className="flex gap-1 bg-stone-100 p-1 rounded-xl flex-wrap">
-            {(['users', 'projects', 'support'] as Tab[]).map((t) => (
+            {(['users', 'projects', 'support', 'marketing'] as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => { setTab(t); setSearch(''); }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all relative ${tab === t ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-500 hover:text-stone-700'}`}
               >
-                {t === 'users' ? `Utilisateurs (${users.length})` : t === 'projects' ? `Projets (${projects.length})` : (
+                {t === 'users' ? `Utilisateurs (${users.length})`
+                  : t === 'projects' ? `Projets (${projects.length})`
+                  : t === 'marketing' ? '📊 Marketing'
+                  : (
                   <span className="flex items-center gap-1.5">
                     Support
                     {tickets.filter(tk => tk.status === 'open').length > 0 && (
@@ -265,13 +280,15 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={tab === 'users' ? 'Rechercher un utilisateur…' : 'Rechercher un projet…'}
-          className="px-4 py-2 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30 focus:border-purple-400 transition-all w-64"
-        />
+        {tab !== 'marketing' && (
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={tab === 'users' ? 'Rechercher un utilisateur…' : 'Rechercher un projet…'}
+            className="px-4 py-2 rounded-xl border border-stone-200 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-purple-400/30 focus:border-purple-400 transition-all w-64"
+          />
+        )}
       </div>
 
       {/* Users table */}
@@ -474,6 +491,106 @@ export default function AdminPage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Marketing tab */}
+      {tab === 'marketing' && (
+        <div className="space-y-6">
+          {/* Export buttons */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-stone-900">Données d&apos;onboarding</h2>
+              <p className="text-stone-400 text-sm">Réponses collectées lors de l&apos;inscription</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-semibold rounded-xl hover:bg-stone-800 transition-colors"
+                onClick={() => {
+                  const token = localStorage.getItem('galineo_token');
+                  const apiEnv = process.env.NEXT_PUBLIC_API_URL;
+                  const apiBase = (apiEnv && !apiEnv.includes('localhost'))
+                    ? apiEnv.replace(/\/$/, '')
+                    : (typeof window !== 'undefined' && window.location.hostname !== 'localhost')
+                      ? 'https://galineo-api.onrender.com'
+                      : 'http://localhost:3001';
+                  fetch(`${apiBase}/admin/onboarding-export`, { headers: { Authorization: `Bearer ${token}` } })
+                    .then(r => r.blob())
+                    .then(blob => {
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url; a.download = 'galineo-onboarding.csv'; a.click();
+                      URL.revokeObjectURL(url);
+                    });
+                }}
+              >
+                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                Exporter CSV
+              </button>
+            </div>
+          </div>
+
+          {onboardingStats ? (
+            <>
+              {/* Summary cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {[
+                  { label: 'Total utilisateurs', value: onboardingStats.total, color: 'text-stone-900' },
+                  { label: 'Ont répondu au questionnaire', value: onboardingStats.answered, pct: onboardingStats.total ? Math.round(onboardingStats.answered / onboardingStats.total * 100) : 0, color: 'text-orange-600' },
+                  { label: 'Tour complété / passé', value: onboardingStats.completed, pct: onboardingStats.total ? Math.round(onboardingStats.completed / onboardingStats.total * 100) : 0, color: 'text-emerald-600' },
+                ].map((card) => (
+                  <div key={card.label} className="bg-white border border-stone-100 rounded-2xl px-5 py-4">
+                    <div className={`text-2xl font-bold ${card.color}`}>
+                      {card.value}
+                      {'pct' in card && <span className="text-sm font-medium text-stone-400 ml-1">({card.pct}%)</span>}
+                    </div>
+                    <div className="text-xs text-stone-400 mt-0.5">{card.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bar charts */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {[
+                  { title: '📢 Sources d\'acquisition', data: onboardingStats.sources },
+                  { title: '👤 Type d\'utilisateur', data: onboardingStats.types },
+                  { title: '🎯 Objectif principal', data: onboardingStats.intents },
+                ].map((section) => {
+                  const max = section.data.reduce((m, d) => Math.max(m, d.count), 1);
+                  return (
+                    <div key={section.title} className="bg-white border border-stone-100 rounded-2xl p-5 space-y-4">
+                      <h3 className="font-semibold text-stone-800 text-sm">{section.title}</h3>
+                      {section.data.length === 0 ? (
+                        <p className="text-xs text-stone-400">Aucune donnée</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {section.data.map((item) => (
+                            <div key={item.value}>
+                              <div className="flex justify-between text-xs text-stone-600 mb-1">
+                                <span className="font-medium truncate mr-2">{item.value}</span>
+                                <span className="shrink-0 font-bold text-stone-800">{item.count}</span>
+                              </div>
+                              <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-700"
+                                  style={{ width: `${Math.round(item.count / max * 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center py-16 text-stone-400 text-sm">Chargement des statistiques…</div>
+          )}
         </div>
       )}
     </div>

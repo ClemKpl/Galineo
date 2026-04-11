@@ -172,4 +172,61 @@ router.get('/stats', authMiddleware, adminMiddleware, (req, res) => {
   });
 });
 
+// GET /admin/onboarding-stats — Statistiques marketing onboarding
+router.get('/onboarding-stats', authMiddleware, adminMiddleware, (req, res) => {
+  db.get('SELECT COUNT(*) as total FROM users', [], (err, total) => {
+    if (err) return res.status(500).json({ error: err.message });
+    db.get("SELECT COUNT(*) as answered FROM users WHERE onboarding_status >= 1", [], (err2, answered) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+      db.get("SELECT COUNT(*) as completed FROM users WHERE onboarding_status >= 2", [], (err3, completed) => {
+        if (err3) return res.status(500).json({ error: err3.message });
+        db.all("SELECT marketing_source as value, COUNT(*) as count FROM users WHERE marketing_source IS NOT NULL GROUP BY marketing_source ORDER BY count DESC", [], (err4, sources) => {
+          if (err4) return res.status(500).json({ error: err4.message });
+          db.all("SELECT user_type as value, COUNT(*) as count FROM users WHERE user_type IS NOT NULL GROUP BY user_type ORDER BY count DESC", [], (err5, types) => {
+            if (err5) return res.status(500).json({ error: err5.message });
+            db.all("SELECT usage_intent as value, COUNT(*) as count FROM users WHERE usage_intent IS NOT NULL GROUP BY usage_intent ORDER BY count DESC", [], (err6, intents) => {
+              if (err6) return res.status(500).json({ error: err6.message });
+              res.json({
+                total: total.total,
+                answered: answered.answered,
+                completed: completed.completed,
+                sources,
+                types,
+                intents,
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
+// GET /admin/onboarding-export — Export CSV des réponses onboarding
+router.get('/onboarding-export', authMiddleware, adminMiddleware, (req, res) => {
+  db.all(
+    `SELECT id, name, email, plan, onboarding_status, marketing_source, user_type, usage_intent, created_at
+     FROM users ORDER BY created_at DESC`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const headers = ['id', 'name', 'email', 'plan', 'onboarding_status', 'marketing_source', 'user_type', 'usage_intent', 'created_at'];
+      const escape = (v) => {
+        if (v === null || v === undefined) return '';
+        const s = String(v);
+        return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const csv = [
+        headers.join(','),
+        ...rows.map(r => headers.map(h => escape(r[h])).join(','))
+      ].join('\n');
+
+      res.setHeader('Content-Disposition', 'attachment; filename="galineo-onboarding-export.csv"');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.send('\uFEFF' + csv); // BOM UTF-8 pour Excel
+    }
+  );
+});
+
 module.exports = router;

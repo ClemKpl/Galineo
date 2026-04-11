@@ -409,6 +409,10 @@ const initDb = async () => {
     await ensureColumn('users', 'login_attempts', 'INTEGER DEFAULT 0');
     await ensureColumn('users', 'locked_until', 'TIMESTAMP');
     await ensureColumn('users', 'banned', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'onboarding_status', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'marketing_source', 'TEXT');
+    await ensureColumn('users', 'user_type', 'TEXT');
+    await ensureColumn('users', 'usage_intent', 'TEXT');
     await ensureColumn('messages', 'attachment_url', 'TEXT');
     await ensureColumn('messages', 'attachment_name', 'TEXT');
     await ensureColumn('messages', 'attachment_type', 'TEXT');

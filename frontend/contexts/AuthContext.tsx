@@ -18,6 +18,7 @@ interface User {
   notif_task_completed?: number;
   notif_ai_responses?: number;
   notif_chat_messages?: number;
+  onboarding_status?: number;
 }
 
 interface AuthContextType {

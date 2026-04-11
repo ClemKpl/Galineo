@@ -31,7 +31,7 @@ router.get('/me', authMiddleware, (req, res) => {
   db.run('UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?', [userId], (updateErr) => {
     if (updateErr) console.error('❌ Erreur update last_login_at:', updateErr.message);
     
-    db.get('SELECT id, name, email, avatar, plan, notif_project_updates, notif_added_to_project, notif_deadlines, notif_mentions, notif_task_completed, notif_ai_responses, notif_chat_messages, created_at FROM users WHERE id = ?', [userId], (err, row) => {
+    db.get('SELECT id, name, email, avatar, plan, onboarding_status, notif_project_updates, notif_added_to_project, notif_deadlines, notif_mentions, notif_task_completed, notif_ai_responses, notif_chat_messages, created_at FROM users WHERE id = ?', [userId], (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!row) return res.status(404).json({ error: 'Utilisateur non trouvé' });
       
@@ -99,6 +99,28 @@ router.patch('/me', authMiddleware, (req, res) => {
       row.isAdmin = req.user.isAdmin;
       res.json(row);
     });
+  });
+});
+
+// PATCH /users/me/onboarding — mettre à jour le statut et les réponses d'onboarding
+router.patch('/me/onboarding', authMiddleware, (req, res) => {
+  const { onboarding_status, marketing_source, user_type, usage_intent } = req.body;
+  const userId = req.user.id;
+
+  const updates = [];
+  const values = [];
+
+  if (onboarding_status !== undefined) { updates.push('onboarding_status = ?'); values.push(onboarding_status); }
+  if (marketing_source !== undefined)  { updates.push('marketing_source = ?');  values.push(marketing_source); }
+  if (user_type !== undefined)         { updates.push('user_type = ?');          values.push(user_type); }
+  if (usage_intent !== undefined)      { updates.push('usage_intent = ?');       values.push(usage_intent); }
+
+  if (updates.length === 0) return res.status(400).json({ error: 'Aucune donnée à modifier' });
+
+  values.push(userId);
+  db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values, function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
   });
 });
 

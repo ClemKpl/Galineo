@@ -7,6 +7,7 @@ import CreateProjectModal from '@/components/CreateProjectModal';
 import AiChat from '@/components/AiChat';
 import PricingModal from '@/components/PricingModal';
 import SupportModal from '@/components/SupportModal';
+import OnboardingFlowManager from '@/components/OnboardingFlowManager';
 import { ToastProvider } from '@/contexts/ToastContext';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -68,6 +69,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastProvider>
+      <OnboardingFlowManager />
       <div className="flex h-dvh min-h-0 bg-stone-50 overflow-hidden">
         <Sidebar
           onNewProject={() => setShowModal(true)}
