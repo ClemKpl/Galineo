@@ -117,6 +117,7 @@ export default function ProjectDashboardPage() {
   const [eventRecurrence, setEventRecurrence] = useState('none');
   const [eventRecurrenceEnd, setEventRecurrenceEnd] = useState('');
   const [eventSaving, setEventSaving] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
 
   const canManageProject = project.my_role_id === 1 || project.my_role_id === 2 || project.owner_id === user?.id;
   const isReadOnly = project.status !== 'active';
@@ -155,7 +156,7 @@ export default function ProjectDashboardPage() {
     e.preventDefault();
     setEventSaving(true);
     try {
-      await api.post(`/projects/${project.id}/events`, {
+      const payload = {
         title: eventTitle,
         start_datetime: eventStart,
         end_datetime: eventEnd,
@@ -163,7 +164,14 @@ export default function ProjectDashboardPage() {
         link: eventLink.trim() || null,
         recurrence: eventRecurrence,
         recurrence_end: eventRecurrenceEnd || null,
-      });
+      };
+
+      if (editingEventId) {
+        await api.put(`/projects/${project.id}/events/${editingEventId}`, payload);
+      } else {
+        await api.post(`/projects/${project.id}/events`, payload);
+      }
+
       setEventTitle('');
       setEventDescription('');
       setEventStart('');
@@ -171,6 +179,7 @@ export default function ProjectDashboardPage() {
       setEventLink('');
       setEventRecurrence('none');
       setEventRecurrenceEnd('');
+      setEditingEventId(null);
       setShowEventModal(false);
       fetchEvents();
     } catch (err) {
@@ -178,6 +187,18 @@ export default function ProjectDashboardPage() {
     } finally {
       setEventSaving(false);
     }
+  }
+
+  function startEditEvent(ev: any) {
+    setEditingEventId(ev.id);
+    setEventTitle(ev.title);
+    setEventDescription(ev.description || '');
+    setEventStart(ev.start_datetime ? ev.start_datetime.replace(' ', 'T').slice(0, 16) : '');
+    setEventEnd(ev.end_datetime ? ev.end_datetime.replace(' ', 'T').slice(0, 16) : '');
+    setEventLink(ev.link || '');
+    setEventRecurrence(ev.recurrence || 'none');
+    setEventRecurrenceEnd(ev.recurrence_end || '');
+    setShowEventModal(true);
   }
 
   async function deleteEvent(id: number) {
@@ -384,9 +405,14 @@ export default function ProjectDashboardPage() {
                           </a>
                         )}
                       </div>
-                      <button onClick={() => deleteEvent(ev.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-stone-300 hover:text-red-500 transition-all rounded-lg hover:bg-red-50 shrink-0">
-                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M19 7l-1 12H6L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/></svg>
-                      </button>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => startEditEvent(ev)} className="p-1.5 text-stone-300 hover:text-violet-500 transition-all rounded-lg hover:bg-violet-50">
+                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                        <button onClick={() => deleteEvent(ev.id)} className="p-1.5 text-stone-300 hover:text-red-500 transition-all rounded-lg hover:bg-red-50">
+                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M19 7l-1 12H6L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3"/></svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
@@ -458,7 +484,7 @@ export default function ProjectDashboardPage() {
                         )}
                       </div>
                     </div>
-                    <button onClick={() => router.push(`/projects/${project.id}/tasks`)} className="opacity-0 group-hover:opacity-100 p-2 text-stone-400 hover:text-orange-500 transition-all">
+                    <button onClick={() => router.push(`/projects/${project.id}/tasks`)} className="p-2 text-stone-400 hover:text-orange-500 transition-all">
                       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M9 5l7 7-7 7"/></svg>
                     </button>
                   </div>
@@ -589,9 +615,9 @@ export default function ProjectDashboardPage() {
             <header className="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-violet-500 mb-1 block">Agenda</span>
-                <h3 className="font-bold text-xl text-stone-900">Nouvel événement</h3>
+                <h3 className="font-bold text-xl text-stone-900">{editingEventId ? 'Modifier l\'événement' : 'Nouvel événement'}</h3>
               </div>
-              <button onClick={() => setShowEventModal(false)} className="text-stone-400 hover:text-stone-900 p-2 hover:bg-stone-100 rounded-full transition-colors">
+              <button onClick={() => { setShowEventModal(false); setEditingEventId(null); }} className="text-stone-400 hover:text-stone-900 p-2 hover:bg-stone-100 rounded-full transition-colors">
                 <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </header>
@@ -647,7 +673,7 @@ export default function ProjectDashboardPage() {
                 </div>
               )}
               <button type="submit" disabled={eventSaving || (eventRecurrence !== 'none' && !eventRecurrenceEnd)} className="w-full rounded-2xl bg-violet-600 hover:bg-violet-700 py-3.5 text-sm font-black text-white transition-all shadow-lg shadow-violet-100 disabled:opacity-50 active:scale-95 uppercase tracking-widest">
-                {eventSaving ? 'Création...' : eventRecurrence !== 'none' ? 'Créer les occurrences' : 'Ajouter l\'événement'}
+                {eventSaving ? (editingEventId ? 'Mise à jour...' : 'Création...') : (editingEventId ? 'Mettre à jour' : (eventRecurrence !== 'none' ? 'Créer les occurrences' : 'Ajouter l\'événement'))}
               </button>
             </form>
           </div>

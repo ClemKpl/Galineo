@@ -50,31 +50,13 @@ type DateNote = {
   author_name: string;
 };
 
-type CalendarEvent = {
-  id: number;
-  title: string;
-  description?: string | null;
-  start_datetime: string;
-  end_datetime: string;
-  location?: string | null;
-  link?: string | null;
-  created_by: number;
-  creator_name?: string;
-  attendee_ids: number[];
-  attendee_names: string[];
-};
-
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function diffInDays(start: Date, end: Date) {
   return Math.round((startOfDay(end).getTime() - startOfDay(start).getTime()) / DAY_MS);
 }
 
-function toDatetimeLocal(str: string | null | undefined): string {
-  if (!str) return '';
-  // Normalize "2026-04-11 09:00:00" → "2026-04-11T09:00"
-  return str.replace(' ', 'T').substring(0, 16);
-}
+
 
 function formatDateInput(date: Date) {
   const y = date.getFullYear();
@@ -115,27 +97,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   const [editNoteContent, setEditNoteContent] = useState('');
   const [editNoteLoading, setEditNoteLoading] = useState(false);
   const [monthNotes, setMonthNotes] = useState<(DateNote & { date: string })[]>([]);
-  const [monthEvents, setMonthEvents] = useState<CalendarEvent[]>([]);
-  const [dayEvents, setDayEvents] = useState<CalendarEvent[]>([]);
-
-  // Event creation form
-  const [eventTitle, setEventTitle] = useState('');
-  const [eventDescription, setEventDescription] = useState('');
-  const [eventStart, setEventStart] = useState('');
-  const [eventEnd, setEventEnd] = useState('');
-  const [eventLink, setEventLink] = useState('');
-  const [eventRecurrence, setEventRecurrence] = useState('none');
-  const [eventRecurrenceEnd, setEventRecurrenceEnd] = useState('');
-  const [eventLoading, setEventLoading] = useState(false);
-
-  // Event edit
-  const [editingEventId, setEditingEventId] = useState<number | null>(null);
-  const [editEventTitle, setEditEventTitle] = useState('');
-  const [editEventDescription, setEditEventDescription] = useState('');
-  const [editEventStart, setEditEventStart] = useState('');
-  const [editEventEnd, setEditEventEnd] = useState('');
-  const [editEventLink, setEditEventLink] = useState('');
-  const [editEventLoading, setEditEventLoading] = useState(false);
+  const [monthNotes, setMonthNotes] = useState<(DateNote & { date: string })[]>([]);
 
   // Task edit form
   const [title, setTitle] = useState('');
@@ -160,12 +122,6 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     api.get(`/projects/${projectId}/events/date-notes?month=${month}`)
       .then((data) => setMonthNotes(Array.isArray(data) ? data : []))
       .catch(() => {});
-    api.get(`/projects/${projectId}/events?month=${month}`)
-      .then((data) => {
-        console.log(`[GANTT] Fetched ${data?.length || 0} events for ${month}`, data);
-        setMonthEvents(Array.isArray(data) ? data : []);
-      })
-      .catch((err) => console.error('Events fetch error:', err));
   }, [projectId, currentDate]);
 
   useEffect(() => {
@@ -188,17 +144,15 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
 
     try {
       const month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-      const [tasksRes, projectRes, notesRes, eventsRes] = await Promise.all([
+      const [tasksRes, projectRes, notesRes] = await Promise.all([
         api.get(`/projects/${projectId}/tasks`),
         api.get(`/projects/${projectId}`),
         api.get(`/projects/${projectId}/events/date-notes?month=${month}`),
-        api.get(`/projects/${projectId}/events?month=${month}`),
       ]);
 
       setTasks(Array.isArray(tasksRes) ? tasksRes : []);
       setMembers(Array.isArray(projectRes?.members) ? projectRes.members : []);
       setMonthNotes(Array.isArray(notesRes) ? notesRes : []);
-      setMonthEvents(Array.isArray(eventsRes) ? eventsRes : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -210,24 +164,10 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   async function openDayPanel(dateKey: string) {
     setDayPanelDate(dateKey);
     setNoteInput('');
-    setEventTitle('');
-    setEventDescription('');
-    setEventStart(`${dateKey}T09:00`);
-    setEventEnd(`${dateKey}T10:00`);
-    setEventLink('');
-    setEventRecurrence('none');
-    setEventRecurrenceEnd('');
     setNoteLoading(true);
     try {
       const notesData = await api.get(`/projects/${projectId}/events/date-notes/${dateKey}`);
       setDayNotes(Array.isArray(notesData) ? notesData : []);
-      // Robust filtering: handle both T and space, and ensure start_datetime exists
-      const filtered = monthEvents.filter(e => {
-        if (!e.start_datetime) return false;
-        const normalized = e.start_datetime.replace(' ', 'T');
-        return normalized.startsWith(dateKey);
-      });
-      setDayEvents(filtered);
     } catch (err) {
       console.error(err);
     } finally {
@@ -250,79 +190,6 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
       showToast((err as Error).message, "error");
     } finally {
       setNoteLoading(false);
-    }
-  }
-
-  async function submitEvent() {
-    if (!dayPanelDate || !eventTitle.trim() || !eventStart || !eventEnd) return;
-    setEventLoading(true);
-    try {
-      await api.post(`/projects/${projectId}/events`, {
-        title: eventTitle.trim(),
-        start_datetime: eventStart,
-        end_datetime: eventEnd,
-        description: eventDescription.trim() || null,
-        link: eventLink.trim() || null,
-        recurrence: eventRecurrence,
-        recurrence_end: eventRecurrenceEnd || null,
-      });
-      const month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-      const updated = await api.get(`/projects/${projectId}/events?month=${month}`);
-      const all = Array.isArray(updated) ? updated : [];
-      setMonthEvents(all);
-      setDayEvents(all.filter((e: CalendarEvent) => e.start_datetime?.startsWith(dayPanelDate ?? '')));
-      setEventTitle('');
-      setEventDescription('');
-      setEventLink('');
-      showToast("Événement ajouté", "success");
-    } catch (err) {
-      showToast((err as Error).message, "error");
-    } finally {
-      setEventLoading(false);
-    }
-  }
-
-  function startEditEvent(ev: CalendarEvent) {
-    setEditingEventId(ev.id);
-    setEditEventTitle(ev.title);
-    setEditEventDescription(ev.description || '');
-    setEditEventStart(toDatetimeLocal(ev.start_datetime));
-    setEditEventEnd(toDatetimeLocal(ev.end_datetime));
-    setEditEventLink(ev.link || '');
-  }
-
-  async function submitEditEvent(eventId: number) {
-    setEditEventLoading(true);
-    try {
-      await api.patch(`/projects/${projectId}/events/${eventId}`, {
-        title: editEventTitle.trim(),
-        description: editEventDescription.trim() || null,
-        start_datetime: editEventStart,
-        end_datetime: editEventEnd,
-        link: editEventLink.trim() || null,
-      });
-      const month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-      const updated = await api.get(`/projects/${projectId}/events?month=${month}`);
-      const all = Array.isArray(updated) ? updated : [];
-      setMonthEvents(all);
-      setDayEvents(all.filter((e: CalendarEvent) => e.start_datetime?.startsWith(dayPanelDate ?? '')));
-      setEditingEventId(null);
-      showToast("Événement modifié", "success");
-    } catch (err) {
-      showToast((err as Error).message, "error");
-    } finally {
-      setEditEventLoading(false);
-    }
-  }
-
-  async function deleteEvent(eventId: number) {
-    try {
-      await api.delete(`/projects/${projectId}/events/${eventId}`);
-      setMonthEvents(prev => prev.filter(e => e.id !== eventId));
-      setDayEvents(prev => prev.filter(e => e.id !== eventId));
-      showToast("Événement supprimé", "info");
-    } catch (err) {
-      showToast((err as Error).message, "error");
     }
   }
 
@@ -762,10 +629,6 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                       const isDragOver = dragOverDateKey === dateKey;
 
                       const notesForDay = monthNotes.filter(n => n.date === dateKey);
-                      const eventsForDay = monthEvents.filter(e => {
-                        if (!e.start_datetime) return false;
-                        return e.start_datetime.replace(' ', 'T').startsWith(dateKey);
-                      });
 
                       return (
                         <div
@@ -780,22 +643,16 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                           >
                             {dayInfo.day}
                           </div>
-                          {(eventsForDay.length > 0 || notesForDay.length > 0) && (
+                          {notesForDay.length > 0 && (
                             <div className="mt-1 flex flex-col gap-0.5 overflow-hidden">
-                              {eventsForDay.slice(0, 2).map(ev => (
-                                <div key={ev.id} className="flex items-center gap-1 px-1 py-0.5 bg-violet-50 border border-violet-100 rounded text-[9px] md:text-[10px] text-violet-700 font-semibold leading-tight">
-                                  <svg className="shrink-0" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                  <span className="truncate">{ev.title}</span>
-                                </div>
-                              ))}
-                              {notesForDay.slice(0, 1).map(note => (
+                              {notesForDay.slice(0, 2).map(note => (
                                 <div key={note.id} className="flex items-start gap-1 px-1 py-0.5 bg-amber-50 border border-amber-100 rounded text-[9px] md:text-[10px] text-amber-700 font-semibold leading-tight">
                                   <svg className="shrink-0 mt-px" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                   <span className="truncate">{note.content}</span>
                                 </div>
                               ))}
-                              {(eventsForDay.length + notesForDay.length) > 3 && (
-                                <div className="text-[9px] font-black text-stone-400 px-1">+{eventsForDay.length + notesForDay.length - 3}</div>
+                              {notesForDay.length > 2 && (
+                                <div className="text-[9px] font-black text-stone-400 px-1">+{notesForDay.length - 2}</div>
                               )}
                             </div>
                           )}
@@ -951,152 +808,6 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
             </header>
 
             <div className="overflow-y-auto flex-1 p-6 space-y-6">
-
-              {/* Events section */}
-              <section>
-                <div className="flex items-center gap-2 mb-3">
-                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="text-violet-500"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <h4 className="text-xs font-black uppercase tracking-widest text-stone-500">Événements</h4>
-                  <span className="ml-auto px-2 py-0.5 bg-violet-100 text-violet-600 rounded text-[10px] font-bold">{dayEvents.length}</span>
-                </div>
-
-                {dayEvents.length === 0 ? (
-                  <p className="text-xs text-stone-400 italic px-1">Aucun événement ce jour.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {dayEvents.map(ev => (
-                      <div key={ev.id} className="group rounded-2xl border border-violet-100 bg-violet-50/50 transition-all hover:bg-violet-50">
-                        {editingEventId === ev.id ? (
-                          <div className="p-4 space-y-2">
-                            <input value={editEventTitle} onChange={e => setEditEventTitle(e.target.value)} placeholder="Titre"
-                              className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
-                            <textarea value={editEventDescription} onChange={e => setEditEventDescription(e.target.value)} placeholder="Description" rows={2}
-                              className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30 resize-none" />
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block mb-0.5">Début</label>
-                                <input type="datetime-local" value={editEventStart} onChange={e => setEditEventStart(e.target.value)}
-                                  className="w-full rounded-xl border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
-                              </div>
-                              <div>
-                                <label className="text-[9px] font-bold text-stone-400 uppercase tracking-wider block mb-0.5">Fin</label>
-                                <input type="datetime-local" value={editEventEnd} onChange={e => setEditEventEnd(e.target.value)}
-                                  className="w-full rounded-xl border border-stone-200 bg-white px-2 py-1.5 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
-                              </div>
-                            </div>
-                            <div className="relative">
-                              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-300" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-                              <input type="url" value={editEventLink} onChange={e => setEditEventLink(e.target.value)} placeholder="Lien (optionnel)"
-                                className="w-full rounded-xl border border-stone-200 bg-white pl-8 pr-3 py-1.5 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
-                            </div>
-                            <div className="flex gap-2">
-                              <button onClick={() => setEditingEventId(null)} className="flex-1 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-500 hover:bg-stone-50 transition-all">Annuler</button>
-                              <button onClick={() => submitEditEvent(ev.id)} disabled={editEventLoading}
-                                className="flex-1 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-xs font-black text-white transition-all disabled:opacity-40">
-                                {editEventLoading ? '...' : 'Enregistrer'}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="p-4 flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <p className="text-sm font-bold text-stone-900 break-words">{ev.title}</p>
-                              <p className="text-[10px] text-stone-400 mt-0.5">
-                                {new Date(toDatetimeLocal(ev.start_datetime)).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                {' → '}
-                                {new Date(toDatetimeLocal(ev.end_datetime)).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                              {ev.description && (
-                                <p className="text-xs text-stone-500 mt-1 break-words whitespace-pre-wrap">{ev.description}</p>
-                              )}
-                              {ev.link && (
-                                <a href={ev.link} target="_blank" rel="noopener noreferrer"
-                                  className="mt-1.5 flex items-center gap-1 text-[11px] text-violet-600 hover:text-violet-800 font-semibold break-all"
-                                  onClick={e => e.stopPropagation()}
-                                >
-                                  <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                  {ev.link.replace(/^https?:\/\//, '')}
-                                </a>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0 mt-0.5">
-                              <button onClick={() => startEditEvent(ev)} className="p-1.5 text-stone-300 hover:text-violet-500 rounded-lg hover:bg-violet-50 transition-all">
-                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                              </button>
-                              <button onClick={() => deleteEvent(ev.id)} className="p-1.5 text-stone-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all">
-                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Event creation form */}
-                <div className="mt-3 rounded-2xl border border-stone-200 bg-stone-50 p-4 space-y-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Nouvel événement</p>
-                  <input
-                    type="text"
-                    value={eventTitle}
-                    onChange={e => setEventTitle(e.target.value)}
-                    placeholder="Titre de l'événement"
-                    className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30"
-                  />
-                  <textarea
-                    value={eventDescription}
-                    onChange={e => setEventDescription(e.target.value)}
-                    placeholder="Description (optionnel)"
-                    rows={2}
-                    className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30 resize-none"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Début</label>
-                      <input type="datetime-local" value={eventStart} onChange={e => setEventStart(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Fin</label>
-                      <input type="datetime-local" value={eventEnd} onChange={e => setEventEnd(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-300" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-                    <input type="url" value={eventLink} onChange={e => setEventLink(e.target.value)}
-                      placeholder="Lien (optionnel)"
-                      className="w-full rounded-xl border border-stone-200 bg-white pl-8 pr-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Récurrence</label>
-                    <select value={eventRecurrence} onChange={e => setEventRecurrence(e.target.value)}
-                      className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30 appearance-none">
-                      <option value="none">Aucune</option>
-                      <option value="daily">Quotidienne</option>
-                      <option value="weekly">Hebdomadaire</option>
-                      <option value="monthly">Mensuelle</option>
-                    </select>
-                  </div>
-                  {eventRecurrence !== 'none' && (
-                    <div>
-                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Répéter jusqu'au</label>
-                      <input type="date" value={eventRecurrenceEnd} onChange={e => setEventRecurrenceEnd(e.target.value)}
-                        className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={submitEvent}
-                    disabled={!eventTitle.trim() || !eventStart || !eventEnd || (eventRecurrence !== 'none' && !eventRecurrenceEnd) || eventLoading}
-                    className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-30 active:scale-95"
-                  >
-                    {eventLoading ? '...' : eventRecurrence !== 'none' ? 'Créer les occurrences' : 'Ajouter l\'événement'}
-                  </button>
-                </div>
-              </section>
-
               {/* Notes section */}
               <section>
                 <div className="flex items-center gap-2 mb-3">
