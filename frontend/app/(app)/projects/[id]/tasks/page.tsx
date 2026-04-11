@@ -13,7 +13,7 @@ const KANBAN_COLUMNS = [
   { key: 'pending', label: 'En attente de tâches', accent: 'bg-stone-400', soft: 'bg-stone-50 text-stone-400' },
 ] as const;
 
-type ViewMode = 'list' | 'kanban';
+type ViewMode = 'list' | 'kanban' | 'wbs';
 
 export default function TasksPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -47,7 +47,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   
   const [searchUser, setSearchUser] = useState('');
   const [showUserList, setShowUserList] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedFeatureId, setSelectedFeatureId] = useState<number | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [expandedFeatures, setExpandedFeatures] = useState<Set<number>>(new Set());
@@ -518,20 +518,26 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
         </div>
         
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-           <div className="flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-sm">
-              <button 
-                onClick={() => setViewMode('list')} 
-                className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/20' : 'text-stone-400 hover:bg-stone-50'}`}
-              >
-                Liste
-              </button>
-              <button 
-                onClick={() => setViewMode('kanban')} 
-                className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'kanban' ? 'bg-stone-900 text-white' : 'text-stone-400 hover:bg-stone-50'}`}
-              >
-                Kanban
-              </button>
-           </div>
+            <div className="flex items-center gap-1.5 rounded-2xl border border-stone-200 bg-white p-1.5 shadow-sm overflow-x-auto scrollbar-none">
+               <button 
+                 onClick={() => setViewMode('list')} 
+                 className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${viewMode === 'list' ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/20' : 'text-stone-400 hover:bg-stone-50'}`}
+               >
+                 Liste
+               </button>
+               <button 
+                 onClick={() => setViewMode('kanban')} 
+                 className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${viewMode === 'kanban' ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/20' : 'text-stone-400 hover:bg-stone-50'}`}
+               >
+                 Kanban
+               </button>
+               <button 
+                 onClick={() => setViewMode('wbs')} 
+                 className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${viewMode === 'wbs' ? 'bg-stone-900 text-white shadow-lg shadow-stone-900/20' : 'text-stone-400 hover:bg-stone-50'}`}
+               >
+                 WBS
+               </button>
+            </div>
            
            <div className="flex items-center gap-2 w-full sm:w-auto">
              {!isReadOnly && (
@@ -624,6 +630,27 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
             {isLimitReached ? "Limite de 25 tâches atteinte (Forfait Gratuit)" : "Créer la première fonctionnalité"}
           </button>
         </div>
+      ) : viewMode === 'list' ? (
+        <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm">
+           {features.map(feature => {
+             const isExpanded = expandedFeatures.has(feature.id);
+             return (
+               <div key={feature.id} className="border-b border-stone-200 last:border-0">
+                  <TaskRow task={feature} isFeature={true} isExpanded={isExpanded} />
+                  {isExpanded && (
+                    <div className="divide-y divide-stone-100 animate-[fadeDown_0.2s_ease-out]">
+                      {getTasksForFeature(feature.id).map(task => (
+                        <TaskRow key={task.id} task={task} />
+                      ))}
+                      {getTasksForFeature(feature.id).length === 0 && (
+                        <div className="pl-16 py-3 text-xs text-stone-400 italic">Aucune tâche dans cette fonctionnalité</div>
+                      )}
+                    </div>
+                  )}
+               </div>
+             );
+           })}
+        </div>
       ) : viewMode === 'kanban' ? (
         <div className="flex lg:grid gap-5 lg:grid-cols-3 overflow-x-auto lg:overflow-x-visible pb-8 lg:pb-0 scrollbar-none -mx-4 px-4 md:-mx-0 md:px-0">
           {tasksByStatus.map((column) => (
@@ -666,34 +693,71 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                     {dragOverColumn === column.key ? 'Deposer ici' : 'Aucune tache'}
                   </div>
                 ) : (
-                  column.tasks.map((task) => <KanbanCard key={task.id} task={task} />)
+                  column.tasks.map((task: any) => <KanbanCard key={task.id} task={task} />)
                 )}
               </div>
             </section>
           ))}
         </div>
        ) : (
-        <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm">
-           {features.map(feature => {
-             const isExpanded = expandedFeatures.has(feature.id);
-             return (
-               <div key={feature.id} className="border-b border-stone-200 last:border-0">
-                  <TaskRow task={feature} isFeature={true} isExpanded={isExpanded} />
-                  {isExpanded && (
-                    <div className="divide-y divide-stone-100 animate-[fadeDown_0.2s_ease-out]">
-                      {getTasksForFeature(feature.id).map(task => (
-                        <TaskRow key={task.id} task={task} />
-                      ))}
-                      {getTasksForFeature(feature.id).length === 0 && (
-                        <div className="pl-16 py-3 text-xs text-stone-400 italic">Aucune tâche dans cette fonctionnalité</div>
-                      )}
+         <div className="overflow-x-auto pb-12 scrollbar-thin scrollbar-thumb-stone-200">
+          <div className="inline-flex flex-col items-center min-w-full p-4">
+            
+            {/* Main Project Node */}
+            <div className="mb-12 relative">
+              <div className="px-8 py-4 bg-orange-500 text-white rounded-2xl shadow-xl shadow-orange-200 font-black uppercase tracking-widest text-sm text-center min-w-[200px]">
+                {project.title || 'PROJET'}
+              </div>
+              <div className="absolute top-full left-1/2 w-px h-12 bg-stone-200 -translate-x-1/2" />
+            </div>
+
+            {/* Features (Level 1) */}
+            <div className="flex justify-center gap-8 relative items-start">
+              {features.map((feature: any, idx) => {
+                const subtasks = getTasksForFeature(feature.id);
+                return (
+                  <div key={feature.id} className="flex flex-col items-center group relative">
+                    {/* Horizontal connector line for siblings */}
+                    {features.length > 1 && (
+                      <div className={`absolute top-0 h-px bg-stone-200 transition-all group-hover:bg-orange-300 ${
+                        idx === 0 ? 'left-1/2 right-0' : 
+                        idx === features.length - 1 ? 'left-0 right-1/2' : 
+                        'left-0 right-0'
+                      }`} />
+                    )}
+
+                    {/* Vertical connector to parent */}
+                    <div className="w-px h-6 bg-stone-200 mb-0" />
+
+                    {/* Feature Card */}
+                    <div className="relative z-10 px-5 py-3.5 bg-white border-2 border-stone-200 rounded-2xl shadow-sm hover:border-orange-500 transition-all group-hover:shadow-md min-w-[180px] text-center">
+                      <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1.5 shrink-0">Module {idx + 1}</p>
+                      <p className="text-xs font-bold text-stone-900 leading-tight">{feature.title}</p>
                     </div>
-                  )}
-               </div>
-             );
-           })}
+
+                    {/* Vertical connector to children */}
+                    {subtasks.length > 0 && (
+                      <>
+                        <div className="w-px h-8 bg-stone-200 mt-0" />
+                        <div className="flex flex-col items-center gap-3">
+                          {subtasks.map((task) => (
+                            <div key={task.id} className="flex items-center">
+                               <div className="w-4 h-px bg-stone-200" />
+                               <div className="px-4 py-2 bg-stone-50 border border-stone-200 rounded-xl text-[11px] font-semibold text-stone-600 min-w-[160px] hover:bg-white hover:shadow-sm hover:border-stone-300 transition-all">
+                                 {task.title}
+                               </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
-      )}
+       )}
 
       {/* MODAL */}
        {showModal && (
