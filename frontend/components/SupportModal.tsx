@@ -73,7 +73,7 @@ export default function SupportModal({ onClose }: Props) {
           </button>
           
           <div className="inline-flex items-center gap-2 bg-orange-500/20 border border-orange-500/30 rounded-full px-4 py-1.5 mb-3">
-             <svg width="14" height="14" fill="none" stroke="#f97316" strokeWidth="2.5" viewBox="0 0 24 24">
+             <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
                <path d="M3 11c0-4.97 4.03-9 9-9s9 4.03 9 9" />
                <rect x="2" y="11" width="4" height="7" rx="2" />
                <rect x="18" y="11" width="4" height="7" rx="2" />
