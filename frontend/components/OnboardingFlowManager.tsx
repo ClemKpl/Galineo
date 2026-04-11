@@ -251,6 +251,9 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
     'sidebar-messages', 'create-project-btn',
   ]);
 
+  const isMobile = () => typeof window !== 'undefined' && window.innerWidth < 1024;
+  let sidebarIsOpen = false;
+
   const driverObj = driver({
     showProgress: true,
     progressText: '{{current}} / {{total}}',
@@ -258,15 +261,26 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
     prevBtnText: '← Retour',
     doneBtnText: 'Terminer ✓',
     animate: true,
-    overlayOpacity: 0.55,
+    overlayOpacity: 0.6,
     smoothScroll: true,
     allowClose: false,
+    disableActiveInteraction: true,
     onHighlightStarted: (el: Element | undefined) => {
       const attr = el?.getAttribute('data-tour') ?? '';
-      if (SIDEBAR_TOUR_ATTRS.has(attr)) {
+      const needsSidebar = SIDEBAR_TOUR_ATTRS.has(attr);
+      if (needsSidebar && !sidebarIsOpen && isMobile()) {
+        // Sidebar fermée → ouvrir et laisser l'animation se terminer avant le popover
         window.dispatchEvent(new Event('open-sidebar'));
-      } else {
+        sidebarIsOpen = true;
+        // Décaler le popover pour laisser la sidebar s'ouvrir (300ms anim + marge)
+        const popover = document.querySelector('.driver-popover') as HTMLElement | null;
+        if (popover) { popover.style.visibility = 'hidden'; }
+        setTimeout(() => {
+          if (popover) { popover.style.visibility = ''; }
+        }, 380);
+      } else if (!needsSidebar) {
         window.dispatchEvent(new Event('close-sidebar'));
+        sidebarIsOpen = false;
       }
     },
     onDestroyStarted: () => {
@@ -405,6 +419,13 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
       },
     ],
   });
+
+  // Sur mobile, pré-ouvrir la sidebar avant le premier step sidebar
+  if (isMobile()) {
+    window.dispatchEvent(new Event('open-sidebar'));
+    sidebarIsOpen = true;
+    await new Promise((r) => setTimeout(r, 400));
+  }
 
   driverObj.drive();
 }
