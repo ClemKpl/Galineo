@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import 'driver.js/dist/driver.css';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
