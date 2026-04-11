@@ -256,6 +256,23 @@ router.post('/date-notes/:date', authMiddleware, ensureProjectActive, (req, res)
   );
 });
 
+// PATCH /projects/:projectId/date-notes/:noteId
+router.patch('/date-notes/:noteId', authMiddleware, ensureProjectActive, (req, res) => {
+  const { projectId, noteId } = req.params;
+  const userId = req.user.id;
+  const { content } = req.body;
+  if (!content || !content.trim()) return res.status(400).json({ error: 'Contenu requis' });
+  db.run(
+    `UPDATE calendar_date_notes SET content = ? WHERE id = ? AND project_id = ? AND user_id = ?`,
+    [content.trim(), noteId, Number(projectId), userId],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ error: 'Note non trouvée ou non autorisé' });
+      res.json({ message: 'Note modifiée' });
+    }
+  );
+});
+
 // DELETE /projects/:projectId/date-notes/:noteId
 router.delete('/date-notes/:noteId', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId, noteId } = req.params;
