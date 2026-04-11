@@ -185,6 +185,8 @@ function loadScript(src: string, id: string): Promise<void> {
 }
 
 async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: () => void) {
+  if (typeof window === 'undefined') return;
+
   // Inject driver.js CSS from public folder
   if (!document.getElementById('driver-css')) {
     const link = document.createElement('link');
@@ -192,7 +194,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
     document.head.appendChild(link);
   }
 
-  // Load driver.js via CDN script tag (avoids Turbopack static analysis issues)
+  // Load driver.js via CDN script tag (avoids Turbopack static analysis)
   await loadScript('https://cdn.jsdelivr.net/npm/driver.js@1.4.0/dist/driver.js.iife.js', 'driver-js');
 
   // IIFE exposes as window.driver.js.driver (vite iife name = "driver.js")
@@ -200,6 +202,36 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
   const w = window as any;
   const driver = w?.driver?.js?.driver ?? w?.driver?.driver ?? w?.driver;
 
+  // ── 1. Créer un projet démo ──────────────────────────────────────────────
+  let demoProjectId: number | null = null;
+  try {
+    const res = await api.post('/projects', {
+      title: '🎯 Projet Démo — Didacticiel',
+      description: 'Projet temporaire créé automatiquement pour la visite guidée.',
+    });
+    demoProjectId = res.id;
+    router.push(`/projects/${demoProjectId}`);
+    // Attendre que la page du projet soit chargée
+    await new Promise((r) => setTimeout(r, 2000));
+  } catch (e) {
+    console.warn('Impossible de créer le projet démo, tour sans projet.', e);
+  }
+
+  // ── 2. Cleanup : suppression définitive du projet démo ───────────────────
+  const cleanup = async () => {
+    if (demoProjectId) {
+      try {
+        await api.delete(`/projects/${demoProjectId}`);           // soft delete
+        await api.delete(`/projects/${demoProjectId}/hard`);      // hard delete
+        window.dispatchEvent(new Event('projects-refresh'));
+      } catch {}
+      demoProjectId = null;
+    }
+    router.push('/dashboard');
+    onDone();
+  };
+
+  // ── 3. Lancer le tour ───────────────────────────────────────────────────
   const driverObj = driver({
     showProgress: true,
     progressText: '{{current}} / {{total}}',
@@ -212,9 +244,10 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
     allowClose: true,
     onDestroyStarted: () => {
       driverObj.destroy();
-      onDone();
+      cleanup();
     },
     steps: [
+      // ── Sidebar (visible depuis le projet) ────────────────────────────
       {
         element: '[data-tour="dashboard"]',
         popover: {
@@ -227,7 +260,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
         element: '[data-tour="projects-nav"]',
         popover: {
           title: '📁 Vos Projets',
-          description: 'Retrouvez et gérez tous vos projets. Créez-en un nouveau avec le bouton + en haut.',
+          description: 'Retrouvez et gérez tous vos projets depuis la barre latérale. Créez-en un nouveau avec le bouton + en haut à gauche.',
           side: 'right',
         },
       },
@@ -235,66 +268,83 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
         element: '[data-tour="sidebar-notifications"]',
         popover: {
           title: '🔔 Notifications',
-          description: 'Restez informé de toutes les activités : assignations, mentions, deadlines et messages.',
+          description: 'Restez informé de toutes les activités : assignations, mentions, deadlines et messages d\'équipe.',
           side: 'right',
         },
       },
       {
         element: '[data-tour="sidebar-messages"]',
         popover: {
-          title: '💬 Chat Privé',
-          description: 'Échangez en direct avec vos collaborateurs via des conversations privées ou des groupes.',
+          title: '💬 Discussions',
+          description: 'Échangez en direct avec vos collaborateurs via des messages privés ou des groupes de discussion.',
           side: 'right',
         },
       },
+      // ── Transition vers le projet démo ───────────────────────────────
       {
-        element: '[data-tour="sidebar-trash"]',
         popover: {
-          title: '🗑️ Corbeille',
-          description: 'Retrouvez ici les projets supprimés. Vous avez 30 jours pour les restaurer.',
-          side: 'right',
+          title: '🚀 Bienvenue dans votre projet !',
+          description: 'Nous avons ouvert un projet démo pour vous faire découvrir toutes les fonctionnalités disponibles à l\'intérieur d\'un projet.',
+        },
+      },
+      // ── Onglets du projet ────────────────────────────────────────────
+      {
+        element: '[data-tour="project-tab-dashboard"]',
+        popover: {
+          title: '🏠 Vue d\'ensemble',
+          description: 'Le dashboard projet centralise l\'avancement global, les membres actifs et les dernières activités de l\'équipe.',
+          side: 'bottom',
         },
       },
       {
-        element: '[data-tour="global-ai"]',
+        element: '[data-tour="project-tab-tasks"]',
         popover: {
-          title: '🤖 Assistant IA',
-          description: 'Votre conseiller intelligent disponible partout dans Galineo. Posez-lui vos questions sur la gestion de projets.',
-          side: 'left',
+          title: '✅ Gestion des Tâches (WBS)',
+          description: 'Organisez vos tâches en hiérarchies (WBS), assignez-les à votre équipe et suivez leur avancement en temps réel.',
+          side: 'bottom',
         },
       },
       {
+        element: '[data-tour="project-tab-gantt"]',
         popover: {
-          title: '🏗️ Gestion des Tâches (WBS)',
-          description: 'Dans chaque projet, l\'onglet WBS vous permet d\'organiser vos tâches en hiérarchies et de visualiser l\'avancement.',
+          title: '📅 Planning GANTT',
+          description: 'Visualisez votre projet sur une timeline interactive. Gérez les deadlines et exportez votre planning en CSV.',
+          side: 'bottom',
         },
       },
       {
-        popover: {
-          title: '📅 Planification GANTT',
-          description: 'Visualisez votre projet sur une timeline interactive. Exportez votre planning en CSV pour le partager.',
-        },
-      },
-      {
+        element: '[data-tour="project-tab-ai"]',
         popover: {
           title: '🧠 Galineo Room',
-          description: 'L\'IA dédiée à votre projet. Elle connaît vos tâches, vos membres et peut agir directement sur votre projet.',
+          description: 'L\'IA dédiée à votre projet. Elle connaît vos tâches et vos membres, et peut agir directement sur votre projet pour vous aider.',
+          side: 'bottom',
         },
       },
+      {
+        element: '[data-tour="project-tab-chat"]',
+        popover: {
+          title: '💬 Chat d\'équipe',
+          description: 'Communiquez en temps réel avec tous les membres du projet. Partagez des fichiers et coordonnez votre travail.',
+          side: 'bottom',
+        },
+      },
+      {
+        element: '[data-tour="project-tab-settings"]',
+        popover: {
+          title: '👥 Membres & Paramètres',
+          description: 'Gérez les membres de votre équipe, leurs rôles et les paramètres du projet depuis cet onglet.',
+          side: 'bottom',
+        },
+      },
+      // ── Final ────────────────────────────────────────────────────────
       {
         popover: {
           title: '🎉 Vous êtes prêt !',
-          description: 'Vous connaissez maintenant l\'essentiel de Galineo. Commencez par créer votre premier projet et invitez votre équipe !',
+          description: 'Vous connaissez maintenant l\'essentiel de Galineo. Le projet démo va être supprimé automatiquement. À vous de jouer !',
         },
       },
     ],
   });
-
-  // Navigate to dashboard first if needed, then start
-  if (!window.location.pathname.includes('/dashboard')) {
-    router.push('/dashboard');
-    await new Promise((r) => setTimeout(r, 800));
-  }
 
   driverObj.drive();
 }

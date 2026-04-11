@@ -141,8 +141,16 @@ export default function ProjectLayout({ children, params }: { children: React.Re
           <nav className="flex gap-6 mt-6 pb-0 overflow-x-auto scrollbar-none -mx-4 px-4 md:-mx-0 md:px-0">
             {tabs.map(tab => {
               const active = pathname === tab.path;
+              const tourAttr = tab.name === 'Dashboard' ? 'project-tab-dashboard'
+                : tab.name === 'Tâches' ? 'project-tab-tasks'
+                : tab.name === 'GANTT' ? 'project-tab-gantt'
+                : tab.name === 'Assistant IA' ? 'project-tab-ai'
+                : tab.name === 'Chat' ? 'project-tab-chat'
+                : tab.name === 'Paramètres' ? 'project-tab-settings'
+                : undefined;
               return (
                 <Link key={tab.path} href={tab.path}
+                  {...(tourAttr ? { 'data-tour': tourAttr } : {})}
                   className={`pb-3 text-[10px] font-black uppercase tracking-[0.15em] border-b-2 transition-all duration-200 whitespace-nowrap ${
                     active ? 'border-orange-500 text-orange-600' : 'border-transparent text-stone-400 hover:text-stone-800'
                   }`}>
