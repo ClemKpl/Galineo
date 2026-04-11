@@ -246,6 +246,11 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
   };
 
   // ── 4. Lancer le tour ───────────────────────────────────────────────────
+  const SIDEBAR_TOUR_ATTRS = new Set([
+    'dashboard', 'projects-nav', 'sidebar-notifications',
+    'sidebar-messages', 'create-project-btn',
+  ]);
+
   const driverObj = driver({
     showProgress: true,
     progressText: '{{current}} / {{total}}',
@@ -255,7 +260,15 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
     animate: true,
     overlayOpacity: 0.55,
     smoothScroll: true,
-    allowClose: true,
+    allowClose: false,
+    onHighlightStarted: (el: Element | undefined) => {
+      const attr = el?.getAttribute('data-tour') ?? '';
+      if (SIDEBAR_TOUR_ATTRS.has(attr)) {
+        window.dispatchEvent(new Event('open-sidebar'));
+      } else {
+        window.dispatchEvent(new Event('close-sidebar'));
+      }
+    },
     onDestroyStarted: () => {
       driverObj.destroy();
       cleanup();

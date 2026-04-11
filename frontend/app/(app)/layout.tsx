@@ -32,15 +32,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const handleOpenSupport = () => setShowSupport(true);
     const handleOpenCreateProject = () => setShowModal(true);
     const handleCloseCreateProject = () => setShowModal(false);
+    const handleOpenSidebar = () => setMobileNavOpen(true);
+    const handleCloseSidebar = () => setMobileNavOpen(false);
     window.addEventListener('open-pricing', handleOpenPricing);
     window.addEventListener('open-support', handleOpenSupport);
     window.addEventListener('open-create-project', handleOpenCreateProject);
     window.addEventListener('close-create-project', handleCloseCreateProject);
+    window.addEventListener('open-sidebar', handleOpenSidebar);
+    window.addEventListener('close-sidebar', handleCloseSidebar);
     return () => {
       window.removeEventListener('open-pricing', handleOpenPricing);
       window.removeEventListener('open-support', handleOpenSupport);
       window.removeEventListener('open-create-project', handleOpenCreateProject);
       window.removeEventListener('close-create-project', handleCloseCreateProject);
+      window.removeEventListener('open-sidebar', handleOpenSidebar);
+      window.removeEventListener('close-sidebar', handleCloseSidebar);
     };
   }, []);
 

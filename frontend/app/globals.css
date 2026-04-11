@@ -283,7 +283,7 @@ html, body {
 .driver-popover-next-btn {
   border-radius: 99px !important;
   border: 2px solid #1c1917 !important;
-  background: #f97316 !important;
+  background: var(--accent-500) !important;
   color: #ffffff !important;
   font-weight: 800 !important;
   font-size: 12px !important;
@@ -297,7 +297,7 @@ html, body {
 .driver-popover-next-btn:hover {
   transform: translate(-1px, -1px) !important;
   box-shadow: 3px 4px 0px #1c1917 !important;
-  background: #ea580c !important;
+  background: var(--accent-600) !important;
 }
 
 .driver-popover-next-btn:not([disabled]):active {
@@ -306,27 +306,7 @@ html, body {
 }
 
 .driver-popover-close-btn {
-  position: absolute !important;
-  top: 14px !important;
-  right: 14px !important;
-  width: 26px !important;
-  height: 26px !important;
-  border-radius: 99px !important;
-  border: 2px solid #1c1917 !important;
-  background: #f5f5f4 !important;
-  color: #1c1917 !important;
-  font-size: 14px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  line-height: 1 !important;
-  padding: 0 !important;
-  transition: background 0.1s !important;
-}
-
-.driver-popover-close-btn:hover {
-  background: #e7e5e4 !important;
+  display: none !important;
 }
 
 /* Arrow styling — keep functional, match border */
