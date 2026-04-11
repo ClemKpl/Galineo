@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProject } from '../ProjectContext';
@@ -62,6 +62,45 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
+  const wbsRef = useRef<HTMLDivElement>(null);
+
+  function downloadWBSAsPNG() {
+    const node = wbsRef.current;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const foreignObj = document.createElementNS(svgNS, 'foreignObject');
+    foreignObj.setAttribute('width', String(rect.width));
+    foreignObj.setAttribute('height', String(rect.height));
+    const clone = node.cloneNode(true) as HTMLElement;
+    clone.style.transform = 'none';
+    foreignObj.appendChild(clone);
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('xmlns', svgNS);
+    svg.setAttribute('width', String(rect.width));
+    svg.setAttribute('height', String(rect.height));
+    svg.appendChild(foreignObj);
+    const svgStr = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = rect.width * 2;
+      canvas.height = rect.height * 2;
+      const ctx = canvas.getContext('2d')!;
+      ctx.scale(2, 2);
+      ctx.fillStyle = '#fafaf9';
+      ctx.fillRect(0, 0, rect.width, rect.height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      const link = document.createElement('a');
+      link.download = `wbs-${(project as any).title || 'projet'}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+    img.src = url;
+  }
 
   useEffect(() => {
     fetchData();
@@ -700,63 +739,96 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
           ))}
         </div>
        ) : (
-         <div className="overflow-x-auto pb-12 scrollbar-thin scrollbar-thumb-stone-200">
-          <div className="inline-flex flex-col items-center min-w-full p-4">
-            
-            {/* Main Project Node */}
-            <div className="mb-12 relative">
-              <div className="px-8 py-4 bg-orange-500 text-white rounded-2xl shadow-xl shadow-orange-200 font-black uppercase tracking-widest text-sm text-center min-w-[200px]">
-                {project.title || 'PROJET'}
+         <div>
+           {/* WBS toolbar */}
+           <div className="mb-4 flex items-center justify-between gap-4">
+             <div className="flex items-center gap-4 text-xs text-stone-400 font-bold">
+               <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-orange-500 inline-block" /> Fonctionnalité</span>
+               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Terminée</span>
+               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> En cours / À faire</span>
+             </div>
+             <button
+               onClick={downloadWBSAsPNG}
+               className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-600 font-bold rounded-xl hover:bg-stone-50 transition-all active:scale-95 shadow-sm text-xs uppercase tracking-widest"
+             >
+               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+               Télécharger PNG
+             </button>
+           </div>
+           <div className="overflow-x-auto pb-12 scrollbar-thin scrollbar-thumb-stone-200 bg-white rounded-2xl border border-stone-200 shadow-sm">
+            <div ref={wbsRef} className="inline-flex flex-col items-center min-w-full p-8">
+
+              {/* Main Project Node */}
+              <div className="mb-12 relative">
+                <div className="px-8 py-4 bg-orange-500 text-white rounded-2xl shadow-xl shadow-orange-200 font-black uppercase tracking-widest text-sm text-center min-w-[200px]">
+                  {(project as any).title || 'PROJET'}
+                </div>
+                <div className="absolute top-full left-1/2 w-px h-12 bg-stone-200 -translate-x-1/2" />
               </div>
-              <div className="absolute top-full left-1/2 w-px h-12 bg-stone-200 -translate-x-1/2" />
-            </div>
 
-            {/* Features (Level 1) */}
-            <div className="flex justify-center gap-8 relative items-start">
-              {features.map((feature: any, idx) => {
-                const subtasks = getTasksForFeature(feature.id);
-                return (
-                  <div key={feature.id} className="flex flex-col items-center group relative">
-                    {/* Horizontal connector line for siblings */}
-                    {features.length > 1 && (
-                      <div className={`absolute top-0 h-px bg-stone-200 transition-all group-hover:bg-orange-300 ${
-                        idx === 0 ? 'left-1/2 right-0' : 
-                        idx === features.length - 1 ? 'left-0 right-1/2' : 
-                        'left-0 right-0'
-                      }`} />
-                    )}
+              {/* Features (Level 1) */}
+              <div className="flex justify-center gap-8 relative items-start flex-wrap">
+                {features.map((feature: any, idx) => {
+                  const subtasks = getTasksForFeature(feature.id);
+                  const doneCount = subtasks.filter((t: any) => t.status === 'done').length;
+                  const progress = subtasks.length > 0 ? Math.round((doneCount / subtasks.length) * 100) : null;
+                  return (
+                    <div key={feature.id} className="flex flex-col items-center group relative">
+                      {/* Horizontal connector line for siblings */}
+                      {features.length > 1 && (
+                        <div className={`absolute top-0 h-px bg-stone-200 transition-all group-hover:bg-orange-300 ${
+                          idx === 0 ? 'left-1/2 right-0' :
+                          idx === features.length - 1 ? 'left-0 right-1/2' :
+                          'left-0 right-0'
+                        }`} />
+                      )}
 
-                    {/* Vertical connector to parent */}
-                    <div className="w-px h-6 bg-stone-200 mb-0" />
+                      {/* Vertical connector to parent */}
+                      <div className="w-px h-6 bg-stone-200 mb-0" />
 
-                    {/* Feature Card */}
-                    <div className="relative z-10 px-5 py-3.5 bg-white border-2 border-stone-200 rounded-2xl shadow-sm hover:border-orange-500 transition-all group-hover:shadow-md min-w-[180px] text-center">
-                      <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1.5 shrink-0">Module {idx + 1}</p>
-                      <p className="text-xs font-bold text-stone-900 leading-tight">{feature.title}</p>
-                    </div>
-
-                    {/* Vertical connector to children */}
-                    {subtasks.length > 0 && (
-                      <>
-                        <div className="w-px h-8 bg-stone-200 mt-0" />
-                        <div className="flex flex-col items-center gap-3">
-                          {subtasks.map((task) => (
-                            <div key={task.id} className="flex items-center">
-                               <div className="w-4 h-px bg-stone-200" />
-                               <div className="px-4 py-2 bg-stone-50 border border-stone-200 rounded-xl text-[11px] font-semibold text-stone-600 min-w-[160px] hover:bg-white hover:shadow-sm hover:border-stone-300 transition-all">
-                                 {task.title}
-                               </div>
+                      {/* Feature Card */}
+                      <div className="relative z-10 px-5 py-3.5 bg-white border-2 border-stone-200 rounded-2xl shadow-sm hover:border-orange-500 transition-all group-hover:shadow-md min-w-[180px] text-center">
+                        <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1.5 shrink-0">Module {idx + 1}</p>
+                        <p className="text-xs font-bold text-stone-900 leading-tight">{feature.title}</p>
+                        {progress !== null && (
+                          <div className="mt-2">
+                            <div className="w-full h-1 bg-stone-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-emerald-400 rounded-full transition-all" style={{ width: `${progress}%` }} />
                             </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+                            <p className="text-[9px] font-black text-stone-400 mt-1">{doneCount}/{subtasks.length} tâches</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Vertical connector to children */}
+                      {subtasks.length > 0 && (
+                        <>
+                          <div className="w-px h-8 bg-stone-200 mt-0" />
+                          <div className="flex flex-col items-center gap-2">
+                            {subtasks.map((task: any) => (
+                              <div key={task.id} className="flex items-center gap-0">
+                                 <div className="w-4 h-px bg-stone-200" />
+                                 <div className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-[11px] font-semibold min-w-[160px] transition-all cursor-pointer hover:shadow-sm ${task.status === 'done' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-white hover:border-stone-300'}`}
+                                   onClick={() => openEditModal(task)}
+                                 >
+                                   <span className={`w-2 h-2 rounded-full shrink-0 ${task.status === 'done' ? 'bg-emerald-500' : task.status === 'in_progress' ? 'bg-amber-400' : 'bg-stone-300'}`} />
+                                   <span className={task.status === 'done' ? 'line-through opacity-60' : ''}>{task.title}</span>
+                                 </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                      {subtasks.length === 0 && (
+                        <div className="mt-2 text-[9px] text-stone-300 font-bold uppercase tracking-wider">Aucune tâche</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
+         </div>
        )}
 
       {/* MODAL */}
