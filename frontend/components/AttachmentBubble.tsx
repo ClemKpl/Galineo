@@ -9,20 +9,20 @@ export default function AttachmentBubble({ url, name, type, isMe }: Props) {
   const getApiUrl = () => {
     let base = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
     if (typeof window !== 'undefined' && base.includes('localhost') && window.location.hostname !== 'localhost') {
-      // Si on est sur mobile/réseau local, remplacer localhost par l'IP du serveur (qui est la même que celle du navigateur)
-      base = base.replace('localhost', window.location.hostname);
+      base = 'https://galineo-api.onrender.com';
     }
     return base;
   };
 
   const API_URL = getApiUrl();
   
-  // Résolution de l'URL pour gérer localhost en prod/réseau local
+  // Résolution de l'URL
   let finalUrl = url;
   if (url.startsWith('/')) {
     finalUrl = `${API_URL}${url}`;
-  } else if (url.startsWith('http://localhost') && typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    finalUrl = url.replace('localhost', window.location.hostname);
+  } else if (url.startsWith('http://localhost')) {
+    // Transformer l'ancien localhost vers le nouveau Render pour que les anciens fichiers s'ouvrent en prod
+    finalUrl = url.replace('http://localhost:3001', 'https://galineo-api.onrender.com');
   }
 
   const isImage = type?.startsWith('image/');

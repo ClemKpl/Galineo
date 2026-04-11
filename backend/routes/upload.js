@@ -6,7 +6,11 @@ const fs = require('fs');
 const { authMiddleware } = require('../middleware/auth');
 
 const UPLOAD_DIR = path.join(__dirname, '../uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+console.log('📂 [UPLOAD] Répertoire cible :', UPLOAD_DIR);
+if (!fs.existsSync(UPLOAD_DIR)) {
+  console.log('📂 [UPLOAD] Création du répertoire...');
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 const ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp',
@@ -46,7 +50,10 @@ router.post('/', authMiddleware, (req, res) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'Aucun fichier reçu.' });
  
-    const url = `/uploads/${req.file.filename}`;
+    const isProd = process.env.NODE_ENV === 'production' || !__dirname.includes('xampp');
+    const apiBase = isProd ? 'https://galineo-api.onrender.com' : `http://localhost:${process.env.PORT || 3001}`;
+    const url = `${apiBase}/uploads/${req.file.filename}`;
+
     res.json({
       url,
       name: req.file.originalname,
