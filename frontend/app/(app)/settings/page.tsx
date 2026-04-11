@@ -538,6 +538,30 @@ export default function SettingsPage() {
       </div>
 
 
+      {/* ── Didacticiel ── */}
+      <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+        <div className="px-6 py-5 border-b border-stone-100">
+          <h2 className="font-semibold text-stone-900 text-base">Didacticiel</h2>
+          <p className="text-stone-400 text-sm mt-0.5">Relancez la visite guidée de Galineo à tout moment</p>
+        </div>
+        <div className="px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
+          <p className="text-sm text-stone-500 max-w-sm">
+            Le didacticiel vous guide à travers les fonctionnalités clés de Galineo en 2 minutes.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event('galineo:start-tour'))}
+            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors"
+          >
+            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v4l3 3"/>
+            </svg>
+            Relancer le didacticiel
+          </button>
+        </div>
+      </div>
+
       {/* ── Danger zone ── */}
       <div className="bg-white rounded-2xl border border-red-100 overflow-hidden">
         <div className="px-6 py-5 border-b border-red-50">

@@ -195,8 +195,10 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
   // Load driver.js via CDN script tag (avoids Turbopack static analysis issues)
   await loadScript('https://cdn.jsdelivr.net/npm/driver.js@1.4.0/dist/driver.js.iife.js', 'driver-js');
 
+  // IIFE exposes as window.driver.js.driver (vite iife name = "driver.js")
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { driver } = (window as any).driver as any;
+  const w = window as any;
+  const driver = w?.driver?.js?.driver ?? w?.driver?.driver ?? w?.driver;
 
   const driverObj = driver({
     showProgress: true,
@@ -348,6 +350,13 @@ export default function OnboardingFlowManager() {
     await updateOnboarding({ onboarding_status: 2 });
     setPhase('done');
   };
+
+  // Listen for manual tour trigger from settings
+  useEffect(() => {
+    const handleManualTour = () => runOnboardingTour(router, () => {});
+    window.addEventListener('galineo:start-tour', handleManualTour);
+    return () => window.removeEventListener('galineo:start-tour', handleManualTour);
+  }, [router]);
 
   if (!ready || phase === 'done') return null;
 
