@@ -65,41 +65,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const wbsRef = useRef<HTMLDivElement>(null);
 
   function downloadWBSAsPNG() {
-    const node = wbsRef.current;
-    if (!node) return;
-    const rect = node.getBoundingClientRect();
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const foreignObj = document.createElementNS(svgNS, 'foreignObject');
-    foreignObj.setAttribute('width', String(rect.width));
-    foreignObj.setAttribute('height', String(rect.height));
-    const clone = node.cloneNode(true) as HTMLElement;
-    clone.style.transform = 'none';
-    foreignObj.appendChild(clone);
-    const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('xmlns', svgNS);
-    svg.setAttribute('width', String(rect.width));
-    svg.setAttribute('height', String(rect.height));
-    svg.appendChild(foreignObj);
-    const svgStr = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([svgStr], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = rect.width * 2;
-      canvas.height = rect.height * 2;
-      const ctx = canvas.getContext('2d')!;
-      ctx.scale(2, 2);
-      ctx.fillStyle = '#fafaf9';
-      ctx.fillRect(0, 0, rect.width, rect.height);
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      const link = document.createElement('a');
-      link.download = `wbs-${(project as any).title || 'projet'}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    };
-    img.src = url;
+    window.print();
   }
 
   useEffect(() => {
@@ -752,10 +718,10 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-600 font-bold rounded-xl hover:bg-stone-50 transition-all active:scale-95 shadow-sm text-xs uppercase tracking-widest"
              >
                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-               Télécharger PNG
+               Imprimer / Exporter
              </button>
            </div>
-           <div className="overflow-x-auto pb-12 scrollbar-thin scrollbar-thumb-stone-200 bg-white rounded-2xl border border-stone-200 shadow-sm">
+           <div id="wbs-print-area" className="overflow-x-auto pb-12 scrollbar-thin scrollbar-thumb-stone-200 bg-white rounded-2xl border border-stone-200 shadow-sm">
             <div ref={wbsRef} className="inline-flex flex-col items-center min-w-full p-8">
 
               {/* Main Project Node */}
@@ -1092,6 +1058,11 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
       <style jsx>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media print {
+          body * { visibility: hidden !important; }
+          #wbs-print-area, #wbs-print-area * { visibility: visible !important; }
+          #wbs-print-area { position: fixed; inset: 0; padding: 24px; background: white; z-index: 9999; overflow: visible; }
+        }
       `}</style>
       
       {showPricing && (
