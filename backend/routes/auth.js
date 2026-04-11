@@ -169,9 +169,37 @@ router.post('/login', (req, res) => {
       return res.status(401).json({ error: "Aucun compte n'est associé à cette adresse. Veuillez en créer un." });
     }
 
+    const MAX_LOGIN_ATTEMPTS = 5;
+    const MAX_LOGIN_ATTEMPTS_LEVEL2 = 10;
+    const LOCK_5_MIN = 5 * 60 * 1000;
+    const LOCK_10_MIN = 10 * 60 * 1000;
+
+    // Vérification du verrouillage de compte
+    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+      const waitTime = Math.ceil((new Date(user.locked_until).getTime() - Date.now()) / 60000);
+      return res.status(423).json({ error: `Compte temporairement verrouillé. Réessayez dans ${waitTime} minute(s).` });
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      logActivity(null, user.id, 'auth', null, 'login_failed', { ip: req.ip }).catch(() => {});
+      const attempts = (user.login_attempts || 0) + 1;
+      let lock = user.locked_until;
+      
+      if (attempts === MAX_LOGIN_ATTEMPTS) {
+        lock = new Date(Date.now() + LOCK_5_MIN).toISOString();
+      } else if (attempts >= MAX_LOGIN_ATTEMPTS_LEVEL2) {
+        lock = new Date(Date.now() + LOCK_10_MIN).toISOString();
+      }
+
+      db.run('UPDATE users SET login_attempts = ?, locked_until = ? WHERE id = ?', [attempts, lock, user.id]);
+      logActivity(null, user.id, 'auth', null, 'login_failed', { ip: req.ip, attempts }).catch(() => {});
+      
+      if (attempts === MAX_LOGIN_ATTEMPTS) {
+        return res.status(423).json({ error: 'Trop de tentatives. Compte verrouillé pendant 5 minutes.' });
+      } else if (attempts >= MAX_LOGIN_ATTEMPTS_LEVEL2) {
+        return res.status(423).json({ error: 'Trop de tentatives. Compte verrouillé pendant 10 minutes.' });
+      }
+
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 

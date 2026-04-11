@@ -52,18 +52,12 @@ function ProjectCard({
   currentUserId, 
   onClick, 
   onManageMembers,
-  onDragStart,
-  onDragEnd,
-  isDragging,
   onToggleFavorite
 }: { 
   project: Project; 
   currentUserId: number; 
   onClick: () => void; 
   onManageMembers?: () => void;
-  onDragStart: (e: React.DragEvent) => void;
-  onDragEnd: () => void;
-  isDragging: boolean;
   onToggleFavorite: (e: React.MouseEvent, id: number) => void;
 }) {
   const isOwner = project.owner_id === currentUserId;
@@ -76,12 +70,7 @@ function ProjectCard({
   return (
     <div 
       onClick={onClick}
-      draggable="true"
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      className={`bg-white rounded-2xl border p-5 transition-all duration-300 cursor-grab active:cursor-grabbing group ${
-        isDragging ? 'opacity-40 scale-95 border-blue-300 border-dashed bg-stone-50' : 'border-stone-200 hover:border-stone-300 hover:-translate-y-1'
-      }`}>
+      className="bg-white rounded-2xl border p-5 transition-all duration-300 cursor-pointer group border-stone-200 hover:border-stone-300 hover:-translate-y-1">
       <div className="flex items-center gap-4 mb-4">
         <div className="w-12 h-12 rounded-xl bg-stone-100 flex items-center justify-center text-stone-500 font-bold overflow-hidden shrink-0">
           {project.avatar ? (
@@ -193,8 +182,6 @@ export default function DashboardPage() {
   const [taskView, setTaskView] = useState<'tasks' | 'features'>('tasks');
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
-  const [draggingProjectId, setDraggingProjectId] = useState<number | null>(null);
-
   const { showToast } = useToast();
   const handleToggleFavorite = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
@@ -523,57 +510,6 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* Action Drop Zones */}
-      {draggingProjectId && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-6 animate-[slideUp_0.4s_cubic-bezier(0.16,1,0.3,1)]">
-          {/* History Zone */}
-          <div 
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={async (e) => {
-              e.preventDefault();
-              try {
-                await api.patch(`/projects/${draggingProjectId}/complete`, {});
-                showToast("Projet archivé", "info");
-                setDraggingProjectId(null);
-                fetchProjects();
-              } catch (err) { 
-                showToast("Erreur lors de l'archivage", "error"); 
-              }
-            }}
-            className="w-40 h-40 rounded-3xl bg-white/80 backdrop-blur-xl border-2 border-dashed border-stone-200 flex flex-col items-center justify-center gap-3 group/zone hover:border-emerald-500 hover:bg-emerald-50/50 transition-all shadow-xl shadow-stone-200/50"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-xl group-hover/zone:bg-emerald-500 group-hover/zone:text-white transition-colors">📦</div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 group-hover/zone:text-emerald-600">Archiver</p>
-          </div>
-
-          {/* Trash Zone */}
-          <div 
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={async (e) => {
-              e.preventDefault();
-              if (window.confirm("Voulez-vous vraiment mettre ce projet à la corbeille ?")) {
-                try {
-                  await api.delete(`/projects/${draggingProjectId}`);
-                  showToast("Projet mis à la corbeille", "info");
-                  setDraggingProjectId(null);
-                  fetchProjects();
-                } catch (err) { 
-                  showToast("Action réservée au propriétaire", "error"); 
-                  setDraggingProjectId(null); 
-                }
-              }
-            }}
-            className="w-40 h-40 rounded-3xl bg-white/80 backdrop-blur-xl border-2 border-dashed border-stone-200 flex flex-col items-center justify-center gap-3 group/zone hover:border-red-500 hover:bg-red-50/50 transition-all shadow-xl shadow-stone-200/50"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-stone-100 flex items-center justify-center text-xl group-hover/zone:bg-red-500 group-hover/zone:text-white transition-colors">🗑️</div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-stone-400 group-hover/zone:text-red-600">Supprimer</p>
-          </div>
-        </div>
-      )}
-
-      <style jsx>{`
-        @keyframes slideUp { from { transform: translate(-50%, 100px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-      `}</style>
     </div>
   );
 }
