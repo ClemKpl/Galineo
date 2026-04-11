@@ -91,6 +91,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   const [dayNotes, setDayNotes] = useState<DateNote[]>([]);
   const [noteInput, setNoteInput] = useState('');
   const [noteLoading, setNoteLoading] = useState(false);
+  const [monthNotes, setMonthNotes] = useState<(DateNote & { date: string })[]>([]);
 
   // Task edit form
   const [title, setTitle] = useState('');
@@ -109,6 +110,13 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
+
+  useEffect(() => {
+    const month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+    api.get(`/projects/${projectId}/events/date-notes?month=${month}`)
+      .then((data) => setMonthNotes(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [projectId, currentDate]);
 
   useEffect(() => {
     if (!editingTask) return;
@@ -164,7 +172,9 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     try {
       await api.post(`/projects/${projectId}/events/date-notes/${dayPanelDate}`, { content: noteInput });
       const notesData = await api.get(`/projects/${projectId}/events/date-notes/${dayPanelDate}`);
-      setDayNotes(Array.isArray(notesData) ? notesData : []);
+      const notes = Array.isArray(notesData) ? notesData : [];
+      setDayNotes(notes);
+      setMonthNotes(prev => [...prev.filter(n => n.date !== dayPanelDate), ...notes.map((n: DateNote) => ({ ...n, date: dayPanelDate! }))]);
       setNoteInput('');
       showToast("Note ajoutée", "success");
     } catch (err) {
@@ -179,6 +189,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     try {
       await api.delete(`/projects/${projectId}/events/date-notes/${noteId}`);
       setDayNotes((prev) => prev.filter((n) => n.id !== noteId));
+      setMonthNotes((prev) => prev.filter((n) => n.id !== noteId));
       showToast("Note supprimée", "info");
     } catch (err) {
       showToast((err as Error).message, "error");
@@ -592,19 +603,34 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                       const dateKey = formatDateInput(dayInfo.date);
                       const isDragOver = dragOverDateKey === dateKey;
 
+                      const notesForDay = monthNotes.filter(n => n.date === dateKey);
+
                       return (
                         <div
                           key={dayIndex}
                           onDragOver={(e) => handleDragOver(e, dateKey)}
                           onDrop={(e) => handleDrop(e, dateKey)}
                           onClick={() => openDayPanel(dateKey)}
-                          className={`min-h-[100px] md:min-h-[140px] bg-white border-r border-stone-100 last:border-r-0 p-1 md:p-2 transition-all relative cursor-pointer group/day ${!dayInfo.currentMonth ? 'bg-stone-50/30' : 'hover:bg-orange-50/30'} ${isDragOver ? 'bg-orange-50' : ''}`}
+                          className={`min-h-[100px] md:min-h-[140px] bg-white border-r border-stone-100 last:border-r-0 p-1 md:p-2 transition-all relative cursor-pointer group/day flex flex-col ${!dayInfo.currentMonth ? 'bg-stone-50/30' : 'hover:bg-orange-50/30'} ${isDragOver ? 'bg-orange-50' : ''}`}
                         >
                           <div
-                            className={`w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-lg text-[10px] md:text-xs font-black transition-all ${isTodayDate ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' : 'text-stone-400 group-hover/day:text-stone-900 group-hover/day:bg-stone-100'}`}
+                            className={`w-6 h-6 md:w-8 md:h-8 flex items-center justify-center rounded-lg text-[10px] md:text-xs font-black transition-all shrink-0 ${isTodayDate ? 'bg-orange-500 text-white shadow-lg shadow-orange-200' : 'text-stone-400 group-hover/day:text-stone-900 group-hover/day:bg-stone-100'}`}
                           >
                             {dayInfo.day}
                           </div>
+                          {notesForDay.length > 0 && (
+                            <div className="mt-1 flex flex-col gap-0.5 overflow-hidden">
+                              {notesForDay.slice(0, 2).map(note => (
+                                <div key={note.id} className="flex items-start gap-1 px-1 py-0.5 bg-amber-50 border border-amber-100 rounded text-[9px] md:text-[10px] text-amber-700 font-semibold leading-tight truncate">
+                                  <span className="shrink-0 mt-px">📝</span>
+                                  <span className="truncate">{note.content}</span>
+                                </div>
+                              ))}
+                              {notesForDay.length > 2 && (
+                                <div className="text-[9px] font-black text-amber-500 px-1">+{notesForDay.length - 2}</div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}

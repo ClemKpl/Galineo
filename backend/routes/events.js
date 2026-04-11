@@ -199,6 +199,27 @@ router.delete('/:id', authMiddleware, ensureProjectActive, (req, res) => {
   });
 });
 
+// GET /projects/:projectId/date-notes?month=YYYY-MM (all notes for a month)
+router.get('/date-notes', authMiddleware, (req, res) => {
+  const { projectId } = req.params;
+  const { month } = req.query; // e.g. "2025-04"
+  if (!month) return res.status(400).json({ error: 'month requis' });
+  const start = `${month}-01`;
+  const end = `${month}-31`;
+  db.all(
+    `SELECT n.id, n.date, n.content, n.user_id, u.name as author_name
+     FROM calendar_date_notes n
+     JOIN users u ON n.user_id = u.id
+     WHERE n.project_id = ? AND n.date >= ? AND n.date <= ?
+     ORDER BY n.date ASC, n.created_at ASC`,
+    [Number(projectId), start, end],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
+});
+
 // GET /projects/:projectId/date-notes/:date
 router.get('/date-notes/:date', authMiddleware, (req, res) => {
   const { projectId, date } = req.params;
