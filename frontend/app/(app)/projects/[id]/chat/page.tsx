@@ -301,7 +301,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               onChange={handleInputChange}
               autoComplete="off"
             />
-            <button type="submit" disabled={!newMessage.trim() && !pendingFile} className="w-10 h-10 bg-orange-500 hover:bg-orange-600 disabled:opacity-40 text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-orange-500/20 shrink-0 active:scale-90">
+            <button type="submit" disabled={!newMessage.trim() && !pendingFile} className="w-10 h-10 bg-orange-500 hover:bg-orange-600 text-white rounded-xl flex items-center justify-center transition-all shadow-lg shadow-orange-500/20 shrink-0 active:scale-90">
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
             </button>
           </div>
