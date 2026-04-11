@@ -438,7 +438,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                 )}
                 <div ref={wizardEndRef} />
               </div>
-              <div className="p-4 bg-white border-t border-stone-100 shrink-0">
+              <div className="p-4 bg-white/60 backdrop-blur-md border-t border-stone-100 shrink-0">
                 <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md,.docx,.xlsx" onChange={handleFileChange} />
                 {pendingFile && (
                   <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-700 font-medium">

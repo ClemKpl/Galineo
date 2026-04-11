@@ -224,7 +224,7 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Message Input */}
-      <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-20 border-t border-stone-100 bg-white/95 px-4 py-4 backdrop-blur md:relative md:bottom-0 md:z-auto md:bg-white md:px-8 md:py-4">
+      <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-20 border-t border-stone-100 bg-white/60 backdrop-blur-md px-4 py-4 md:relative md:bottom-0 md:z-auto md:px-8 md:py-4">
         <form onSubmit={handleSendMessage} className="mx-auto max-w-4xl">
           <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md,.docx,.xlsx" onChange={handleFileChange} />
           {pendingFile && (

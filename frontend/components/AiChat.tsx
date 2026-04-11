@@ -243,7 +243,7 @@ export default function AiChat() {
           </div>
 
           {/* Input - Fixé au dessus de la nav mobile */}
-          <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 mx-auto w-full lg:w-auto px-4 py-4 lg:py-5 border-t border-stone-100 bg-white/95 backdrop-blur shrink-0 z-[70] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+          <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 mx-auto w-full lg:w-auto px-4 py-4 lg:py-5 border-t border-stone-100 bg-white/60 backdrop-blur-md shrink-0 z-[70] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
             <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md,.docx,.xlsx" onChange={handleFileChange} />
             {pendingFile && (
               <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-700 font-medium">
