@@ -29,8 +29,10 @@ router.get('/', authMiddleware, (req, res) => {
   const params = [id];
 
   if (month) {
-    sql += ` AND (e.start_datetime LIKE ? OR e.end_datetime LIKE ?)`;
-    params.push(`${month}%`, `${month}%`);
+    const start = `${month}-01`;
+    const end = `${month}-31`;
+    sql += ` AND e.start_datetime >= ? AND e.start_datetime <= ?`;
+    params.push(start, end);
   }
 
   sql += ` ORDER BY e.start_datetime ASC`;

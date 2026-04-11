@@ -265,49 +265,7 @@ const initDb = async () => {
       await migrateNull('ai_active_tasks', 'user_id');
     }
 
-    // 2. Migrations (Colonnes manquantes)
-    await ensureColumn('users', 'last_login_at', 'TIMESTAMP');
-    await ensureColumn('users', 'plan', "TEXT DEFAULT 'free'");
-    await ensureColumn('users', 'ai_prompts_count', 'INTEGER DEFAULT 0');
-    await ensureColumn('users', 'notif_project_updates', 'INTEGER DEFAULT 1');
-    await ensureColumn('users', 'notif_added_to_project', 'INTEGER DEFAULT 1');
-    await ensureColumn('users', 'notif_deadlines', 'INTEGER DEFAULT 1');
-    await ensureColumn('users', 'notif_mentions', 'INTEGER DEFAULT 1');
-    await ensureColumn('users', 'notif_task_completed', 'INTEGER DEFAULT 1');
-    await ensureColumn('users', 'notif_ai_responses', 'INTEGER DEFAULT 1');
-    await ensureColumn('users', 'notif_chat_messages', 'INTEGER DEFAULT 1');
-    await ensureColumn('users', 'ai_history_duration', 'INTEGER DEFAULT 60');
-    await ensureColumn('users', 'stripe_customer_id', 'TEXT');
-    await ensureColumn('users', 'stripe_subscription_id', 'TEXT');
-    await ensureColumn('users', 'login_attempts', 'INTEGER DEFAULT 0');
-    await ensureColumn('users', 'locked_until', 'TIMESTAMP');
-    await ensureColumn('users', 'banned', 'INTEGER DEFAULT 0');
-    await ensureColumn('messages', 'attachment_url', 'TEXT');
-    await ensureColumn('messages', 'attachment_name', 'TEXT');
-    await ensureColumn('messages', 'attachment_type', 'TEXT');
-    await ensureColumn('chat_group_messages', 'attachment_url', 'TEXT');
-    await ensureColumn('chat_group_messages', 'attachment_name', 'TEXT');
-    await ensureColumn('chat_group_messages', 'attachment_type', 'TEXT');
-    await ensureColumn('ai_messages', 'attachment_url', 'TEXT');
-    await ensureColumn('ai_messages', 'attachment_name', 'TEXT');
-    await ensureColumn('ai_messages', 'attachment_type', 'TEXT');
-
-    await ensureColumn('projects', 'status', "TEXT DEFAULT 'active'");
-    await ensureColumn('projects', 'avatar', 'TEXT');
-    await ensureColumn('projects', 'deadline', 'TIMESTAMP');
-    await ensureColumn('projects', 'start_date', 'TEXT');
-
-    await ensureColumn('notifications', 'from_user_id', 'INTEGER');
-    await ensureColumn('notifications', 'task_id', 'INTEGER');
-
-    await ensureColumn('project_members', 'is_favorite', 'INTEGER DEFAULT 0');
-    await ensureColumn('tasks', 'color', 'TEXT');
-    await ensureColumn('tasks', 'phase', 'TEXT');
-    await ensureColumn('tasks', 'start_date', 'TEXT');
-    await ensureColumn('calendar_events', 'link', 'TEXT');
-    await ensureColumn('calendar_events', 'recurrence_group', 'TEXT');
-    
-    // 3. Tables additionnelles
+    // 2. Tables additionnelles
     const extraTables = [
       `CREATE TABLE IF NOT EXISTS task_comments (
         id ${autoInc},
@@ -433,6 +391,48 @@ const initDb = async () => {
     for (const q of extraTables) {
       await new Promise((res, rej) => db.run(q, (err) => err ? rej(err) : res()));
     }
+
+    // 3. Migrations (Colonnes manquantes) - APRES la création des tables
+    await ensureColumn('users', 'last_login_at', 'TIMESTAMP');
+    await ensureColumn('users', 'plan', "TEXT DEFAULT 'free'");
+    await ensureColumn('users', 'ai_prompts_count', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'notif_project_updates', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'notif_added_to_project', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'notif_deadlines', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'notif_mentions', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'notif_task_completed', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'notif_ai_responses', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'notif_chat_messages', 'INTEGER DEFAULT 1');
+    await ensureColumn('users', 'ai_history_duration', 'INTEGER DEFAULT 60');
+    await ensureColumn('users', 'stripe_customer_id', 'TEXT');
+    await ensureColumn('users', 'stripe_subscription_id', 'TEXT');
+    await ensureColumn('users', 'login_attempts', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'locked_until', 'TIMESTAMP');
+    await ensureColumn('users', 'banned', 'INTEGER DEFAULT 0');
+    await ensureColumn('messages', 'attachment_url', 'TEXT');
+    await ensureColumn('messages', 'attachment_name', 'TEXT');
+    await ensureColumn('messages', 'attachment_type', 'TEXT');
+    await ensureColumn('chat_group_messages', 'attachment_url', 'TEXT');
+    await ensureColumn('chat_group_messages', 'attachment_name', 'TEXT');
+    await ensureColumn('chat_group_messages', 'attachment_type', 'TEXT');
+    await ensureColumn('ai_messages', 'attachment_url', 'TEXT');
+    await ensureColumn('ai_messages', 'attachment_name', 'TEXT');
+    await ensureColumn('ai_messages', 'attachment_type', 'TEXT');
+
+    await ensureColumn('projects', 'status', "TEXT DEFAULT 'active'");
+    await ensureColumn('projects', 'avatar', 'TEXT');
+    await ensureColumn('projects', 'deadline', 'TIMESTAMP');
+    await ensureColumn('projects', 'start_date', 'TEXT');
+
+    await ensureColumn('notifications', 'from_user_id', 'INTEGER');
+    await ensureColumn('notifications', 'task_id', 'INTEGER');
+
+    await ensureColumn('project_members', 'is_favorite', 'INTEGER DEFAULT 0');
+    await ensureColumn('tasks', 'color', 'TEXT');
+    await ensureColumn('tasks', 'phase', 'TEXT');
+    await ensureColumn('tasks', 'start_date', 'TEXT');
+    await ensureColumn('calendar_events', 'link', 'TEXT');
+    await ensureColumn('calendar_events', 'recurrence_group', 'TEXT');
 
     // 4. Données par défaut
     const defaults = [
