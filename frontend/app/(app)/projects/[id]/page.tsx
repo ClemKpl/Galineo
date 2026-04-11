@@ -112,6 +112,7 @@ export default function ProjectDashboardPage() {
   const [eventTitle, setEventTitle] = useState('');
   const [eventStart, setEventStart] = useState('');
   const [eventEnd, setEventEnd] = useState('');
+  const [eventDescription, setEventDescription] = useState('');
   const [eventLink, setEventLink] = useState('');
   const [eventRecurrence, setEventRecurrence] = useState('none');
   const [eventRecurrenceEnd, setEventRecurrenceEnd] = useState('');
@@ -158,11 +159,13 @@ export default function ProjectDashboardPage() {
         title: eventTitle,
         start_datetime: eventStart,
         end_datetime: eventEnd,
+        description: eventDescription.trim() || null,
         link: eventLink.trim() || null,
         recurrence: eventRecurrence,
         recurrence_end: eventRecurrenceEnd || null,
       });
       setEventTitle('');
+      setEventDescription('');
       setEventStart('');
       setEventEnd('');
       setEventLink('');
@@ -369,6 +372,9 @@ export default function ProjectDashboardPage() {
                           {' → '}
                           {new Date(ev.end_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
+                        {ev.description && (
+                          <p className="text-xs text-stone-500 mt-1 break-words whitespace-pre-wrap">{ev.description}</p>
+                        )}
                         {ev.link && (
                           <a href={ev.link} target="_blank" rel="noopener noreferrer"
                             className="mt-1 flex items-center gap-1 text-[11px] text-violet-600 hover:text-violet-800 font-semibold truncate max-w-[200px]"
@@ -597,6 +603,13 @@ export default function ProjectDashboardPage() {
                 required
                 placeholder="Titre de l'événement"
                 className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30"
+              />
+              <textarea
+                value={eventDescription}
+                onChange={e => setEventDescription(e.target.value)}
+                placeholder="Description (optionnel)"
+                rows={2}
+                className="w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30 resize-none"
               />
               <div className="grid grid-cols-2 gap-3">
                 <div>

@@ -111,6 +111,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
 
   // Event creation form
   const [eventTitle, setEventTitle] = useState('');
+  const [eventDescription, setEventDescription] = useState('');
   const [eventStart, setEventStart] = useState('');
   const [eventEnd, setEventEnd] = useState('');
   const [eventLink, setEventLink] = useState('');
@@ -184,6 +185,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     setDayPanelDate(dateKey);
     setNoteInput('');
     setEventTitle('');
+    setEventDescription('');
     setEventStart(`${dateKey}T09:00`);
     setEventEnd(`${dateKey}T10:00`);
     setEventLink('');
@@ -227,6 +229,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
         title: eventTitle.trim(),
         start_datetime: eventStart,
         end_datetime: eventEnd,
+        description: eventDescription.trim() || null,
         link: eventLink.trim() || null,
         recurrence: eventRecurrence,
         recurrence_end: eventRecurrenceEnd || null,
@@ -237,6 +240,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
       setMonthEvents(all);
       setDayEvents(all.filter((e: CalendarEvent) => e.start_datetime.startsWith(dayPanelDate!)));
       setEventTitle('');
+      setEventDescription('');
       setEventLink('');
       showToast("Événement ajouté", "success");
     } catch (err) {
@@ -886,6 +890,9 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                               {' → '}
                               {new Date(ev.end_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                             </p>
+                            {ev.description && (
+                              <p className="text-xs text-stone-500 mt-1 break-words whitespace-pre-wrap">{ev.description}</p>
+                            )}
                             {ev.link && (
                               <a href={ev.link} target="_blank" rel="noopener noreferrer"
                                 className="mt-1.5 flex items-center gap-1 text-[11px] text-violet-600 hover:text-violet-800 font-semibold truncate max-w-xs"
@@ -916,6 +923,13 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                     onChange={e => setEventTitle(e.target.value)}
                     placeholder="Titre de l'événement"
                     className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30"
+                  />
+                  <textarea
+                    value={eventDescription}
+                    onChange={e => setEventDescription(e.target.value)}
+                    placeholder="Description (optionnel)"
+                    rows={2}
+                    className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30 resize-none"
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <div>
@@ -982,7 +996,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                     {dayNotes.map((note) => (
                       <div key={note.id} className="group rounded-2xl border border-amber-100 bg-amber-50/50 p-4 transition-all hover:bg-amber-50">
                         <div className="flex items-start justify-between gap-3">
-                          <p className="text-sm text-stone-800 leading-relaxed">{note.content}</p>
+                          <p className="text-sm text-stone-800 leading-relaxed break-words whitespace-pre-wrap">{note.content}</p>
                           {user && note.user_id === user.id && (
                             <button onClick={() => deleteNote(note.id)} className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-stone-300 hover:text-red-500">
                               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
