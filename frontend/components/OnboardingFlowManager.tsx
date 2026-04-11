@@ -202,27 +202,37 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
   const w = window as any;
   const driver = w?.driver?.js?.driver ?? w?.driver?.driver ?? w?.driver;
 
-  // ── 1. Créer un projet démo ──────────────────────────────────────────────
-  let demoProjectId: number | null = null;
-  try {
-    const res = await api.post('/projects', {
-      title: '🎯 Projet Démo — Didacticiel',
-      description: 'Projet temporaire créé automatiquement pour la visite guidée.',
-    });
-    demoProjectId = res.id;
-    router.push(`/projects/${demoProjectId}`);
-    // Attendre que la page du projet soit chargée
-    await new Promise((r) => setTimeout(r, 2000));
-  } catch (e) {
-    console.warn('Impossible de créer le projet démo, tour sans projet.', e);
+  // ── 1. Naviguer sur le dashboard ────────────────────────────────────────
+  if (!window.location.pathname.includes('/dashboard')) {
+    router.push('/dashboard');
+    await new Promise((r) => setTimeout(r, 800));
   }
 
-  // ── 2. Cleanup : suppression définitive du projet démo ───────────────────
+  // ── 2. État du projet démo ───────────────────────────────────────────────
+  let demoProjectId: number | null = null;
+
+  const createAndEnterDemoProject = async () => {
+    try {
+      const res = await api.post('/projects', {
+        title: '🎯 Projet Démo — Didacticiel',
+        description: 'Projet temporaire créé automatiquement pour la visite guidée.',
+      });
+      demoProjectId = res.id;
+      window.dispatchEvent(new Event('projects-refresh'));
+      router.push(`/projects/${demoProjectId}`);
+      await new Promise((r) => setTimeout(r, 2000));
+    } catch (e) {
+      console.warn('Impossible de créer le projet démo.', e);
+    }
+  };
+
+  // ── 3. Cleanup ───────────────────────────────────────────────────────────
   const cleanup = async () => {
+    window.dispatchEvent(new Event('close-create-project'));
     if (demoProjectId) {
       try {
-        await api.delete(`/projects/${demoProjectId}`);           // soft delete
-        await api.delete(`/projects/${demoProjectId}/hard`);      // hard delete
+        await api.delete(`/projects/${demoProjectId}`);
+        await api.delete(`/projects/${demoProjectId}/hard`);
         window.dispatchEvent(new Event('projects-refresh'));
       } catch {}
       demoProjectId = null;
@@ -231,7 +241,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
     onDone();
   };
 
-  // ── 3. Lancer le tour ───────────────────────────────────────────────────
+  // ── 4. Lancer le tour ───────────────────────────────────────────────────
   const driverObj = driver({
     showProgress: true,
     progressText: '{{current}} / {{total}}',
@@ -247,7 +257,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
       cleanup();
     },
     steps: [
-      // ── Sidebar (visible depuis le projet) ────────────────────────────
+      // ── Dashboard ────────────────────────────────────────────────────
       {
         element: '[data-tour="dashboard"]',
         popover: {
@@ -260,7 +270,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
         element: '[data-tour="projects-nav"]',
         popover: {
           title: '📁 Vos Projets',
-          description: 'Retrouvez et gérez tous vos projets depuis la barre latérale. Créez-en un nouveau avec le bouton + en haut à gauche.',
+          description: 'Retrouvez et gérez tous vos projets depuis la barre latérale.',
           side: 'right',
         },
       },
@@ -280,14 +290,47 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
           side: 'right',
         },
       },
-      // ── Transition vers le projet démo ───────────────────────────────
+      // ── Création de projet ───────────────────────────────────────────
       {
+        element: '[data-tour="create-project-btn"]',
         popover: {
-          title: '🚀 Bienvenue dans votre projet !',
-          description: 'Nous avons ouvert un projet démo pour vous faire découvrir toutes les fonctionnalités disponibles à l\'intérieur d\'un projet.',
+          title: '✨ Créer un projet',
+          description: 'Ce bouton ouvre le panneau de création de projet. Deux modes sont disponibles : l\'Assistant IA ou la saisie manuelle.',
+          side: 'right',
+          onNextClick: () => {
+            window.dispatchEvent(new Event('open-create-project'));
+            setTimeout(() => driverObj.moveNext(), 400);
+          },
         },
       },
-      // ── Onglets du projet ────────────────────────────────────────────
+      {
+        element: '[data-tour="create-ai"]',
+        popover: {
+          title: '🤖 Assistant de création IA',
+          description: 'Décrivez votre projet en quelques mots. L\'IA génère automatiquement la structure, les tâches et les paramètres pour vous.',
+          side: 'bottom',
+        },
+      },
+      {
+        element: '[data-tour="create-manual"]',
+        popover: {
+          title: '📝 Saisie manuelle',
+          description: 'Vous avez déjà tout en tête ? Remplissez le formulaire classique et configurez votre projet à votre rythme.',
+          side: 'top',
+          onNextClick: async () => {
+            window.dispatchEvent(new Event('close-create-project'));
+            await createAndEnterDemoProject();
+            driverObj.moveNext();
+          },
+        },
+      },
+      // ── Projet démo ──────────────────────────────────────────────────
+      {
+        popover: {
+          title: '🚀 Bienvenue dans votre projet démo !',
+          description: 'Nous avons ouvert un projet temporaire pour vous faire découvrir toutes les fonctionnalités disponibles à l\'intérieur d\'un projet.',
+        },
+      },
       {
         element: '[data-tour="project-tab-dashboard"]',
         popover: {
@@ -300,7 +343,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
         element: '[data-tour="project-tab-tasks"]',
         popover: {
           title: '✅ Gestion des Tâches (WBS)',
-          description: 'Organisez vos tâches en hiérarchies (WBS), assignez-les à votre équipe et suivez leur avancement en temps réel.',
+          description: 'Organisez vos tâches en hiérarchies, assignez-les à votre équipe et suivez leur avancement en temps réel.',
           side: 'bottom',
         },
       },
@@ -316,7 +359,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
         element: '[data-tour="project-tab-ai"]',
         popover: {
           title: '🧠 Galineo Room',
-          description: 'L\'IA dédiée à votre projet. Elle connaît vos tâches et vos membres, et peut agir directement sur votre projet pour vous aider.',
+          description: 'L\'IA dédiée à votre projet. Elle connaît vos tâches et vos membres, et peut agir directement sur votre projet.',
           side: 'bottom',
         },
       },
@@ -340,7 +383,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
       {
         popover: {
           title: '🎉 Vous êtes prêt !',
-          description: 'Vous connaissez maintenant l\'essentiel de Galineo. Le projet démo va être supprimé automatiquement. À vous de jouer !',
+          description: 'Vous connaissez maintenant l\'essentiel de Galineo. Le projet démo sera supprimé automatiquement. À vous de jouer !',
         },
       },
     ],

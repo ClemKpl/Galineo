@@ -30,11 +30,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handleOpenPricing = () => setShowPricing(true);
     const handleOpenSupport = () => setShowSupport(true);
+    const handleOpenCreateProject = () => setShowModal(true);
+    const handleCloseCreateProject = () => setShowModal(false);
     window.addEventListener('open-pricing', handleOpenPricing);
     window.addEventListener('open-support', handleOpenSupport);
+    window.addEventListener('open-create-project', handleOpenCreateProject);
+    window.addEventListener('close-create-project', handleCloseCreateProject);
     return () => {
       window.removeEventListener('open-pricing', handleOpenPricing);
       window.removeEventListener('open-support', handleOpenSupport);
+      window.removeEventListener('open-create-project', handleOpenCreateProject);
+      window.removeEventListener('close-create-project', handleCloseCreateProject);
     };
   }, []);
 

@@ -379,6 +379,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
               {/* AI Card */}
               <button
                 onClick={() => setView('wizard')}
+                data-tour="create-ai"
                 className={`w-full group relative p-6 rounded-3xl shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all text-left overflow-hidden border-2 border-transparent hover:border-white/20 ${ACCENT_BG[accent]}`}
               >
                 <div className="relative z-10 flex items-start gap-4">
@@ -398,6 +399,7 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
               {/* Manual Card */}
               <button
                 onClick={() => setView('manual')}
+                data-tour="create-manual"
                 className="w-full group p-6 bg-stone-50 border-2 border-stone-100 rounded-3xl hover:bg-white hover:border-orange-200 hover:shadow-lg transition-all text-left flex items-start gap-4"
               >
                 <div className="w-12 h-12 rounded-2xl bg-stone-200 group-hover:bg-orange-100 flex items-center justify-center text-stone-500 group-hover:text-orange-500 text-2xl transition-colors">📝</div>

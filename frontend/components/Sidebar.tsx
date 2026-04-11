@@ -551,6 +551,7 @@ export default function Sidebar({
         </div>
 
         <button onClick={onNewProject}
+          data-tour="create-project-btn"
           className="mt-2 flex items-center gap-3 px-3 py-2.5 rounded-xl text-stone-500 hover:text-stone-100 hover:bg-stone-800 transition-colors text-sm font-medium w-full text-left border border-dashed border-stone-800 hover:border-stone-700">
           <IconPlus />
           Nouveau projet
