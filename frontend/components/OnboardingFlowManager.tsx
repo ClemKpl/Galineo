@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import 'driver.js/dist/driver.css';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -183,7 +184,6 @@ function TourChoiceModal({ userName, onStart, onSkip }: { userName: string; onSt
 
 async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: () => void) {
   const { driver } = await import('driver.js');
-  await import('driver.js/dist/driver.css');
 
   const driverObj = driver({
     showProgress: true,
