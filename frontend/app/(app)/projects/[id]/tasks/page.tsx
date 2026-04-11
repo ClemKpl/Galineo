@@ -806,8 +806,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                           <div className="w-px h-8 bg-stone-200 mt-0" />
                           <div className="flex flex-col items-center gap-2">
                             {subtasks.map((task: any) => (
-                              <div key={task.id} className="flex items-center gap-0">
-                                 <div className="w-4 h-px bg-stone-200" />
+                              <div key={task.id} className="flex items-center">
                                  <div className={`flex items-center gap-2 px-4 py-2 border rounded-xl text-[11px] font-semibold min-w-[160px] transition-all cursor-pointer hover:shadow-sm ${task.status === 'done' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-white hover:border-stone-300'}`}
                                    onClick={() => openEditModal(task)}
                                  >
