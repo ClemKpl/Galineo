@@ -120,7 +120,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
 
-          <main className={`min-h-0 flex-1 overflow-x-hidden ${pathname.includes('/ai') || (pathname.includes('/messages') && pathname !== '/messages') || pathname.includes('/chat') ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-6 lg:pb-0'}`}>
+          <main className={`min-h-0 flex-1 overflow-x-hidden ${pathname.includes('/ai') || (pathname.includes('/messages') && pathname !== '/messages') || pathname.includes('/chat') ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-32 lg:pb-0'}`}>
             {children}
           </main>
 
