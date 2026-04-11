@@ -659,7 +659,6 @@ router.post('/chat', authMiddleware, checkAiPromptLimit, async (req, res) => {
       for (let i = 0; i < apiKeys.length; i++) {
         const apiKey = apiKeys[i];
         try {
-          const actions = [];
           const genAI = new GoogleGenerativeAI(apiKey);
           let sysInstruct = '';
           let currentTools = undefined;
@@ -701,7 +700,7 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
             1. PAS DE DOUBLONS : Si l'historique montre que le projet est déjà créé, refuse de recommencer et renvoie vers la Room.
             2. DATE DU JOUR : ${currentDate}.
             3. ÉCHÉANCES : Tu DOIS générer une 'start_date' et une 'due_date' (YYYY-MM-DD) pour CHAQUE élément.
-            4. CONFIRMATION : Tu dois demander et recevoir une confirmation pour la structure globale. Une fois le "Oui" reçu, appelle 'creer_projet' IMMÉDIATEMENT. Ne demande jamais deux fois.
+            4. CONFIRMATION OBLIGATOIRE : Tu ne dois JAMAIS appeler l'outil 'creer_projet' sans avoir présenté la structure et obtenu un accord explicite (ex: "Oui", "Ok", "Go"). L'action doit être validée par l'utilisateur.
             
             DISCOURS APRÈS CRÉATION :
             Confirme la création et précise que pour modifier ou AJOUTER des éléments, il doit maintenant utiliser l'Assistant IA interne au projet.`;
@@ -721,7 +720,7 @@ CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existan
             RÈGLES CRITIQUES :
             1. STRUCTURE : Pour toute nouvelle fonctionnalité créée, génère AU MOINS 2 tâches liées.
             2. ÉCHÉANCES : Fournis TOUJOURS une 'start_date' et une 'due_date' pour toute création.
-            3. DÉCISION : Demande confirmation avant de modifier ou créer quoi que ce soit. Une fois que l'utilisateur a donné son accord, s'exécute IMMÉDIATEMENT sans redemander une deuxième fois.
+            3. CONFIRMATION OBLIGATOIRE : Tu as l'interdiction de créer, modifier ou supprimer quoi que ce soit sans l'accord explicite de l'utilisateur ("Oui", "Ok", "C'est bon"). Présente ton plan, puis attends sa validation.
             4. SUPPRESSION : L'outil 'supprimer_elements' est EXPÉRIMENTAL. Ne l'utilise que si explicitement demandé et confirme toujours avant. Tu ne peux PAS supprimer un projet entier, seulement ses tâches/fonctionnalités.`;
             currentTools = toolConfig;
           }
