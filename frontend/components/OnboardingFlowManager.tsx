@@ -424,7 +424,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
   if (isMobile()) {
     window.dispatchEvent(new Event('open-sidebar'));
     sidebarIsOpen = true;
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 700));
   }
 
   driverObj.drive();
