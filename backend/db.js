@@ -427,6 +427,7 @@ const initDb = async () => {
     await ensureColumn('projects', 'avatar', 'TEXT');
     await ensureColumn('projects', 'deadline', 'TIMESTAMP');
     await ensureColumn('projects', 'start_date', 'TEXT');
+    await ensureColumn('email_verifications', 'attempts', 'INTEGER DEFAULT 0');
 
     await ensureColumn('notifications', 'from_user_id', 'INTEGER');
     await ensureColumn('notifications', 'task_id', 'INTEGER');
