@@ -167,7 +167,7 @@ export default function ProjectDashboardPage() {
       };
 
       if (editingEventId) {
-        await api.put(`/projects/${project.id}/events/${editingEventId}`, payload);
+        await api.patch(`/projects/${project.id}/events/${editingEventId}`, payload);
       } else {
         await api.post(`/projects/${project.id}/events`, payload);
       }
