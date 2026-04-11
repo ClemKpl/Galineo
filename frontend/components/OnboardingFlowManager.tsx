@@ -181,18 +181,28 @@ function TourChoiceModal({ userName, onStart, onSkip }: { userName: string; onSt
 
 // ─── Phase 2 : Tour Driver.js ─────────────────────────────────────────────────
 
+function loadScript(src: string, id: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.getElementById(id)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.id = id; s.src = src; s.onload = () => resolve(); s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
 async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: () => void) {
-  // Inject driver.js CSS from public folder (avoids Next.js CSS module resolution issues)
+  // Inject driver.js CSS from public folder
   if (!document.getElementById('driver-css')) {
     const link = document.createElement('link');
-    link.id = 'driver-css';
-    link.rel = 'stylesheet';
-    link.href = '/driver.css';
+    link.id = 'driver-css'; link.rel = 'stylesheet'; link.href = '/driver.css';
     document.head.appendChild(link);
   }
 
-  if (typeof window === 'undefined') return;
-  const { driver } = await import('driver.js');
+  // Load driver.js via CDN script tag (avoids Turbopack static analysis issues)
+  await loadScript('https://cdn.jsdelivr.net/npm/driver.js@1.4.0/dist/driver.js.iife.js', 'driver-js');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { driver } = (window as any).driver as { driver: typeof import('driver.js').driver };
 
   const driverObj = driver({
     showProgress: true,
