@@ -238,7 +238,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
       const updated = await api.get(`/projects/${projectId}/events?month=${month}`);
       const all = Array.isArray(updated) ? updated : [];
       setMonthEvents(all);
-      setDayEvents(all.filter((e: CalendarEvent) => e.start_datetime.startsWith(dayPanelDate!)));
+      setDayEvents(all.filter((e: CalendarEvent) => e.start_datetime?.startsWith(dayPanelDate ?? '')));
       setEventTitle('');
       setEventDescription('');
       setEventLink('');
