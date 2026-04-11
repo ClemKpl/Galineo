@@ -70,16 +70,16 @@ router.get('/', authMiddleware, (req, res) => {
 router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId } = req.params;
   const userId = req.user.id;
-  const { title, description, start_datetime, end_datetime, location, attendee_ids } = req.body;
+  const { title, description, start_datetime, end_datetime, location, link, attendee_ids } = req.body;
 
   if (!title || !start_datetime || !end_datetime) {
     return res.status(400).json({ error: 'Titre, date de début et date de fin requis' });
   }
 
   db.run(
-    `INSERT INTO calendar_events (project_id, title, description, start_datetime, end_datetime, location, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [Number(projectId), title, description || null, start_datetime, end_datetime, location || null, userId],
+    `INSERT INTO calendar_events (project_id, title, description, start_datetime, end_datetime, location, link, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [Number(projectId), title, description || null, start_datetime, end_datetime, location || null, link || null, userId],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       const eventId = this.lastID;
@@ -131,7 +131,7 @@ router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
 // PATCH /projects/:projectId/events/:id
 router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
   const { projectId, id } = req.params;
-  const { title, description, start_datetime, end_datetime, location, attendee_ids } = req.body;
+  const { title, description, start_datetime, end_datetime, location, link, attendee_ids } = req.body;
 
   db.get(
     `SELECT * FROM calendar_events WHERE id = ? AND project_id = ?`,
@@ -141,7 +141,7 @@ router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
       if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
 
       db.run(
-        `UPDATE calendar_events SET title = ?, description = ?, start_datetime = ?, end_datetime = ?, location = ?
+        `UPDATE calendar_events SET title = ?, description = ?, start_datetime = ?, end_datetime = ?, location = ?, link = ?
          WHERE id = ? AND project_id = ?`,
         [
           title ?? event.title,
@@ -149,6 +149,7 @@ router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
           start_datetime ?? event.start_datetime,
           end_datetime ?? event.end_datetime,
           location !== undefined ? location : event.location,
+          link !== undefined ? link : event.link,
           id,
           projectId,
         ],

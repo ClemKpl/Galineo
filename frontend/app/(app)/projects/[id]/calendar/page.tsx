@@ -50,6 +50,20 @@ type DateNote = {
   author_name: string;
 };
 
+type CalendarEvent = {
+  id: number;
+  title: string;
+  description?: string | null;
+  start_datetime: string;
+  end_datetime: string;
+  location?: string | null;
+  link?: string | null;
+  created_by: number;
+  creator_name?: string;
+  attendee_ids: number[];
+  attendee_names: string[];
+};
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function diffInDays(start: Date, end: Date) {
@@ -92,6 +106,15 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   const [noteInput, setNoteInput] = useState('');
   const [noteLoading, setNoteLoading] = useState(false);
   const [monthNotes, setMonthNotes] = useState<(DateNote & { date: string })[]>([]);
+  const [monthEvents, setMonthEvents] = useState<CalendarEvent[]>([]);
+  const [dayEvents, setDayEvents] = useState<CalendarEvent[]>([]);
+
+  // Event creation form
+  const [eventTitle, setEventTitle] = useState('');
+  const [eventStart, setEventStart] = useState('');
+  const [eventEnd, setEventEnd] = useState('');
+  const [eventLink, setEventLink] = useState('');
+  const [eventLoading, setEventLoading] = useState(false);
 
   // Task edit form
   const [title, setTitle] = useState('');
@@ -115,6 +138,9 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     const month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
     api.get(`/projects/${projectId}/events/date-notes?month=${month}`)
       .then((data) => setMonthNotes(Array.isArray(data) ? data : []))
+      .catch(() => {});
+    api.get(`/projects/${projectId}/events?month=${month}`)
+      .then((data) => setMonthEvents(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, [projectId, currentDate]);
 
@@ -155,10 +181,15 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   async function openDayPanel(dateKey: string) {
     setDayPanelDate(dateKey);
     setNoteInput('');
+    setEventTitle('');
+    setEventStart(`${dateKey}T09:00`);
+    setEventEnd(`${dateKey}T10:00`);
+    setEventLink('');
     setNoteLoading(true);
     try {
       const notesData = await api.get(`/projects/${projectId}/events/date-notes/${dateKey}`);
       setDayNotes(Array.isArray(notesData) ? notesData : []);
+      setDayEvents(monthEvents.filter(e => e.start_datetime.startsWith(dateKey)));
     } catch (err) {
       console.error(err);
     } finally {
@@ -181,6 +212,42 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
       showToast((err as Error).message, "error");
     } finally {
       setNoteLoading(false);
+    }
+  }
+
+  async function submitEvent() {
+    if (!dayPanelDate || !eventTitle.trim() || !eventStart || !eventEnd) return;
+    setEventLoading(true);
+    try {
+      await api.post(`/projects/${projectId}/events`, {
+        title: eventTitle.trim(),
+        start_datetime: eventStart,
+        end_datetime: eventEnd,
+        link: eventLink.trim() || null,
+      });
+      const month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+      const updated = await api.get(`/projects/${projectId}/events?month=${month}`);
+      const all = Array.isArray(updated) ? updated : [];
+      setMonthEvents(all);
+      setDayEvents(all.filter((e: CalendarEvent) => e.start_datetime.startsWith(dayPanelDate!)));
+      setEventTitle('');
+      setEventLink('');
+      showToast("Événement ajouté", "success");
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setEventLoading(false);
+    }
+  }
+
+  async function deleteEvent(eventId: number) {
+    try {
+      await api.delete(`/projects/${projectId}/events/${eventId}`);
+      setMonthEvents(prev => prev.filter(e => e.id !== eventId));
+      setDayEvents(prev => prev.filter(e => e.id !== eventId));
+      showToast("Événement supprimé", "info");
+    } catch (err) {
+      showToast((err as Error).message, "error");
     }
   }
 
@@ -604,6 +671,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                       const isDragOver = dragOverDateKey === dateKey;
 
                       const notesForDay = monthNotes.filter(n => n.date === dateKey);
+                      const eventsForDay = monthEvents.filter(e => e.start_datetime.startsWith(dateKey));
 
                       return (
                         <div
@@ -618,16 +686,22 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                           >
                             {dayInfo.day}
                           </div>
-                          {notesForDay.length > 0 && (
+                          {(eventsForDay.length > 0 || notesForDay.length > 0) && (
                             <div className="mt-1 flex flex-col gap-0.5 overflow-hidden">
-                              {notesForDay.slice(0, 2).map(note => (
-                                <div key={note.id} className="flex items-start gap-1 px-1 py-0.5 bg-amber-50 border border-amber-100 rounded text-[9px] md:text-[10px] text-amber-700 font-semibold leading-tight truncate">
-                                  <span className="shrink-0 mt-px">📝</span>
+                              {eventsForDay.slice(0, 2).map(ev => (
+                                <div key={ev.id} className="flex items-center gap-1 px-1 py-0.5 bg-violet-50 border border-violet-100 rounded text-[9px] md:text-[10px] text-violet-700 font-semibold leading-tight">
+                                  <svg className="shrink-0" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                  <span className="truncate">{ev.title}</span>
+                                </div>
+                              ))}
+                              {notesForDay.slice(0, 1).map(note => (
+                                <div key={note.id} className="flex items-start gap-1 px-1 py-0.5 bg-amber-50 border border-amber-100 rounded text-[9px] md:text-[10px] text-amber-700 font-semibold leading-tight">
+                                  <svg className="shrink-0 mt-px" width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                                   <span className="truncate">{note.content}</span>
                                 </div>
                               ))}
-                              {notesForDay.length > 2 && (
-                                <div className="text-[9px] font-black text-amber-500 px-1">+{notesForDay.length - 2}</div>
+                              {(eventsForDay.length + notesForDay.length) > 3 && (
+                                <div className="text-[9px] font-black text-stone-400 px-1">+{eventsForDay.length + notesForDay.length - 3}</div>
                               )}
                             </div>
                           )}
@@ -768,13 +842,13 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
         </div>
       )}
 
-      {/* Day Panel Modal (Notes only) */}
+      {/* Day Panel Modal */}
       {dayPanelDate && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-md animate-fadeIn">
-          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] animate-fadeUp">
-            <header className="px-8 py-6 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-fadeUp">
+            <header className="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/50 shrink-0">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500 mb-1 block">Notes de journée</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-orange-500 mb-1 block">Agenda</span>
                 <h3 className="font-bold text-xl text-stone-900">{formatHumanDate(dayPanelDate)}</h3>
               </div>
               <button onClick={() => setDayPanelDate(null)} className="text-stone-400 hover:text-stone-900 transition-colors p-2 hover:bg-stone-100 rounded-full">
@@ -782,29 +856,108 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
               </button>
             </header>
 
-            <div className="overflow-y-auto flex-1 p-8 space-y-6">
+            <div className="overflow-y-auto flex-1 p-6 space-y-6">
+
+              {/* Events section */}
               <section>
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-xs font-bold uppercase tracking-widest text-stone-400">Flux de notes</h4>
-                  <span className="px-2.5 py-1 bg-stone-100 rounded-lg text-[10px] font-bold text-stone-500">{dayNotes.length} note(s)</span>
+                <div className="flex items-center gap-2 mb-3">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="text-violet-500"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-stone-500">Événements</h4>
+                  <span className="ml-auto px-2 py-0.5 bg-violet-100 text-violet-600 rounded text-[10px] font-bold">{dayEvents.length}</span>
                 </div>
-                
+
+                {dayEvents.length === 0 ? (
+                  <p className="text-xs text-stone-400 italic px-1">Aucun événement ce jour.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {dayEvents.map(ev => (
+                      <div key={ev.id} className="group rounded-2xl border border-violet-100 bg-violet-50/50 p-4 transition-all hover:bg-violet-50">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-stone-900 truncate">{ev.title}</p>
+                            <p className="text-[10px] text-stone-400 mt-0.5">
+                              {new Date(ev.start_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                              {' → '}
+                              {new Date(ev.end_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                            {ev.link && (
+                              <a href={ev.link} target="_blank" rel="noopener noreferrer"
+                                className="mt-1.5 flex items-center gap-1 text-[11px] text-violet-600 hover:text-violet-800 font-semibold truncate max-w-xs"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                {ev.link.replace(/^https?:\/\//, '')}
+                              </a>
+                            )}
+                          </div>
+                          {user && ev.created_by === user.id && (
+                            <button onClick={() => deleteEvent(ev.id)} className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-stone-300 hover:text-red-500 mt-0.5">
+                              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Event creation form */}
+                <div className="mt-3 rounded-2xl border border-stone-200 bg-stone-50 p-4 space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-stone-400">Nouvel événement</p>
+                  <input
+                    type="text"
+                    value={eventTitle}
+                    onChange={e => setEventTitle(e.target.value)}
+                    placeholder="Titre de l'événement"
+                    className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Début</label>
+                      <input type="datetime-local" value={eventStart} onChange={e => setEventStart(e.target.value)}
+                        className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block mb-1">Fin</label>
+                      <input type="datetime-local" value={eventEnd} onChange={e => setEventEnd(e.target.value)}
+                        className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-300" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                    <input type="url" value={eventLink} onChange={e => setEventLink(e.target.value)}
+                      placeholder="Lien (optionnel)"
+                      className="w-full rounded-xl border border-stone-200 bg-white pl-8 pr-3 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-violet-400/30" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={submitEvent}
+                    disabled={!eventTitle.trim() || !eventStart || !eventEnd || eventLoading}
+                    className="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all disabled:opacity-30 active:scale-95"
+                  >
+                    {eventLoading ? '...' : 'Ajouter l\'événement'}
+                  </button>
+                </div>
+              </section>
+
+              {/* Notes section */}
+              <section>
+                <div className="flex items-center gap-2 mb-3">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="text-amber-500"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-stone-500">Notes</h4>
+                  <span className="ml-auto px-2 py-0.5 bg-amber-100 text-amber-600 rounded text-[10px] font-bold">{dayNotes.length}</span>
+                </div>
+
                 {noteLoading ? (
-                  <div className="space-y-3">
-                    <div className="h-20 bg-stone-50 rounded-2xl animate-pulse" />
-                    <div className="h-20 bg-stone-50 rounded-2xl animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="h-16 bg-stone-50 rounded-2xl animate-pulse" />
                   </div>
                 ) : dayNotes.length === 0 ? (
-                  <div className="py-12 text-center">
-                    <div className="w-12 h-12 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <svg className="w-6 h-6 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    </div>
-                    <p className="text-sm text-stone-400 italic">Aucune note pour ce jour.</p>
-                  </div>
+                  <p className="text-xs text-stone-400 italic px-1">Aucune note pour ce jour.</p>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {dayNotes.map((note) => (
-                      <div key={note.id} className="group rounded-2xl border border-stone-100 bg-stone-50 p-4 transition-all hover:bg-white hover:shadow-md hover:shadow-stone-100">
+                      <div key={note.id} className="group rounded-2xl border border-amber-100 bg-amber-50/50 p-4 transition-all hover:bg-amber-50">
                         <div className="flex items-start justify-between gap-3">
                           <p className="text-sm text-stone-800 leading-relaxed">{note.content}</p>
                           {user && note.user_id === user.id && (
@@ -821,27 +974,25 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                     ))}
                   </div>
                 )}
-              </section>
-            </div>
 
-            <div className="p-8 border-t border-stone-100 bg-stone-50/50">
-              <div className="relative">
-                <textarea
-                  value={noteInput}
-                  onChange={(e) => setNoteInput(e.target.value)}
-                  placeholder="Écrire une note..."
-                  className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-4 pr-16 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                  rows={2}
-                />
-                <button
-                  type="button"
-                  onClick={submitNote}
-                  disabled={!noteInput.trim() || noteLoading}
-                  className="absolute right-3 bottom-3 p-2 bg-stone-900 text-white rounded-xl hover:bg-stone-800 disabled:opacity-30 transition-all"
-                >
-                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
-              </div>
+                <div className="relative mt-3">
+                  <textarea
+                    value={noteInput}
+                    onChange={(e) => setNoteInput(e.target.value)}
+                    placeholder="Écrire une note..."
+                    className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-4 pr-14 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                    rows={2}
+                  />
+                  <button
+                    type="button"
+                    onClick={submitNote}
+                    disabled={!noteInput.trim() || noteLoading}
+                    className="absolute right-3 bottom-3 p-2 bg-stone-900 text-white rounded-xl hover:bg-stone-800 disabled:opacity-30 transition-all"
+                  >
+                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </button>
+                </div>
+              </section>
             </div>
           </div>
         </div>
