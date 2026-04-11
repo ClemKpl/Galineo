@@ -6,14 +6,22 @@ type Props = {
 };
 
 export default function AttachmentBubble({ url, name, type, isMe }: Props) {
-  const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+  const getApiUrl = () => {
+    let base = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+    if (typeof window !== 'undefined' && base.includes('localhost') && window.location.hostname !== 'localhost') {
+      // Si on est sur mobile/réseau local, remplacer localhost par l'IP du serveur (qui est la même que celle du navigateur)
+      base = base.replace('localhost', window.location.hostname);
+    }
+    return base;
+  };
+
+  const API_URL = getApiUrl();
   
   // Résolution de l'URL pour gérer localhost en prod/réseau local
   let finalUrl = url;
   if (url.startsWith('/')) {
     finalUrl = `${API_URL}${url}`;
   } else if (url.startsWith('http://localhost') && typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    // Si on accède depuis le réseau local (IP), remplacer localhost par l'IP du serveur
     finalUrl = url.replace('localhost', window.location.hostname);
   }
 

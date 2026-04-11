@@ -6,7 +6,15 @@ import { useRouter } from 'next/navigation';
 import ManageGroupMembersModal from '@/components/ManageGroupMembersModal';
 import AttachmentBubble from '@/components/AttachmentBubble';
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+const getApiBase = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && !envUrl.includes('localhost')) return envUrl.replace(/\/$/, '');
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    return `http://${window.location.hostname}:3001`;
+  }
+  return 'http://localhost:3001';
+};
+const API_URL = getApiBase();
 
 export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);

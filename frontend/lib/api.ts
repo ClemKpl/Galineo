@@ -1,4 +1,14 @@
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+const getApiBase = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && !envUrl.includes('localhost')) return envUrl.replace(/\/$/, '');
+  
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    return `http://${window.location.hostname}:3001`;
+  }
+  return 'http://localhost:3001';
+};
+
+const API_URL = getApiBase();
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
