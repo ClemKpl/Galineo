@@ -438,7 +438,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Input - Fixé et Flottant sur mobile */}
-      <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 px-4 lg:px-8 pb-20 lg:pb-8 pt-3 bg-white border-t border-stone-100 shrink-0 z-10">
+      <div className="fixed lg:relative bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] lg:bottom-0 inset-x-0 px-4 lg:px-8 pb-4 lg:pb-8 pt-3 bg-white border-t border-stone-100 shrink-0 z-10">
         <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md,.docx,.xlsx" onChange={handleFileChange} />
         <div className="max-w-4xl mx-auto">
           {pendingFile && (

@@ -167,7 +167,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       {/* CHAT MESSAGES */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 scrollbar-none">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 md:pb-8 space-y-6 scrollbar-none">
         {loading ? (
           <div className="text-center text-stone-400 text-sm">Chargement...</div>
         ) : messages.length === 0 ? (
@@ -264,7 +264,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       {/* CHAT INPUT AREA */}
-      <div className="px-4 md:px-8 pb-20 lg:pb-8 pt-3 bg-white border-t border-stone-100 shrink-0">
+      <div className="fixed lg:relative inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] lg:bottom-0 z-20 px-4 md:px-8 pb-4 lg:pb-8 pt-3 bg-white/95 backdrop-blur lg:bg-white border-t border-stone-100 shrink-0">
         <form onSubmit={handleSend} className="relative max-w-4xl mx-auto">
           {/* Autocomplete Mentions Box */}
           {mentionListVisible && (
