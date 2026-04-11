@@ -101,7 +101,7 @@ function RegisterForm() {
         )}
 
         {step === 1 ? (
-          <form onSubmit={requestOTP} className="space-y-5">
+          <form onSubmit={requestOTP} className="space-y-5" noValidate>
             <div>
               <label className="block text-sm font-semibold text-stone-700 mb-1.5">Nom complet</label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)} required
@@ -144,7 +144,7 @@ function RegisterForm() {
             </a>
           </form>
         ) : (
-          <form onSubmit={handleRegister} className="space-y-6">
+          <form onSubmit={handleRegister} className="space-y-6" noValidate>
             <div className="text-center">
               <div className="text-stone-600 mb-4 bg-stone-50 py-3 px-4 rounded-xl border border-stone-100 italic text-sm">
                 Un code a été envoyé à <span className="font-semibold text-stone-900 not-italic">{email}</span>

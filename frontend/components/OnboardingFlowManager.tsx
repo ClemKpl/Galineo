@@ -97,9 +97,9 @@ function QuestionnaireModal({ onDone, onSkip }: { onDone: (data: { source: strin
             <span className="text-stone-400 text-[11px] font-bold uppercase tracking-widest">Galineo</span>
           </div>
           <h2 className="text-[26px] font-black text-stone-900 leading-tight">
-            Dites-nous{' '}
-            <span style={{ color: 'var(--accent-500)' }}>en plus</span>{' '}
-            sur vous&nbsp;✨
+            Apprenons à nous{' '}
+            <span style={{ color: 'var(--accent-500)' }}>connaître</span>{' '}
+            ✨
           </h2>
           <p className="text-stone-400 text-sm mt-2 font-medium">{current.label}</p>
           <div className="mt-5">
@@ -277,7 +277,9 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
         if (popover) { popover.style.visibility = 'hidden'; }
         setTimeout(() => {
           if (popover) { popover.style.visibility = ''; }
-        }, 380);
+          // Trigger a resize to force driver.js to recalculate position
+          window.dispatchEvent(new Event('resize'));
+        }, 400);
       } else if (!needsSidebar) {
         window.dispatchEvent(new Event('close-sidebar'));
         sidebarIsOpen = false;
@@ -424,7 +426,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
   if (isMobile()) {
     window.dispatchEvent(new Event('open-sidebar'));
     sidebarIsOpen = true;
-    await new Promise((r) => setTimeout(r, 700));
+    await new Promise((r) => setTimeout(r, 1000));
   }
 
   driverObj.drive();
