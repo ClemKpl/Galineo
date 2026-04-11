@@ -83,7 +83,7 @@ export default function ProjectLayout({ children, params }: { children: React.Re
                   <path d="M15 19l-7-7 7-7" />
                 </svg>
               </Link>
-              <div className="w-10 h-10 lg:w-14 lg:h-14 bg-orange-500 rounded-xl lg:rounded-2xl flex items-center justify-center text-white font-black text-sm lg:text-xl shadow-lg shadow-orange-500 overflow-hidden shrink-0">
+              <div className="w-10 h-10 lg:w-14 lg:h-14 bg-orange-500 rounded-xl lg:rounded-2xl flex items-center justify-center text-white font-black text-sm lg:text-xl shadow-lg shadow-orange-500/20 overflow-hidden shrink-0">
                 {project.avatar ? (
                   <img src={project.avatar} alt={project.title} className="w-full h-full object-cover" />
                 ) : (
