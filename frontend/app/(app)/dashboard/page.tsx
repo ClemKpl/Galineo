@@ -453,9 +453,6 @@ export default function DashboardPage() {
                     key={p.id}
                     project={p}
                     currentUserId={user!.id}
-                    isDragging={draggingProjectId === p.id}
-                    onDragStart={() => setDraggingProjectId(p.id)}
-                    onDragEnd={() => setDraggingProjectId(null)}
                     onClick={() => router.push(`/projects/${p.id}`)}
                     onManageMembers={() => setManageProjectId(p.id)}
                     onToggleFavorite={handleToggleFavorite}
@@ -477,9 +474,6 @@ export default function DashboardPage() {
                     key={p.id}
                     project={p}
                     currentUserId={user!.id}
-                    isDragging={draggingProjectId === p.id}
-                    onDragStart={() => setDraggingProjectId(p.id)}
-                    onDragEnd={() => setDraggingProjectId(null)}
                     onClick={() => router.push(`/projects/${p.id}`)}
                     onManageMembers={() => setManageProjectId(p.id)}
                     onToggleFavorite={handleToggleFavorite}
