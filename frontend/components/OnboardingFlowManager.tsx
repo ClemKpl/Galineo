@@ -91,14 +91,18 @@ function QuestionnaireModal({ onDone, onSkip }: { onDone: (data: { source: strin
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 px-6 pt-6 pb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Logo size={20} className="text-white/90" />
-            <span className="text-white/80 text-xs font-bold uppercase tracking-widest">Pour mieux vous connaître</span>
+        <div className="px-7 pt-8 pb-4">
+          <div className="flex items-center gap-2 mb-5">
+            <Logo size={16} className="text-orange-500" style={{ color: 'var(--accent-500)' }} />
+            <span className="text-stone-400 text-[11px] font-bold uppercase tracking-widest">Galineo</span>
           </div>
-          <p className="text-white/70 text-xs mb-3">Question {step + 1} sur 3</p>
-          <h2 className="text-white text-xl font-bold leading-snug">{current.label}</h2>
-          <div className="mt-4">
+          <h2 className="text-[26px] font-black text-stone-900 leading-tight">
+            Dites-nous{' '}
+            <span style={{ color: 'var(--accent-500)' }}>en plus</span>{' '}
+            sur vous&nbsp;✨
+          </h2>
+          <p className="text-stone-400 text-sm mt-2 font-medium">{current.label}</p>
+          <div className="mt-5">
             <ProgressDots current={step} total={3} />
           </div>
         </div>
