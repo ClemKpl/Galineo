@@ -312,6 +312,10 @@ html, body {
   display: none !important;
 }
 
+.driver-popover-arrow {
+  display: none !important;
+}
+
 /* Arrow styling — keep functional, match border */
 .driver-popover-arrow-side-left.driver-popover-arrow {
   border-right-color: #1c1917 !important;
