@@ -101,10 +101,21 @@ export default function AiChat() {
     const text = input.trim();
     if (!text && !pendingFile || loading) return;
 
-    const userMsg: Message = { role: 'user', content: text, ...(pendingFile ?? {}) };
+    const userMsg: Message = { 
+      role: 'user', 
+      content: text,
+      ...(pendingFile ? { 
+        attachment_url: pendingFile.url, 
+        attachment_name: pendingFile.name, 
+        attachment_type: pendingFile.type 
+      } : {})
+    };
     const next = [...messages, userMsg];
     setMessages(next);
     setInput('');
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
     const sentFile = pendingFile;
     setPendingFile(null);
     setLoading(true);

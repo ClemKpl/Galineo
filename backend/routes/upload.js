@@ -45,9 +45,8 @@ router.post('/', authMiddleware, (req, res) => {
     }
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'Aucun fichier reçu.' });
-
-    const apiBase = (process.env.API_URL || 'http://localhost:3001').replace(/\/$/, '');
-    const url = `${apiBase}/uploads/${req.file.filename}`;
+ 
+    const url = `/uploads/${req.file.filename}`;
     res.json({
       url,
       name: req.file.originalname,

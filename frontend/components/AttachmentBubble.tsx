@@ -6,20 +6,31 @@ type Props = {
 };
 
 export default function AttachmentBubble({ url, name, type, isMe }: Props) {
+  const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+  
+  // Résolution de l'URL pour gérer localhost en prod/réseau local
+  let finalUrl = url;
+  if (url.startsWith('/')) {
+    finalUrl = `${API_URL}${url}`;
+  } else if (url.startsWith('http://localhost') && typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    // Si on accède depuis le réseau local (IP), remplacer localhost par l'IP du serveur
+    finalUrl = url.replace('localhost', window.location.hostname);
+  }
+
   const isImage = type?.startsWith('image/');
   const isPdf = type === 'application/pdf';
 
   if (isImage) {
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-1">
-        <img src={url} alt={name} className="max-w-[240px] max-h-[200px] rounded-xl object-cover border border-white/20 shadow" />
+      <a href={finalUrl} target="_blank" rel="noopener noreferrer" className="block mt-1">
+        <img src={finalUrl} alt={name} className="max-w-[240px] max-h-[200px] rounded-xl object-cover border border-white/20 shadow" />
       </a>
     );
   }
 
   return (
     <a
-      href={url}
+      href={finalUrl}
       target="_blank"
       rel="noopener noreferrer"
       className={`mt-1 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-colors max-w-[240px] ${
