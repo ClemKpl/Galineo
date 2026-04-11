@@ -18,7 +18,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3001/auth/google/callback',
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || 'https://galineo-api.onrender.com/auth/google/callback',
   }, (_accessToken, _refreshToken, profile, done) => {
     const email = profile.emails?.[0]?.value;
     const name = profile.displayName;
@@ -57,8 +57,7 @@ passport.deserializeUser((id, done) => {
 });
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
-const MAX_LOGIN_ATTEMPTS = 10;
-const LOCK_DURATION_MS = 30 * 60 * 1000; // 30 minutes
+// (Retrait des limites de tentatives)
 
 // POST /auth/verify-email/request
 router.post('/verify-email/request', async (req, res) => {
@@ -171,19 +170,9 @@ router.post('/login', (req, res) => {
       return res.status(401).json({ error: "Aucun compte n'est associé à cette adresse. Veuillez en créer un." });
     }
 
-    // Vérification du verrouillage de compte
-    if (user.locked_until && new Date(user.locked_until) > new Date()) {
-      return res.status(423).json({ error: 'Compte temporairement verrouillé. Réessayez dans 30 minutes.' });
-    }
-
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
-      const attempts = (user.login_attempts || 0) + 1;
-      const lock = attempts >= MAX_LOGIN_ATTEMPTS
-        ? new Date(Date.now() + LOCK_DURATION_MS).toISOString()
-        : user.locked_until;
-      db.run('UPDATE users SET login_attempts = ?, locked_until = ? WHERE id = ?', [attempts, lock, user.id]);
-      logActivity(null, user.id, 'auth', null, 'login_failed', { ip: req.ip, attempts }).catch(() => {});
+      logActivity(null, user.id, 'auth', null, 'login_failed', { ip: req.ip }).catch(() => {});
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 

@@ -6,7 +6,15 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Logo from '@/components/Logo';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001';
+const getBackendBase = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (envUrl && !envUrl.includes('localhost')) return envUrl.replace('/api', '').replace(/\/$/, '');
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    return 'https://galineo-api.onrender.com';
+  }
+  return 'http://localhost:3001';
+};
+const BACKEND_URL = getBackendBase();
 
 export default function LoginPage() {
   return (

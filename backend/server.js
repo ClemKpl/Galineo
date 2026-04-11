@@ -53,31 +53,13 @@ app.use((req, res, next) => {
 });
 
 // 2. Middlewares globaux
+app.set('trust proxy', 1);
 
 // CORS restreint à l'origine frontend
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true,
 }));
-
-// Rate limiting
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
-  message: { error: 'Trop de tentatives. Réessayez dans 15 minutes.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-const globalLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 100,
-  message: { error: 'Trop de requêtes. Réessayez dans une minute.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/auth/login', authLimiter);
-app.use('/auth/register', authLimiter);
-app.use(globalLimiter);
 
 app.use((req, res, next) => {
   // On s'assure que le parser JSON ne s'exécute JAMAIS pour le webhook
