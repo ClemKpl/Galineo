@@ -673,6 +673,22 @@ HIÉRARCHIE DU PROJET (RÈGLE ABSOLUE) :
 1. 'feature' (Fonctionnalité) : C'est un CONTENEUR ou un MODULE MAJEUR (ex: "Authentification", "Système de Paiement", "Interface Dashboard"). Il ne peut JAMAIS être l'enfant d'un autre élément.
 2. 'task' (Tâche) : C'est une ACTION CONCRÈTE qui appartient obligatoirement à une fonctionnalité (ex: "Créer le formulaire de login" est une tâche de "Authentification"). 
 CHAQUE tâche doit avoir un 'parent_title' qui pointe vers une 'feature' existante. Une tâche ne peut pas flotter seule.
+
+STRUCTURE WBS (CSV/Export Galineo) :
+Si l'utilisateur te fournit un fichier CSV ou un texte structuré comme un WBS GANTT, voici les colonnes à interpréter pour tes outils ('creer_elements' ou 'creer_projet') :
+- type : 'feature' ou 'task'.
+- title : Le titre de l'élément (ex: "Développement API").
+- description : Détails textuels.
+- status : 'todo', 'in_progress' ou 'done'.
+- priority : 'low', 'normal', 'high' ou 'urgent'.
+- phase : Nom de la phase organisationnelle.
+- start_date : Date de début (YYYY-MM-DD).
+- due_date : Date d'échéance (YYYY-MM-DD).
+- assigned_email : Email de la personne assignée (doit être un membre du projet).
+- parent_title : Pour les 'task', doit être le titre EXACT de la 'feature' parente.
+
+RÈGLE D'IMPORT WBS :
+Si tu détectes cette structure, analyse son contenu et propose à l'utilisateur de l'importer massivement dans le projet en utilisant tes outils de création. Ne crée RIEN sans confirmation.
 `;
 
           if (mode === 'global') {
