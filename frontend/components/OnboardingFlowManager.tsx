@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import Logo from '@/components/Logo';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -91,14 +92,11 @@ function QuestionnaireModal({ onDone, onSkip }: { onDone: (data: { source: strin
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 px-6 pt-6 pb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center">
-              <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.2" viewBox="0 0 24 24">
-                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 0 2-2h2a2 2 0 0 0 2 2" />
-              </svg>
-            </div>
-            <span className="text-white/80 text-xs font-bold uppercase tracking-widest">Question {step + 1}/3</span>
+          <div className="flex items-center gap-2 mb-3">
+            <Logo size={20} className="text-white/90" />
+            <span className="text-white/80 text-xs font-bold uppercase tracking-widest">Pour mieux vous connaître</span>
           </div>
+          <p className="text-white/70 text-xs mb-3">Question {step + 1} sur 3</p>
           <h2 className="text-white text-xl font-bold leading-snug">{current.label}</h2>
           <div className="mt-4">
             <ProgressDots current={step} total={3} />
@@ -145,12 +143,8 @@ function TourChoiceModal({ userName, onStart, onSkip }: { userName: string; onSt
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="bg-gradient-to-br from-stone-900 to-stone-800 px-6 py-8 text-center">
-          <div className="w-14 h-14 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/30">
-            <svg width="24" height="24" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M12 2L2 7l10 5 10-5-10-5Z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
+          <div className="w-14 h-14 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Logo size={32} className="text-white" />
           </div>
           <h2 className="text-white text-xl font-bold mb-2">Bienvenue, {userName.split(' ')[0]} !</h2>
           <p className="text-stone-400 text-sm leading-relaxed">
