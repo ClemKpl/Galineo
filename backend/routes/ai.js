@@ -137,6 +137,14 @@ const functions = {
 
     let created = 0;
     const featureMap = {};
+
+    // 1. D'abord, on charge les IDs des fonctionnalités EXISTANTES pour permettre de lier des tâches à des modules déjà là
+    const existingFeatures = await dbAll('SELECT id, title FROM tasks WHERE project_id = ? AND parent_id IS NULL AND status != ?', [targetProjectId, 'deleted']);
+    existingFeatures.forEach(f => {
+      featureMap[f.title.toLowerCase()] = f.id;
+    });
+
+    // 2. Création des NOUVELLES fonctionnalités
     for (const el of elements.filter(e => e.type === 'feature')) {
       // Check limits
       const info = await dbGet(`
@@ -159,9 +167,11 @@ const functions = {
         `INSERT INTO tasks (project_id, title, description, status, priority, start_date, due_date, created_by, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [targetProjectId, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId, assignedTo]
       );
-      featureMap[el.title] = r.lastID;
+      featureMap[el.title.toLowerCase()] = r.lastID;
       created++;
     }
+
+    // 3. Création des tâches liées (nouvelles ou existantes)
     for (const el of elements.filter(e => e.type === 'task')) {
       // Check limits
       const info = await dbGet(`
@@ -171,16 +181,19 @@ const functions = {
        WHERE p.id = ?
      `, [targetProjectId, targetProjectId]);
 
-     if (info && info.plan === 'free' && info.task_count >= 25) {
-        return { message: `Partiellement terminé. Créé ${created} éléments, mais la limite de 25 tâches du forfait gratuit a été atteinte.`, created };
-     }
+      if (info && info.plan === 'free' && info.task_count >= 25) {
+         return { message: `Partiellement terminé. Créé ${created} éléments, mais la limite de 25 tâches du forfait gratuit a été atteinte.`, created };
+      }
 
       let assignedTo = null;
       if (el.assigned_email) {
         const u = await dbGet('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [el.assigned_email]);
         if (u) assignedTo = u.id;
       }
-      const parentId = featureMap[el.parent_title] || null;
+
+      // Recherche du parent dans la map (insensible à la casse)
+      const parentId = featureMap[el.parent_title?.toLowerCase()] || null;
+      
       await dbRun(
         `INSERT INTO tasks (project_id, parent_id, title, description, status, priority, start_date, due_date, created_by, assigned_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [targetProjectId, parentId, el.title, el.description || null, el.status || 'todo', el.priority || 'normal', el.start_date || null, el.due_date || null, userId, assignedTo]
@@ -357,7 +370,7 @@ const toolConfig = [
       },
       {
         name: "creer_elements",
-        description: "Ajoute des fonctionnalités et tâches à un projet",
+        description: "Ajoute des fonctionnalités et tâches à un projet. IMPORTANT: Avant d'appeler cet outil pour ajouter des tâches à des fonctionnalités existantes, tu DOIS appeler 'voir_taches' pour connaître le titre exact des fonctionnalités déjà présentes.",
         parameters: {
           type: "object",
           properties: {
@@ -370,12 +383,12 @@ const toolConfig = [
                   type: { 
                     type: "string", 
                     enum: ["feature", "task"],
-                    description: "'feature' = Module Parent. 'task' = Action Enfant rattachée."
+                    description: "'feature' = Module Parent (ex: Authentification). 'task' = Action Enfant rattachée (ex: Créer le formulaire)."
                   },
                   title: { type: "string" },
                   parent_title: { 
                     type: "string", 
-                    description: "OBLIGATOIRE pour les 'task'. Doit correspondre au 'title' d'une 'feature'." 
+                    description: "OBLIGATOIRE pour les 'task'. Doit correspondre au 'title' d'une 'feature' (soit créée dans le même appel, soit déjà existante dans le projet)." 
                   },
                   priority: { type: "string" },
                   start_date: { type: "string" },
