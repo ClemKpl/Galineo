@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, use, useRef } from 'react';
+import { useState, useEffect, use } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProject } from '../ProjectContext';
@@ -62,10 +62,36 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
-  const wbsRef = useRef<HTMLDivElement>(null);
 
-  function downloadWBSAsPNG() {
-    window.print();
+  function downloadWBSAsText() {
+    const lines: string[] = [];
+    const projectTitle = (project as any).title || 'PROJET';
+    lines.push(projectTitle);
+    lines.push('│');
+    features.forEach((feature: any, fi) => {
+      const subtasks = getTasksForFeature(feature.id);
+      const isLastFeature = fi === features.length - 1;
+      const featurePrefix = isLastFeature ? '└── ' : '├── ';
+      const doneCount = subtasks.filter((t: any) => t.status === 'done').length;
+      const progress = subtasks.length > 0 ? ` (${doneCount}/${subtasks.length})` : '';
+      lines.push(`${featurePrefix}[Module ${fi + 1}] ${feature.title}${progress}`);
+      subtasks.forEach((task: any, ti) => {
+        const isLastTask = ti === subtasks.length - 1;
+        const indent = isLastFeature ? '    ' : '│   ';
+        const taskPrefix = isLastTask ? '└── ' : '├── ';
+        const statusIcon = task.status === 'done' ? '✓' : task.status === 'in_progress' ? '◑' : '○';
+        lines.push(`${indent}${taskPrefix}${statusIcon} ${task.title}`);
+      });
+      if (!isLastFeature) lines.push('│');
+    });
+    const content = lines.join('\n');
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `wbs-${(project as any).title || 'projet'}.txt`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   useEffect(() => {
@@ -714,7 +740,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> En cours / À faire</span>
              </div>
              <button
-               onClick={downloadWBSAsPNG}
+               onClick={downloadWBSAsText}
                className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-600 font-bold rounded-xl hover:bg-stone-50 transition-all active:scale-95 shadow-sm text-xs uppercase tracking-widest"
                title="Imprimer / Exporter"
              >
@@ -722,8 +748,8 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                <span className="hidden sm:inline">Imprimer / Exporter</span>
              </button>
            </div>
-           <div id="wbs-print-area" className="overflow-x-auto pb-12 scrollbar-thin scrollbar-thumb-stone-200 bg-white rounded-2xl border border-stone-200 shadow-sm">
-            <div ref={wbsRef} className="inline-flex flex-col items-center min-w-full p-8">
+           <div className="overflow-x-auto pb-12 scrollbar-thin scrollbar-thumb-stone-200 bg-white rounded-2xl border border-stone-200 shadow-sm">
+            <div className="inline-flex flex-col items-center min-w-full p-8">
 
               {/* Main Project Node */}
               <div className="mb-12 relative">
@@ -1059,11 +1085,6 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
       <style jsx>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @media print {
-          body * { visibility: hidden !important; }
-          #wbs-print-area, #wbs-print-area * { visibility: visible !important; }
-          #wbs-print-area { position: fixed; inset: 0; padding: 24px; background: white; z-index: 9999; overflow: visible; }
-        }
       `}</style>
       
       {showPricing && (
