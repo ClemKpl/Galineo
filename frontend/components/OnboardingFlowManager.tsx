@@ -191,6 +191,7 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
     document.head.appendChild(link);
   }
 
+  if (typeof window === 'undefined') return;
   const { driver } = await import('driver.js');
 
   const driverObj = driver({
