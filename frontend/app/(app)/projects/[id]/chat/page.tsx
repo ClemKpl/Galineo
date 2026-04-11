@@ -264,7 +264,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       {/* CHAT INPUT AREA */}
-      <div className="fixed lg:relative inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] lg:bottom-0 z-20 px-4 md:px-8 pb-4 lg:pb-8 pt-3 bg-white/60 backdrop-blur-md lg:bg-white/60 lg:backdrop-blur-md border-t border-stone-100 shrink-0">
+      <div className="fixed lg:relative inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] lg:bottom-0 z-20 px-4 md:px-8 pb-4 lg:pb-8 pt-3 shrink-0">
         <form onSubmit={handleSend} className="relative max-w-4xl mx-auto">
           {/* Autocomplete Mentions Box */}
           {mentionListVisible && (
@@ -288,14 +288,14 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           <div className="flex gap-2.5">
             <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md" onChange={handleFileChange} />
             <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
-              className="w-10 h-10 bg-stone-100 hover:bg-stone-200 disabled:opacity-50 text-stone-500 rounded-xl flex items-center justify-center transition-all shrink-0">
+              className="w-10 h-10 bg-white/60 hover:bg-white/80 backdrop-blur-sm border border-stone-200/60 disabled:opacity-50 text-stone-500 rounded-xl flex items-center justify-center transition-all shrink-0">
               {uploading
                 ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
                 : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
               }
             </button>
             <input id="chat-input" type="text"
-              className="flex-1 bg-stone-50 border border-stone-200 rounded-2xl px-5 py-2.5 shadow-inner focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm text-stone-900 placeholder:text-stone-400"
+              className="flex-1 bg-white/60 backdrop-blur-sm border border-stone-200/60 rounded-2xl px-5 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm text-stone-900 placeholder:text-stone-400"
               placeholder="Message..."
               value={newMessage}
               onChange={handleInputChange}

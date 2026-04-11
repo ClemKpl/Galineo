@@ -224,7 +224,7 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Message Input */}
-      <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-20 border-t border-stone-100 bg-white/60 backdrop-blur-md px-4 py-4 md:relative md:bottom-0 md:z-auto md:px-8 md:py-4">
+      <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-20 px-4 py-4 md:relative md:bottom-0 md:z-auto md:px-8 md:py-4">
         <form onSubmit={handleSendMessage} className="mx-auto max-w-4xl">
           <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md,.docx,.xlsx" onChange={handleFileChange} />
           {pendingFile && (
@@ -236,7 +236,7 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
           )}
           <div className="flex gap-2.5">
             <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
-              className="w-10 h-10 bg-stone-100 hover:bg-stone-200 disabled:opacity-50 text-stone-500 rounded-xl flex items-center justify-center transition-all shrink-0">
+              className="w-10 h-10 bg-white/60 hover:bg-white/80 backdrop-blur-sm border border-stone-200/60 disabled:opacity-50 text-stone-500 rounded-xl flex items-center justify-center transition-all shrink-0">
               {uploading
                 ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
                 : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
@@ -251,7 +251,7 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
               }}
               disabled={sending}
               placeholder="Tapez votre message..."
-              className="flex-1 bg-stone-50 border border-stone-200 rounded-2xl px-5 py-2.5 shadow-inner focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm text-stone-900 placeholder:text-stone-400"
+              className="flex-1 bg-white/60 backdrop-blur-sm border border-stone-200/60 rounded-2xl px-5 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm text-stone-900 placeholder:text-stone-400"
             />
             <button type="submit" disabled={(!newMessage.trim() && !pendingFile) || sending}
               className="w-10 h-10 bg-orange-500 hover:bg-orange-600 text-white rounded-xl flex items-center justify-center transition-all shrink-0 active:scale-90 shadow-lg shadow-orange-500/20">
