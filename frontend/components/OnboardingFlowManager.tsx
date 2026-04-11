@@ -94,7 +94,7 @@ function QuestionnaireModal({ onDone, onSkip }: { onDone: (data: { source: strin
         <div className="px-7 pt-8 pb-4">
           <div className="flex items-center gap-2 mb-5">
             <Logo size={16} style={{ color: 'var(--accent-500)' }} />
-            <span className="text-stone-400 text-[11px] font-bold uppercase tracking-widest">Galineo</span>
+            <span className="text-stone-900 font-bold text-sm tracking-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>GALINÉO</span>
           </div>
           <h2 className="text-[26px] font-black text-stone-900 leading-tight">
             Apprenons à nous{' '}
