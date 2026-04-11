@@ -63,7 +63,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
 
-  function downloadWBSAsText() {
+  function downloadWBS() {
     const lines: string[] = [];
     const projectTitle = (project as any).title || 'PROJET';
     lines.push(projectTitle);
@@ -740,7 +740,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> En cours / À faire</span>
              </div>
              <button
-               onClick={downloadWBSAsText}
+               onClick={downloadWBS}
                className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-600 font-bold rounded-xl hover:bg-stone-50 transition-all active:scale-95 shadow-sm text-xs uppercase tracking-widest"
                title="Imprimer / Exporter"
              >
