@@ -716,9 +716,10 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
              <button
                onClick={downloadWBSAsPNG}
                className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-600 font-bold rounded-xl hover:bg-stone-50 transition-all active:scale-95 shadow-sm text-xs uppercase tracking-widest"
+               title="Imprimer / Exporter"
              >
-               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-               Imprimer / Exporter
+               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+               <span className="hidden sm:inline">Imprimer / Exporter</span>
              </button>
            </div>
            <div id="wbs-print-area" className="overflow-x-auto pb-12 scrollbar-thin scrollbar-thumb-stone-200 bg-white rounded-2xl border border-stone-200 shadow-sm">
