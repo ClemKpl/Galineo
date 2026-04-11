@@ -224,9 +224,9 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Message Input */}
-      <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-20 border-t border-stone-100 bg-white/95 px-4 py-4 backdrop-blur md:relative md:bottom-0 md:z-auto md:bg-white md:px-8 md:py-8">
-        <form onSubmit={handleSendMessage} className="relative mx-auto max-w-4xl group">
-          <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md" onChange={handleFileChange} />
+      <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-20 border-t border-stone-100 bg-white/95 px-4 py-4 backdrop-blur md:relative md:bottom-0 md:z-auto md:bg-white md:px-8 md:py-4">
+        <form onSubmit={handleSendMessage} className="mx-auto max-w-4xl">
+          <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md,.docx,.xlsx" onChange={handleFileChange} />
           {pendingFile && (
             <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-700 font-medium">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
@@ -234,47 +234,33 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
               <button type="button" onClick={() => setPendingFile(null)} className="ml-auto text-orange-400 hover:text-orange-600">✕</button>
             </div>
           )}
-          <textarea
-            rows={1}
-            value={newMessage}
-            onChange={(e) => {
-              setNewMessage(e.target.value);
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage(e as any);
+          <div className="flex gap-2.5">
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+              className="w-10 h-10 bg-stone-100 hover:bg-stone-200 disabled:opacity-50 text-stone-500 rounded-xl flex items-center justify-center transition-all shrink-0">
+              {uploading
+                ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+                : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
               }
-            }}
-            disabled={sending}
-            placeholder="Tapez votre message..."
-            className="w-full pl-12 pr-16 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 text-stone-900 transition-all font-medium placeholder:text-stone-300 resize-none leading-relaxed overflow-hidden"
-            style={{ minHeight: '56px', maxHeight: '150px' }}
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="absolute left-3 top-1/2 -translate-y-1/2 p-2 text-stone-400 hover:text-orange-500 disabled:opacity-40 transition-colors"
-          >
-            {uploading
-              ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
-              : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-            }
-          </button>
-          <button
-            type="submit"
-            disabled={(!newMessage.trim() && !pendingFile) || sending}
-            className="absolute right-2 top-2 bottom-2 px-6 bg-orange-500 hover:bg-orange-600 disabled:opacity-30 text-white rounded-xl transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center overflow-hidden"
-          >
-            {sending ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : (
-              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-            )}
-          </button>
+            </button>
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(e as any); }
+              }}
+              disabled={sending}
+              placeholder="Tapez votre message..."
+              className="flex-1 bg-stone-50 border border-stone-200 rounded-2xl px-5 py-2.5 shadow-inner focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all text-sm text-stone-900 placeholder:text-stone-400"
+            />
+            <button type="submit" disabled={(!newMessage.trim() && !pendingFile) || sending}
+              className="w-10 h-10 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-xl flex items-center justify-center transition-all shrink-0 active:scale-90 shadow-lg shadow-orange-500/20">
+              {sending
+                ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+              }
+            </button>
+          </div>
         </form>
       </footer>
 

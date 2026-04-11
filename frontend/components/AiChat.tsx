@@ -244,7 +244,7 @@ export default function AiChat() {
 
           {/* Input - Fixé au dessus de la nav mobile */}
           <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 mx-auto w-full lg:w-auto px-4 py-4 lg:py-5 border-t border-stone-100 bg-white/95 backdrop-blur shrink-0 z-[70] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-            <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md" onChange={handleFileChange} />
+            <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md,.docx,.xlsx" onChange={handleFileChange} />
             {pendingFile && (
               <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-700 font-medium">
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
@@ -252,9 +252,9 @@ export default function AiChat() {
                 <button type="button" onClick={() => setPendingFile(null)} className="ml-auto text-orange-400 hover:text-orange-600">✕</button>
               </div>
             )}
-            <div className="flex items-end gap-3 max-w-full">
+            <div className="flex gap-2.5">
               <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                className="w-10 h-10 rounded-xl bg-stone-100 hover:bg-stone-200 disabled:opacity-40 text-stone-500 flex items-center justify-center transition-all shrink-0">
+                className="w-10 h-10 bg-stone-100 hover:bg-stone-200 disabled:opacity-50 text-stone-500 rounded-xl flex items-center justify-center transition-all shrink-0">
                 {uploading
                   ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
                   : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
@@ -272,17 +272,15 @@ export default function AiChat() {
                 onKeyDown={handleKeyDown}
                 placeholder="Décris ton projet…"
                 disabled={loading}
-                className="flex-1 resize-none bg-stone-50 border border-stone-200 rounded-2xl px-4 py-2.5 text-sm text-stone-800 placeholder-stone-400 outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500/50 disabled:opacity-50 overflow-hidden leading-relaxed transition-all"
+                className="flex-1 resize-none bg-stone-50 border border-stone-200 rounded-2xl px-5 py-2.5 shadow-inner text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 disabled:opacity-50 overflow-hidden transition-all"
                 style={{ minHeight: '40px', maxHeight: '100px' }}
               />
               <button
                 onClick={send}
                 disabled={(!input.trim() && !pendingFile) || loading}
-                className="w-10 h-10 rounded-xl bg-stone-900 hover:bg-stone-800 disabled:bg-stone-100 disabled:text-stone-400 text-white flex items-center justify-center transition-all shrink-0 active:scale-90 shadow-lg shadow-stone-900/10"
+                className="w-10 h-10 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-xl flex items-center justify-center transition-all shrink-0 active:scale-90 shadow-lg shadow-orange-500/20"
               >
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                </svg>
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
               </button>
             </div>
           </div>

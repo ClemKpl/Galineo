@@ -438,9 +438,9 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Input - Fixé et Flottant sur mobile */}
-      <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 p-3 lg:p-8 bg-transparent lg:bg-white/95 lg:backdrop-blur border-none lg:border-t lg:border-stone-200 shrink-0 z-10 lg:shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md" onChange={handleFileChange} />
-        <div className="max-w-[1000px] mx-auto relative">
+      <div className="fixed lg:relative bottom-[93px] lg:bottom-0 inset-x-0 px-4 lg:px-8 pb-20 lg:pb-8 pt-3 bg-white border-t border-stone-100 shrink-0 z-10">
+        <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md,.docx,.xlsx" onChange={handleFileChange} />
+        <div className="max-w-4xl mx-auto">
           {pendingFile && (
             <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-700 font-medium">
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
@@ -448,45 +448,38 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
               <button type="button" onClick={() => setPendingFile(null)} className="ml-auto text-orange-400 hover:text-orange-600">✕</button>
             </div>
           )}
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                send();
+          <div className="flex gap-2.5">
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+              className="w-10 h-10 bg-stone-100 hover:bg-stone-200 disabled:opacity-50 text-stone-500 rounded-xl flex items-center justify-center transition-all shrink-0">
+              {uploading
+                ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+                : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
               }
-            }}
-            placeholder="Échange avec l'IA..."
-            className="w-full pl-12 pr-14 py-3.5 bg-stone-50 border border-stone-200 rounded-[20px] text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all resize-none min-h-[50px] max-h-[150px] text-stone-800"
-            rows={1}
-            style={{ height: 'auto' }}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = 'auto';
-              target.style.height = `${target.scrollHeight}px`;
-            }}
-          />
-          <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 text-stone-400 hover:text-orange-500 disabled:opacity-40 flex items-center justify-center transition-colors">
-            {uploading
-              ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
-              : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-            }
-          </button>
-          <button
-            onClick={send}
-            disabled={(!input.trim() && !pendingFile) || loading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-orange-500 text-white rounded-xl shadow-lg shadow-orange-500/20 flex items-center justify-center hover:bg-orange-600 disabled:bg-stone-200 disabled:shadow-none transition-all cursor-pointer active:scale-90"
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-            </svg>
-          </button>
+            </button>
+            <textarea
+              value={input}
+              rows={1}
+              onChange={(e) => {
+                setInput(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+              }}
+              placeholder="Échange avec l'IA..."
+              className="flex-1 resize-none bg-stone-50 border border-stone-200 rounded-2xl px-5 py-2.5 shadow-inner text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 overflow-hidden transition-all"
+              style={{ minHeight: '40px', maxHeight: '120px' }}
+            />
+            <button
+              onClick={send}
+              disabled={(!input.trim() && !pendingFile) || loading}
+              className="w-10 h-10 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-xl flex items-center justify-center transition-all shrink-0 active:scale-90 shadow-lg shadow-orange-500/20"
+            >
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </button>
+          </div>
         </div>
-        <p className="hidden sm:block text-center text-[10px] text-stone-400 mt-4 uppercase tracking-[0.2em] font-bold">
-          Entrée pour envoyer · Shift+Entrée pour passer à la ligne
-        </p>
       </div>
     </div>
   );
