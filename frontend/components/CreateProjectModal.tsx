@@ -3,6 +3,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useTheme } from '@/components/ThemeProvider';
 import { useToast } from '@/contexts/ToastContext';
+import AttachmentBubble from '@/components/AttachmentBubble';
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('galineo_token') : null; }
 
 const ACCENT_BG: Record<string, string> = {
   orange:  'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20 hover:shadow-orange-500/30',
@@ -97,7 +101,27 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
   const [wizardLoading, setWizardLoading] = useState(false);
   const wizardEndRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFile, setPendingFile] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { showToast } = useToast();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${API_URL}/upload`, { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` }, body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur upload');
+      setPendingFile({ url: data.url, name: data.name, type: data.type });
+    } catch (err: unknown) {
+      showToast((err as Error).message || 'Erreur upload', 'error');
+    } finally { setUploading(false); }
+  };
 
   useEffect(() => {
     api.get('/roles').then(setRoles).catch(console.error);
@@ -245,16 +269,22 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
 
   const handleWizardSend = async () => {
     const text = wizardInput.trim();
-    if (!text || wizardLoading) return;
+    if (!text && !pendingFile || wizardLoading) return;
 
     setWizardInput('');
-    const userMsg = { role: 'user', content: text };
+    const sentFile = pendingFile;
+    setPendingFile(null);
+    const userMsg = { role: 'user', content: text, ...(sentFile ?? {}) };
     const next = [...wizardMessages, userMsg];
     setWizardMessages(next);
     setWizardLoading(true);
 
     try {
-      const res = await api.post('/ai/chat', { messages: next, mode: 'wizard' });
+      const res = await api.post('/ai/chat', {
+        messages: next.slice(1).map((m: any) => ({ role: m.role, content: m.content })),
+        mode: 'wizard',
+        ...(sentFile ? { attachment_url: sentFile.url, attachment_name: sentFile.name, attachment_type: sentFile.type } : {}),
+      });
 
       if (res.status === 'processing') {
         // En arrière-plan. On laisse wizardLoading = true
@@ -390,7 +420,12 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm break-words ${m.role === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-white text-stone-700 border border-stone-200 rounded-tl-none font-medium'
                       }`}>
-                      {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
+                      {m.role === 'assistant' ? renderMarkdown(m.content) : (
+                        <>
+                          {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
+                          {m.attachment_url && <AttachmentBubble url={m.attachment_url} name={m.attachment_name!} type={m.attachment_type!} isMe />}
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -404,7 +439,22 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                 <div ref={wizardEndRef} />
               </div>
               <div className="p-4 bg-white border-t border-stone-100 shrink-0">
-                <div className="relative">
+                <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md,.docx,.xlsx" onChange={handleFileChange} />
+                {pendingFile && (
+                  <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-xl text-xs text-orange-700 font-medium">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                    <span className="truncate max-w-[180px]">{pendingFile.name}</span>
+                    <button type="button" onClick={() => setPendingFile(null)} className="ml-auto text-orange-400 hover:text-orange-600">✕</button>
+                  </div>
+                )}
+                <div className="flex gap-2.5">
+                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                    className="w-10 h-10 bg-stone-100 hover:bg-stone-200 disabled:opacity-50 text-stone-500 rounded-xl flex items-center justify-center transition-all shrink-0">
+                    {uploading
+                      ? <div className="w-4 h-4 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+                      : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                    }
+                  </button>
                   <textarea
                     rows={1}
                     autoFocus
@@ -421,13 +471,14 @@ export default function CreateProjectModal({ onClose, onCreated }: Props) {
                       }
                     }}
                     placeholder="Répondez à l'assistant..."
-                    className="w-full pl-4 pr-12 py-3.5 rounded-2xl bg-stone-100 border-none text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition-all resize-none leading-relaxed"
-                    style={{ minHeight: '48px', maxHeight: '100px' }}
+                    disabled={wizardLoading}
+                    className="flex-1 resize-none bg-stone-50 border border-stone-200 rounded-2xl px-5 py-2.5 shadow-inner text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 disabled:opacity-50 overflow-hidden transition-all"
+                    style={{ minHeight: '40px', maxHeight: '100px' }}
                   />
                   <button
                     onClick={handleWizardSend}
-                    disabled={!wizardInput.trim() || wizardLoading}
-                    className="absolute right-2 bottom-2 w-8 h-8 rounded-xl bg-orange-500 text-white flex items-center justify-center disabled:opacity-30 disabled:grayscale transition-all shadow-md shadow-orange-500/20"
+                    disabled={(!wizardInput.trim() && !pendingFile) || wizardLoading}
+                    className="w-10 h-10 bg-orange-500 hover:bg-orange-600 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-xl flex items-center justify-center transition-all shrink-0 active:scale-90 shadow-lg shadow-orange-500/20"
                   >
                     <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
                       <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
