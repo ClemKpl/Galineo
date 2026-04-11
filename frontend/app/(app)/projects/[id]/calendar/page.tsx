@@ -97,7 +97,6 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   const [editNoteContent, setEditNoteContent] = useState('');
   const [editNoteLoading, setEditNoteLoading] = useState(false);
   const [monthNotes, setMonthNotes] = useState<(DateNote & { date: string })[]>([]);
-  const [monthNotes, setMonthNotes] = useState<(DateNote & { date: string })[]>([]);
 
   // Task edit form
   const [title, setTitle] = useState('');
