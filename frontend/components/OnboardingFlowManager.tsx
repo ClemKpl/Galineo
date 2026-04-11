@@ -182,6 +182,15 @@ function TourChoiceModal({ userName, onStart, onSkip }: { userName: string; onSt
 // ─── Phase 2 : Tour Driver.js ─────────────────────────────────────────────────
 
 async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: () => void) {
+  // Inject driver.js CSS from public folder (avoids Next.js CSS module resolution issues)
+  if (!document.getElementById('driver-css')) {
+    const link = document.createElement('link');
+    link.id = 'driver-css';
+    link.rel = 'stylesheet';
+    link.href = '/driver.css';
+    document.head.appendChild(link);
+  }
+
   const { driver } = await import('driver.js');
 
   const driverObj = driver({
