@@ -195,7 +195,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
     try {
       const notesData = await api.get(`/projects/${projectId}/events/date-notes/${dateKey}`);
       setDayNotes(Array.isArray(notesData) ? notesData : []);
-      setDayEvents(monthEvents.filter(e => e.start_datetime.startsWith(dateKey)));
+      setDayEvents(monthEvents.filter(e => e.start_datetime?.startsWith(dateKey)));
     } catch (err) {
       console.error(err);
     } finally {
@@ -681,7 +681,7 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                       const isDragOver = dragOverDateKey === dateKey;
 
                       const notesForDay = monthNotes.filter(n => n.date === dateKey);
-                      const eventsForDay = monthEvents.filter(e => e.start_datetime.startsWith(dateKey));
+                      const eventsForDay = monthEvents.filter(e => e.start_datetime?.startsWith(dateKey));
 
                       return (
                         <div
