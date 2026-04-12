@@ -24,7 +24,7 @@ export default function ProjectSettingsPage() {
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [aiSettings, setAiSettings] = useState({ allow_create: 1, allow_modify: 1, allow_members: 1, allow_delete: 0 });
+  const [aiSettings, setAiSettings] = useState({ allow_create: 1, allow_modify: 1, allow_members: 1, allow_delete: 0, allow_invite: 1, allow_color: 1 });
   const [aiLoading, setAiLoading] = useState(false);
   const { showToast } = useToast();
 
@@ -194,15 +194,27 @@ export default function ProjectSettingsPage() {
               active={aiSettings.allow_modify === 1}
               onChange={(val) => handleToggleAiPermission('allow_modify', val ? 1 : 0)}
             />
-            <PermissionToggle 
-              label="Gérer les membres" 
-              description="Autoriser l'IA à ajouter ou retirer des collaborateurs via email."
+            <PermissionToggle
+              label="Gérer les membres"
+              description="Autoriser l'IA à ajouter ou retirer des collaborateurs déjà inscrits."
               active={aiSettings.allow_members === 1}
               onChange={(val) => handleToggleAiPermission('allow_members', val ? 1 : 0)}
             />
+            <PermissionToggle
+              label="Invitations externes"
+              description="Autoriser l'IA à envoyer des invitations par email à des personnes non inscrites."
+              active={aiSettings.allow_invite === 1}
+              onChange={(val) => handleToggleAiPermission('allow_invite', val ? 1 : 0)}
+            />
+            <PermissionToggle
+              label="Changer les couleurs Gantt"
+              description="Autoriser l'IA à modifier la couleur des tâches dans le diagramme de Gantt."
+              active={aiSettings.allow_color === 1}
+              onChange={(val) => handleToggleAiPermission('allow_color', val ? 1 : 0)}
+            />
             <div className="pt-4 border-t border-stone-100">
-              <PermissionToggle 
-                label="Supprimer des éléments" 
+              <PermissionToggle
+                label="Supprimer des éléments"
                 description="Action irréversible. L'IA pourra supprimer des tâches existantes."
                 active={aiSettings.allow_delete === 1}
                 isExperimental={true}

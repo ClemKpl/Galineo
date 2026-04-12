@@ -436,6 +436,8 @@ const initDb = async () => {
     await ensureColumn('tasks', 'color', 'TEXT');
     await ensureColumn('tasks', 'phase', 'TEXT');
     await ensureColumn('tasks', 'start_date', 'TEXT');
+    await ensureColumn('project_ai_settings', 'allow_invite', 'INTEGER DEFAULT 1');
+    await ensureColumn('project_ai_settings', 'allow_color', 'INTEGER DEFAULT 1');
     await ensureColumn('calendar_events', 'link', 'TEXT');
     await ensureColumn('calendar_events', 'recurrence_group', 'TEXT');
 

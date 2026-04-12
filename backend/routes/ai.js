@@ -6,6 +6,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { logActivity } = require('../utils/activityLogger');
 const { checkAiPromptLimit } = require('../middleware/planLimits');
 const { createNotification } = require('../utils/notifService');
+const { sendProjectInvitation, sendMemberAdded } = require('../utils/mailer');
 
 const MODEL_NAME = "gemini-3.1-flash-lite-preview";
 
@@ -204,7 +205,7 @@ const functions = {
     return { message: `${created} éléments créés.` };
   },
 
-  modifier_tache: async ({ task_id, title, status, priority, start_date, due_date, assigned_email }, userId, contextProjectId) => {
+  modifier_tache: async ({ task_id, title, status, priority, start_date, due_date, assigned_email, color }, userId, contextProjectId) => {
     const task = await dbGet('SELECT project_id FROM tasks WHERE id = ?', [task_id]);
     if (!task) return { error: `Tâche #${task_id} introuvable.` };
     
@@ -226,6 +227,7 @@ const functions = {
     if (start_date) { fields.push('start_date = ?'); params.push(start_date); }
     if (due_date) { fields.push('due_date = ?'); params.push(due_date); }
     if (assignedTo !== undefined) { fields.push('assigned_to = ?'); params.push(assignedTo); }
+    if (color) { fields.push('color = ?'); params.push(color); }
     if (fields.length === 0) return { message: 'Aucune modification' };
     params.push(task_id);
     await dbRun(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`, params);
@@ -234,23 +236,62 @@ const functions = {
     return { message: `Tâche ${task_id} mise à jour` };
   },
 
-  gerer_membres: async ({ project_id, email, action }, userId, contextProjectId) => {
+  gerer_membres: async ({ project_id, email, action, role }, userId, contextProjectId) => {
     const targetProjectId = contextProjectId || project_id;
     if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
       return { error: "Accès refusé : Vous ne pouvez pas gérer les membres d'un autre projet." };
     }
     if (!targetProjectId) return { error: "ID de projet manquant." };
 
-    const u = await dbGet('SELECT id, name FROM users WHERE LOWER(email) = LOWER(?)', [email]);
-    if (!u) return { error: `Email ${email} introuvable.` };
+    const roleMap = { owner: 1, admin: 2, membre: 3, member: 3, observateur: 4, observer: 4 };
+    const roleId = roleMap[(role || 'membre').toLowerCase()] || 3;
 
-    if (action === 'add') {
-      await dbRun(`INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, 3)`, [targetProjectId, u.id]);
-      return { message: `Membre ${u.name} ajouté.` };
-    } else {
+    const u = await dbGet('SELECT id, name FROM users WHERE LOWER(email) = LOWER(?)', [email]);
+
+    if (action === 'remove') {
+      if (!u) return { error: `Email ${email} introuvable.` };
       await dbRun(`DELETE FROM project_members WHERE project_id = ? AND user_id = ?`, [targetProjectId, u.id]);
       return { message: `Membre ${u.name} retiré.` };
     }
+
+    // action === 'add'
+    if (!u) {
+      // Utilisateur non inscrit → envoyer une invitation par email
+      const existing = await dbGet(
+        `SELECT id FROM invitations WHERE project_id = ? AND LOWER(email) = LOWER(?) AND status = 'pending'`,
+        [targetProjectId, email]
+      );
+      if (existing) return { message: `Une invitation est déjà en attente pour ${email}.` };
+
+      const crypto = require('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      await dbRun(
+        `INSERT INTO invitations (project_id, email, role_id, inviter_id, token, status) VALUES (?, ?, ?, ?, ?, 'pending')`,
+        [targetProjectId, email, roleId, userId, token]
+      );
+
+      const project = await dbGet('SELECT title FROM projects WHERE id = ?', [targetProjectId]);
+      const inviter = await dbGet('SELECT name FROM users WHERE id = ?', [userId]);
+      await sendProjectInvitation({
+        email,
+        projectName: project?.title || 'un projet',
+        inviterName: inviter?.name || 'Un collaborateur',
+        token
+      });
+
+      const roleLabels = { 1: 'Propriétaire', 2: 'Admin', 3: 'Membre', 4: 'Observateur' };
+      return { message: `Invitation envoyée à ${email} avec le rôle ${roleLabels[roleId] || 'Membre'}.` };
+    }
+
+    // Utilisateur existant → ajout direct
+    await dbRun(
+      `INSERT OR REPLACE INTO project_members (project_id, user_id, role_id) VALUES (?, ?, ?)`,
+      [targetProjectId, u.id, roleId]
+    );
+    const project = await dbGet('SELECT id, title FROM projects WHERE id = ?', [targetProjectId]);
+    await sendMemberAdded({ userId: u.id, projectName: project?.title || '', projectId: targetProjectId });
+    const roleLabels = { 1: 'Propriétaire', 2: 'Admin', 3: 'Membre', 4: 'Observateur' };
+    return { message: `${u.name} ajouté au projet avec le rôle ${roleLabels[roleId] || 'Membre'}.` };
   },
 
   voir_taches: async ({ project_id }, userId, contextProjectId) => {
@@ -310,10 +351,10 @@ const functions = {
     if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
       return { error: "Accès refusé." };
     }
-    if (!element_ids || !Array.isArray(element_ids)) return { error: "IDs manquants." };
-    
+    if (!element_ids || !Array.isArray(element_ids) || element_ids.length === 0) return { error: "IDs manquants ou liste vide." };
+
     await dbRun(`UPDATE tasks SET status = 'deleted' WHERE project_id = ? AND id IN (${element_ids.map(() => '?').join(',')})`, [targetProjectId, ...element_ids]);
-    return { message: `${element_ids.length} éléments supprimés.` };
+    return { message: `${element_ids.length} élément(s) supprimé(s).` };
   }
 };
 
@@ -404,7 +445,7 @@ const toolConfig = [
       },
       {
         name: "modifier_tache",
-        description: "Modifie une tâche existante (date, statut, assignation)",
+        description: "Modifie une tâche existante (date, statut, assignation, couleur dans le Gantt)",
         parameters: {
           type: "object",
           properties: {
@@ -412,7 +453,8 @@ const toolConfig = [
             status: { type: "string", enum: ["todo", "in_progress", "done"] },
             start_date: { type: "string" },
             due_date: { type: "string" },
-            assigned_email: { type: "string" }
+            assigned_email: { type: "string" },
+            color: { type: "string", description: "Couleur hexadécimale de la tâche dans le Gantt (ex: #f97316, #ef4444, #3b82f6, #10b981, #a855f7, #64748b)" }
           },
           required: ["task_id"]
         }
@@ -428,13 +470,14 @@ const toolConfig = [
       },
       {
         name: "gerer_membres",
-        description: "Ajoute ou retire un membre du projet via son email",
+        description: "Ajoute ou retire un membre du projet. Si l'email n'est pas encore inscrit sur Galineo, envoie automatiquement une invitation par email avec un lien d'inscription.",
         parameters: {
           type: "object",
           properties: {
             project_id: { type: "number" },
             email: { type: "string" },
-            action: { type: "string", enum: ["add", "remove"] }
+            action: { type: "string", enum: ["add", "remove"] },
+            role: { type: "string", enum: ["membre", "observateur", "admin"], description: "Rôle à attribuer : 'membre' (défaut), 'observateur' (lecture seule), 'admin'" }
           },
           required: ["project_id", "email", "action"]
         }
@@ -851,7 +894,9 @@ Si tu détectes cette structure, analyse son contenu et propose à l'utilisateur
                 const canCreate = !settings || settings.allow_create === 1;
                 const canModify = !settings || settings.allow_modify === 1;
                 const canMembers = !settings || settings.allow_members === 1;
-                const canDelete = settings && settings.allow_delete === 1;
+                const canDelete = !settings || settings.allow_delete === 1;
+                const canInvite = !settings || settings.allow_invite === 1;
+                const canColor = !settings || settings.allow_color === 1;
 
                 // 2. Rôle de l'utilisateur (Propriétaire=1, Admin=2, Membre=3, Observateur=4)
                 // Seuls Propriétaire et Admin peuvent effectuer des actions administratives via l'IA
@@ -876,6 +921,17 @@ Si tu détectes cette structure, analyse son contenu et propose à l'utilisateur
                     toolLogs.push({ name: call.name, response: { error: "Action refusée : Vous n'avez pas les droits d'administrateur nécessaires pour gérer l'équipe via l'IA." } });
                     continue;
                   }
+                  // Restriction spécifique aux invitations externes
+                  if (call.args?.action === 'add' && !canInvite) {
+                    toolLogs.push({ name: call.name, response: { error: "Action refusée : L'envoi d'invitations externes par l'IA est désactivé pour ce projet." } });
+                    continue;
+                  }
+                }
+
+                // Restriction de COULEUR (modifier_tache avec champ color)
+                if (call.name === 'modifier_tache' && call.args?.color && !canColor) {
+                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La modification des couleurs par l'IA est désactivée pour ce projet." } });
+                  continue;
                 }
 
                 // Restriction de MODIFICATION PARAMÈTRES par rôle
