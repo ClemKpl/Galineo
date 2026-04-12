@@ -348,6 +348,39 @@ const functions = {
     return { members: rows };
   },
   
+  creer_jalon: async ({ project_id, title, date, color }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) return { error: "Accès refusé." };
+    if (!title || !date) return { error: "Titre et date requis." };
+    const result = await dbRun(
+      `INSERT INTO milestones (project_id, title, date, color) VALUES (?, ?, ?, ?)`,
+      [targetProjectId, title, date, color || '#a855f7']
+    );
+    return { message: `Jalon "${title}" créé le ${date}.`, id: result.lastID };
+  },
+
+  modifier_jalon: async ({ milestone_id, title, date, color }, userId, contextProjectId) => {
+    const milestone = await dbGet('SELECT project_id FROM milestones WHERE id = ?', [milestone_id]);
+    if (!milestone) return { error: `Jalon #${milestone_id} introuvable.` };
+    if (contextProjectId && Number(milestone.project_id) !== Number(contextProjectId)) return { error: "Accès refusé." };
+    const fields = []; const params = [];
+    if (title) { fields.push('title = ?'); params.push(title); }
+    if (date)  { fields.push('date = ?');  params.push(date); }
+    if (color) { fields.push('color = ?'); params.push(color); }
+    if (fields.length === 0) return { message: 'Aucune modification.' };
+    params.push(milestone_id);
+    await dbRun(`UPDATE milestones SET ${fields.join(', ')} WHERE id = ?`, params);
+    return { message: `Jalon #${milestone_id} mis à jour.` };
+  },
+
+  supprimer_jalon: async ({ milestone_id }, userId, contextProjectId) => {
+    const milestone = await dbGet('SELECT project_id FROM milestones WHERE id = ?', [milestone_id]);
+    if (!milestone) return { error: `Jalon #${milestone_id} introuvable.` };
+    if (contextProjectId && Number(milestone.project_id) !== Number(contextProjectId)) return { error: "Accès refusé." };
+    await dbRun('DELETE FROM milestones WHERE id = ?', [milestone_id]);
+    return { message: `Jalon #${milestone_id} supprimé.` };
+  },
+
   supprimer_elements: async ({ project_id, element_ids }, userId, contextProjectId) => {
     const targetProjectId = contextProjectId || project_id;
     if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
@@ -515,6 +548,43 @@ const toolConfig = [
           type: "object",
           properties: { project_id: { type: "number" } },
           required: ["project_id"]
+        }
+      },
+      {
+        name: "creer_jalon",
+        description: "Crée un jalon (milestone) sur le Gantt à une date précise.",
+        parameters: {
+          type: "object",
+          properties: {
+            project_id: { type: "number" },
+            title: { type: "string", description: "Nom du jalon (ex: 'Livraison v1.0')" },
+            date: { type: "string", description: "Date du jalon au format YYYY-MM-DD" },
+            color: { type: "string", description: "Couleur hex (défaut: #a855f7)" }
+          },
+          required: ["title", "date"]
+        }
+      },
+      {
+        name: "modifier_jalon",
+        description: "Modifie un jalon existant (titre, date ou couleur).",
+        parameters: {
+          type: "object",
+          properties: {
+            milestone_id: { type: "number" },
+            title: { type: "string" },
+            date: { type: "string" },
+            color: { type: "string" }
+          },
+          required: ["milestone_id"]
+        }
+      },
+      {
+        name: "supprimer_jalon",
+        description: "Supprime un jalon du Gantt.",
+        parameters: {
+          type: "object",
+          properties: { milestone_id: { type: "number" } },
+          required: ["milestone_id"]
         }
       },
       {
@@ -770,6 +840,11 @@ Si tu détectes cette structure, analyse son contenu et propose à l'utilisateur
             currentTools = toolConfig;
           } else { // mode === 'project'
             // Injection de l'état actuel du projet dans le contexte
+            const projectMilestones = await dbAll(
+              `SELECT id, title, date, color FROM milestones WHERE project_id = ? ORDER BY date ASC`,
+              [projectId]
+            );
+
             const projectTasks = await dbAll(`
               SELECT t.id, CASE WHEN t.parent_id IS NULL THEN 'feature' ELSE 'task' END as type,
                      t.title, t.status, t.priority, t.start_date, t.due_date, t.parent_id, t.color,
@@ -779,6 +854,13 @@ Si tu détectes cette structure, analyse son contenu et propose à l'utilisateur
               WHERE t.project_id = ? AND t.status != 'deleted'
               ORDER BY t.parent_id ASC NULLS FIRST, t.id ASC
             `, [projectId]);
+
+            let milestoneSnapshot = '';
+            if (projectMilestones.length > 0) {
+              milestoneSnapshot = '\n  [JALONS]\n' + projectMilestones.map(m =>
+                `    - [JALON #${m.id}] "${m.title}" | date: ${m.date}`
+              ).join('\n');
+            }
 
             let taskSnapshot = '';
             if (projectTasks.length === 0) {
@@ -807,7 +889,7 @@ Si tu détectes cette structure, analyse son contenu et propose à l'utilisateur
             CONTEXTE : ID Projet = ${projectId}. DATE DU JOUR : ${currentDate}.
 
             ── ÉTAT ACTUEL DU PROJET (mis à jour en temps réel) ──
-${taskSnapshot}
+${taskSnapshot}${milestoneSnapshot}
             ── FIN DE L'ÉTAT DU PROJET ──
 
             IMPORTANT : Tu connais déjà l'état complet du projet ci-dessus. Tu n'as PAS besoin d'appeler 'voir_taches' sauf si tu as besoin de vérifier un détail très précis après une modification récente.
