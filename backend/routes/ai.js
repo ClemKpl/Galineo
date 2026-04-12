@@ -302,10 +302,11 @@ const functions = {
     if (!targetProjectId) return { error: "ID de projet manquant." };
 
     const rows = await dbAll(`
-      SELECT t.id, t.title, t.status, t.priority, t.start_date, t.due_date, u.email as assigned_email
+      SELECT t.id, t.type, t.title, t.status, t.priority, t.start_date, t.due_date, t.parent_id, u.email as assigned_email
       FROM tasks t
       LEFT JOIN users u ON t.assigned_to = u.id
       WHERE t.project_id = ? AND t.status != 'deleted'
+      ORDER BY t.type DESC, t.parent_id ASC, t.id ASC
     `, [targetProjectId]);
     return { tasks: rows };
   },
@@ -461,11 +462,11 @@ const toolConfig = [
       },
       {
         name: "voir_taches",
-        description: "Récupère la liste des tâches d'un projet",
+        description: "Récupère la liste complète des fonctionnalités (type='feature') et tâches (type='task') du projet, avec leur id, titre, statut, priorité, dates, parent_id et email assigné. Appelle cet outil AVANT toute création ou modification pour connaître l'état exact du projet.",
         parameters: {
           type: "object",
-          properties: { project_id: { type: "number" } },
-          required: ["project_id"]
+          properties: { project_id: { type: "number", description: "ID du projet (optionnel si déjà en contexte projet)" } },
+          required: []
         }
       },
       {
