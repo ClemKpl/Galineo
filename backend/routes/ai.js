@@ -1049,6 +1049,25 @@ ${taskSnapshot}
           lastError = err;
           if (err.message.includes('429') && i < apiKeys.length - 1) continue;
           console.error('[AI Background Error]', err);
+
+          // Message d'erreur lisible selon le type d'erreur
+          let errorText;
+          if (err.message.includes('503') || err.message.includes('Service Unavailable') || err.message.includes('high demand')) {
+            errorText = "L'IA est actuellement surchargée en raison d'une forte demande. Réessaie dans quelques instants.";
+          } else if (err.message.includes('429') || err.message.includes('quota') || err.message.includes('RESOURCE_EXHAUSTED')) {
+            errorText = "Le quota de requêtes IA a été atteint. Réessaie dans quelques secondes.";
+          } else if (err.message.includes('timeout') || err.message.includes('DEADLINE_EXCEEDED')) {
+            errorText = "L'IA a mis trop de temps à répondre. Réessaie ta demande.";
+          } else {
+            errorText = "Une erreur inattendue s'est produite. Réessaie ta demande.";
+          }
+
+          const saveProjectId = (mode === 'wizard') ? null : (currentProjectIdTask || dbProjectId);
+          await dbRun(
+            `INSERT INTO ai_messages (project_id, user_id, role, content) VALUES (?, ?, 'model', ?)`,
+            [saveProjectId, userId, errorText]
+          ).catch(console.error);
+
           break;
         }
       }
