@@ -32,6 +32,7 @@ const billingRoutes     = require('./routes/billing');
 const adminRoutes       = require('./routes/admin');
 const supportRoutes     = require('./routes/support');
 const uploadRoutes      = require('./routes/upload');
+const milestoneRoutes   = require('./routes/milestones');
 
 const app = express();
 
@@ -79,6 +80,7 @@ app.use('/projects/:projectId/tasks',    authMiddleware, projectMemberMiddleware
 app.use('/tasks', globalTaskRoutes);
 app.use('/projects/:projectId/messages', authMiddleware, projectMemberMiddleware, messageRoutes);
 app.use('/projects/:projectId/events',   authMiddleware, projectMemberMiddleware, eventRoutes);
+app.use('/projects/:projectId/milestones', milestoneRoutes);
 app.use('/projects', projectRoutes);
 app.use('/users',    userRoutes);
 app.use('/roles',    roleRoutes);

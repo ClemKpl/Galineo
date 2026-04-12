@@ -50,6 +50,14 @@ type DateNote = {
   author_name: string;
 };
 
+type Milestone = {
+  id: number;
+  project_id: number;
+  title: string;
+  date: string;
+  color: string;
+};
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function diffInDays(start: Date, end: Date) {
@@ -97,6 +105,12 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
   const [editNoteContent, setEditNoteContent] = useState('');
   const [editNoteLoading, setEditNoteLoading] = useState(false);
   const [monthNotes, setMonthNotes] = useState<(DateNote & { date: string })[]>([]);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
+  const [milestoneTitle, setMilestoneTitle] = useState('');
+  const [milestoneDate, setMilestoneDate] = useState('');
+  const [milestoneColor, setMilestoneColor] = useState('#a855f7');
 
   // Task edit form
   const [title, setTitle] = useState('');
@@ -143,15 +157,17 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
 
     try {
       const month = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-      const [tasksRes, projectRes, notesRes] = await Promise.all([
+      const [tasksRes, projectRes, notesRes, milestonesRes] = await Promise.all([
         api.get(`/projects/${projectId}/tasks`),
         api.get(`/projects/${projectId}`),
         api.get(`/projects/${projectId}/events/date-notes?month=${month}`),
+        api.get(`/projects/${projectId}/milestones`),
       ]);
 
       setTasks(Array.isArray(tasksRes) ? tasksRes : []);
       setMembers(Array.isArray(projectRes?.members) ? projectRes.members : []);
       setMonthNotes(Array.isArray(notesRes) ? notesRes : []);
+      setMilestones(Array.isArray(milestonesRes) ? milestonesRes : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -528,6 +544,14 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => { setEditingMilestone(null); setMilestoneTitle(''); setMilestoneDate(formatDateInput(new Date())); setMilestoneColor('#a855f7'); setShowMilestoneModal(true); }}
+              className="rounded-2xl border border-purple-200 bg-purple-50 px-4 py-2.5 text-[11px] font-black uppercase tracking-widest text-purple-700 transition hover:bg-purple-100 active:scale-95 shadow-sm flex items-center gap-2"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+              Jalon
+            </button>
             <label className="cursor-pointer rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-[11px] font-black uppercase tracking-widest text-stone-700 transition hover:bg-stone-50 active:scale-95 shadow-sm">
               Import
               <input type="file" accept=".csv" onChange={handleImport} className="hidden" />
@@ -642,6 +666,18 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
                           >
                             {dayInfo.day}
                           </div>
+                          {milestones.filter(m => m.date === dateKey).map(m => (
+                            <div
+                              key={m.id}
+                              onClick={(e) => { e.stopPropagation(); setEditingMilestone(m); setMilestoneTitle(m.title); setMilestoneDate(m.date); setMilestoneColor(m.color || '#a855f7'); setShowMilestoneModal(true); }}
+                              className="mt-1 flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] md:text-[10px] font-black cursor-pointer hover:opacity-80 transition-opacity"
+                              style={{ backgroundColor: `${m.color}20`, color: m.color, border: `1px solid ${m.color}40` }}
+                              title={m.title}
+                            >
+                              <svg width="7" height="7" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+                              <span className="truncate">{m.title}</span>
+                            </div>
+                          ))}
                           {notesForDay.length > 0 && (
                             <div className="mt-1 flex flex-col gap-0.5 overflow-hidden">
                               {notesForDay.slice(0, 2).map(note => (
@@ -705,6 +741,88 @@ export default function GanttPage({ params }: { params: Promise<{ id: string }> 
             </div>
           </div>
         </div>
+
+      {/* Milestone Modal */}
+      {showMilestoneModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setShowMilestoneModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 border border-stone-200" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-black text-stone-900 uppercase tracking-tight mb-5">
+              {editingMilestone ? 'Modifier le jalon' : 'Nouveau jalon'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-600 mb-1.5 uppercase tracking-wider">Titre</label>
+                <input
+                  type="text"
+                  value={milestoneTitle}
+                  onChange={e => setMilestoneTitle(e.target.value)}
+                  placeholder="Ex: Livraison v1.0"
+                  className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-purple-400/30 focus:border-purple-400"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-stone-600 mb-1.5 uppercase tracking-wider">Date</label>
+                <input
+                  type="date"
+                  value={milestoneDate}
+                  onChange={e => setMilestoneDate(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-purple-400/30 focus:border-purple-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-stone-600 mb-1.5 uppercase tracking-wider">Couleur</label>
+                <div className="flex items-center gap-2">
+                  {['#a855f7', '#f97316', '#ef4444', '#3b82f6', '#10b981', '#64748b'].map(c => (
+                    <button key={c} type="button" onClick={() => setMilestoneColor(c)}
+                      className="w-7 h-7 rounded-full border-2 transition-transform hover:scale-110"
+                      style={{ backgroundColor: c, borderColor: milestoneColor === c ? '#1c1917' : 'transparent' }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              {editingMilestone && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await api.delete(`/projects/${projectId}/milestones/${editingMilestone.id}`);
+                    setMilestones(ms => ms.filter(m => m.id !== editingMilestone.id));
+                    setShowMilestoneModal(false);
+                    showToast('Jalon supprimé', 'success');
+                  }}
+                  className="px-4 py-2.5 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 border border-red-200 transition-colors"
+                >Supprimer</button>
+              )}
+              <button type="button" onClick={() => setShowMilestoneModal(false)}
+                className="ml-auto px-4 py-2.5 rounded-xl text-sm font-bold text-stone-500 hover:bg-stone-50 border border-stone-200 transition-colors">
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={!milestoneTitle.trim() || !milestoneDate}
+                onClick={async () => {
+                  if (editingMilestone) {
+                    const updated = await api.patch(`/projects/${projectId}/milestones/${editingMilestone.id}`, { title: milestoneTitle, date: milestoneDate, color: milestoneColor });
+                    setMilestones(ms => ms.map(m => m.id === editingMilestone.id ? updated : m));
+                    showToast('Jalon mis à jour', 'success');
+                  } else {
+                    const created = await api.post(`/projects/${projectId}/milestones`, { title: milestoneTitle, date: milestoneDate, color: milestoneColor });
+                    setMilestones(ms => [...ms, created]);
+                    showToast('Jalon créé', 'success');
+                  }
+                  setShowMilestoneModal(false);
+                }}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-colors disabled:opacity-50"
+                style={{ backgroundColor: milestoneColor }}
+              >
+                {editingMilestone ? 'Enregistrer' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Task Edit Modal */}
       {editingTask && (
