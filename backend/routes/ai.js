@@ -302,11 +302,12 @@ const functions = {
     if (!targetProjectId) return { error: "ID de projet manquant." };
 
     const rows = await dbAll(`
-      SELECT t.id, t.type, t.title, t.status, t.priority, t.start_date, t.due_date, t.parent_id, u.email as assigned_email
+      SELECT t.id, CASE WHEN t.parent_id IS NULL THEN 'feature' ELSE 'task' END as type,
+             t.title, t.status, t.priority, t.start_date, t.due_date, t.parent_id, u.email as assigned_email
       FROM tasks t
       LEFT JOIN users u ON t.assigned_to = u.id
       WHERE t.project_id = ? AND t.status != 'deleted'
-      ORDER BY t.type DESC, t.parent_id ASC, t.id ASC
+      ORDER BY t.parent_id ASC NULLS FIRST, t.id ASC
     `, [targetProjectId]);
     return { tasks: rows };
   },
