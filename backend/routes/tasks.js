@@ -97,7 +97,7 @@ router.get('/', authMiddleware, (req, res) => {
     FROM tasks t
     LEFT JOIN users u1 ON t.created_by = u1.id
     LEFT JOIN users u2 ON t.assigned_to = u2.id
-    WHERE t.project_id = ?
+    WHERE t.project_id = ? AND t.status != 'deleted'
     ORDER BY t.created_at ASC
   `, [Number(projectId)], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
