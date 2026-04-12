@@ -14,7 +14,8 @@
       "Bash(git commit -m 'debug: log redirect URL Google OAuth:*)",
       "Bash(git commit -m 'feat: responsive mobile settings & PricingModal:*)",
       "Bash(git commit -m 'fix: PricingModal scrollable et limité à 90dvh sur mobile:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(grep -n \"INSERT.*SELECT\\\\|UPDATE.*WHERE.*IN\\\\|DELETE.*WHERE.*IN\" /c/xampp/htdocs/Galineo/backend/routes/*.js)"
     ]
   }
 }

@@ -285,9 +285,10 @@ export default function Sidebar({
       <aside className={`fixed inset-y-0 left-0 w-72 lg:w-64 bg-stone-900 flex flex-col shrink-0 select-none z-50 transition-transform duration-300 transform lg:translate-x-0 lg:static h-full ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         {/* Logo & Close Button */}
         <div className="px-5 h-16 flex items-center justify-between border-b border-stone-800">
-          <div className="flex items-center gap-2.5">
+          <Link href="/dashboard" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <Logo size={22} className="text-orange-500" />
             <span className="text-white font-bold text-lg tracking-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>GALINÉO</span>
+          </Link>
             {user?.plan === 'unlimited' ? (
               <span className="flex items-center gap-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
                 <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
