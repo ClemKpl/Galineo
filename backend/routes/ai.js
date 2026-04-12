@@ -838,6 +838,7 @@ Si tu détectes cette structure, analyse son contenu et propose à l'utilisateur
           const currentUserRoleId = userRoleId;
 
           let toolCallsCount = 0;
+          const actions = [];
           while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
             toolCallsCount++;
             const calls = response.functionCalls();
