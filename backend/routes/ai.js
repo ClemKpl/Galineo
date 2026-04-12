@@ -392,6 +392,190 @@ const functions = {
 
     await dbRun(`UPDATE tasks SET status = 'deleted' WHERE project_id = ? AND id IN (${validIds.map(() => '?').join(',')})`, [targetProjectId, ...validIds]);
     return { message: `${element_ids.length} élément(s) supprimé(s).` };
+  },
+
+  // ─── FONCTIONS BUDGET ─────────────────────────────────────────────────────
+
+  voir_budget: async ({ project_id }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé : Impossible de consulter le budget d'un autre projet." };
+    }
+    if (!targetProjectId) return { error: "ID de projet manquant." };
+
+    const config = await dbGet('SELECT * FROM budget_config WHERE project_id = ?', [targetProjectId]);
+    const entries = await dbAll(
+      'SELECT amount_cents, status FROM budget_entries WHERE project_id = ?',
+      [targetProjectId]
+    );
+
+    const budgetTotal = config?.budget_total || 0;
+    const devise = config?.devise || 'EUR';
+
+    let totalDepensesCents = 0;
+    let totalRevenusCents = 0;
+    let depensesPrevisCents = 0;
+    for (const e of entries) {
+      if (e.status === 'annulé') continue;
+      if (e.amount_cents < 0) {
+        if (e.status === 'payé' || e.status === 'engagé') totalDepensesCents += Math.abs(e.amount_cents);
+        else if (e.status === 'prévu') depensesPrevisCents += Math.abs(e.amount_cents);
+      } else if (e.amount_cents > 0 && (e.status === 'payé' || e.status === 'engagé')) {
+        totalRevenusCents += e.amount_cents;
+      }
+    }
+    const soldeNetCents = totalRevenusCents - totalDepensesCents;
+    const pctConsomme = budgetTotal > 0 ? Math.round((totalDepensesCents / budgetTotal) * 100) : 0;
+    let alerte = null;
+    if (budgetTotal > 0) {
+      if (totalDepensesCents > budgetTotal) alerte = 'critique';
+      else if (totalDepensesCents > budgetTotal * 0.8) alerte = 'warning';
+    }
+
+    const fmtEur = (cents) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: devise, minimumFractionDigits: 2 }).format(cents / 100);
+
+    return {
+      budget_total: fmtEur(budgetTotal),
+      devise,
+      solde_net: fmtEur(soldeNetCents),
+      total_depenses: fmtEur(totalDepensesCents),
+      total_revenus: fmtEur(totalRevenusCents),
+      depenses_previsionnelles: fmtEur(depensesPrevisCents),
+      pct_consomme: pctConsomme,
+      alerte: alerte || 'aucune',
+      message: alerte === 'critique'
+        ? `⚠️ BUDGET DÉPASSÉ : ${pctConsomme}% consommé !`
+        : alerte === 'warning'
+        ? `⚠️ Attention : ${pctConsomme}% du budget consommé (seuil d'alerte > 80%)`
+        : null,
+    };
+  },
+
+  voir_lignes_budget: async ({ project_id, status, category, date_from, date_to }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé : Impossible de consulter les lignes d'un autre projet." };
+    }
+    if (!targetProjectId) return { error: "ID de projet manquant." };
+
+    let sql = `
+      SELECT be.id, be.title, be.amount_cents, be.category, be.status,
+             be.entry_date, be.notes, u.email as created_by_email
+      FROM budget_entries be
+      LEFT JOIN users u ON u.id = be.created_by
+      WHERE be.project_id = ?
+    `;
+    const params = [targetProjectId];
+    if (status) { sql += ' AND be.status = ?'; params.push(status); }
+    if (category) { sql += ' AND be.category = ?'; params.push(category); }
+    if (date_from) { sql += ' AND be.entry_date >= ?'; params.push(date_from); }
+    if (date_to) { sql += ' AND be.entry_date <= ?'; params.push(date_to); }
+    sql += ' ORDER BY be.entry_date DESC, be.id DESC';
+
+    const rows = await dbAll(sql, params);
+    const config = await dbGet('SELECT devise FROM budget_config WHERE project_id = ?', [targetProjectId]);
+    const devise = config?.devise || 'EUR';
+    const fmtEur = (cents) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: devise, minimumFractionDigits: 2 }).format(cents / 100);
+
+    const lignes = rows.map(r => ({
+      id: r.id,
+      title: r.title,
+      montant: fmtEur(r.amount_cents),
+      type: r.amount_cents < 0 ? 'dépense' : 'revenu',
+      category: r.category,
+      status: r.status,
+      date: r.entry_date || 'non définie',
+      notes: r.notes || null,
+      cree_par: r.created_by_email,
+    }));
+    return { lignes, total: lignes.length };
+  },
+
+  creer_ligne_budget: async ({ project_id, title, amount, category, status, date, notes }, userId, contextProjectId) => {
+    const targetProjectId = contextProjectId || project_id;
+    if (contextProjectId && project_id && Number(project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé : Vous ne pouvez pas modifier le budget d'un autre projet." };
+    }
+    if (!targetProjectId) return { error: "ID de projet manquant." };
+    if (!title) return { error: "Le titre est requis." };
+    if (amount === undefined || amount === null) return { error: "Le montant est requis." };
+
+    // Vérification du rôle (Propriétaire=1, Admin=2, Membre=3)
+    const membership = await dbGet(
+      'SELECT p.owner_id, pm.role_id FROM projects p LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ? WHERE p.id = ?',
+      [userId, targetProjectId]
+    );
+    const isOwnerOrAdmin = membership && (membership.owner_id === userId || (membership.role_id && membership.role_id <= 2));
+    const isMember = isOwnerOrAdmin || (membership && membership.role_id === 3);
+    if (!isMember) return { error: "Action refusée : Droits insuffisants (Observateur : lecture seule)." };
+
+    const amountCents = Math.round(parseFloat(amount) * 100);
+    const result = await dbRun(
+      'INSERT INTO budget_entries (project_id, title, amount_cents, category, status, entry_date, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [targetProjectId, title, amountCents, category || 'Divers', status || 'prévu', date || null, notes || null, userId]
+    );
+    return { id: result.lastID, message: `Ligne budgétaire "${title}" créée avec succès.` };
+  },
+
+  modifier_ligne_budget: async ({ entry_id, title, amount, category, status, date, notes }, userId, contextProjectId) => {
+    if (!entry_id) return { error: "entry_id requis." };
+
+    const entry = await dbGet('SELECT * FROM budget_entries WHERE id = ?', [entry_id]);
+    if (!entry) return { error: `Ligne budgétaire #${entry_id} introuvable.` };
+
+    // VALIDATION ISOLATION
+    if (contextProjectId && Number(entry.project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé : Cette ligne appartient à un autre projet." };
+    }
+
+    const membership = await dbGet(
+      'SELECT p.owner_id, pm.role_id FROM projects p LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ? WHERE p.id = ?',
+      [userId, entry.project_id]
+    );
+    const isOwnerOrAdmin = membership && (membership.owner_id === userId || (membership.role_id && membership.role_id <= 2));
+    const isMemberCreator = membership && membership.role_id === 3 && entry.created_by === userId;
+    if (!isOwnerOrAdmin && !isMemberCreator) {
+      return { error: "Action refusée : Vous n'avez pas les droits pour modifier cette ligne." };
+    }
+
+    const fields = [];
+    const params = [];
+    if (title !== undefined) { fields.push('title = ?'); params.push(title); }
+    if (amount !== undefined) { fields.push('amount_cents = ?'); params.push(Math.round(parseFloat(amount) * 100)); }
+    if (category !== undefined) { fields.push('category = ?'); params.push(category); }
+    if (status !== undefined) { fields.push('status = ?'); params.push(status); }
+    if (date !== undefined) { fields.push('entry_date = ?'); params.push(date || null); }
+    if (notes !== undefined) { fields.push('notes = ?'); params.push(notes || null); }
+    if (fields.length === 0) return { message: 'Aucune modification demandée.' };
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    params.push(entry_id);
+    await dbRun(`UPDATE budget_entries SET ${fields.join(', ')} WHERE id = ?`, params);
+    return { message: `Ligne budgétaire #${entry_id} mise à jour avec succès.` };
+  },
+
+  supprimer_ligne_budget: async ({ entry_id, project_id }, userId, contextProjectId) => {
+    if (!entry_id) return { error: "entry_id requis." };
+
+    const entry = await dbGet('SELECT * FROM budget_entries WHERE id = ?', [entry_id]);
+    if (!entry) return { error: `Ligne budgétaire #${entry_id} introuvable.` };
+
+    // VALIDATION ISOLATION
+    if (contextProjectId && Number(entry.project_id) !== Number(contextProjectId)) {
+      return { error: "Accès refusé : Cette ligne appartient à un autre projet." };
+    }
+
+    // Réservé aux Propriétaires et Admins
+    const membership = await dbGet(
+      'SELECT p.owner_id, pm.role_id FROM projects p LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ? WHERE p.id = ?',
+      [userId, entry.project_id]
+    );
+    const isOwnerOrAdmin = membership && (membership.owner_id === userId || (membership.role_id && membership.role_id <= 2));
+    if (!isOwnerOrAdmin) {
+      return { error: "Action refusée : Seuls les propriétaires et admins peuvent supprimer des lignes budgétaires." };
+    }
+
+    await dbRun('DELETE FROM budget_entries WHERE id = ?', [entry_id]);
+    return { message: `Ligne budgétaire #${entry_id} supprimée définitivement.` };
   }
 };
 
@@ -600,6 +784,78 @@ const toolConfig = [
             }
           },
           required: ["project_id", "element_ids"]
+        }
+      },
+      {
+        name: "voir_budget",
+        description: "Récupère le résumé budgétaire du projet : budget total configuré, solde net, total dépenses (payées + engagées), total revenus, dépenses prévisionnelles, pourcentage consommé et alertes actives. Appelle cette fonction en premier pour toute question financière.",
+        parameters: {
+          type: "object",
+          properties: {
+            project_id: { type: "number", description: "ID du projet (optionnel si déjà en contexte projet)" }
+          },
+          required: []
+        }
+      },
+      {
+        name: "voir_lignes_budget",
+        description: "Récupère la liste des lignes budgétaires (dépenses et revenus) avec filtres optionnels par statut, catégorie et période.",
+        parameters: {
+          type: "object",
+          properties: {
+            project_id: { type: "number" },
+            status: { type: "string", enum: ["prévu", "engagé", "payé", "annulé"], description: "Filtrer par statut" },
+            category: { type: "string", enum: ["Personnel", "Matériel", "Logiciel", "Sous-traitance", "Marketing", "Divers"], description: "Filtrer par catégorie" },
+            date_from: { type: "string", description: "Date de début au format YYYY-MM-DD" },
+            date_to: { type: "string", description: "Date de fin au format YYYY-MM-DD" }
+          },
+          required: []
+        }
+      },
+      {
+        name: "creer_ligne_budget",
+        description: "Crée une nouvelle ligne budgétaire (dépense ou revenu). Pour une dépense, fournir un montant négatif (ex: -2500). Pour un revenu, un montant positif (ex: 5000). Accessible aux Propriétaires, Admins et Membres.",
+        parameters: {
+          type: "object",
+          properties: {
+            project_id: { type: "number" },
+            title: { type: "string", description: "Libellé de la ligne (ex: 'Hébergement serveur')" },
+            amount: { type: "number", description: "Montant en euros. Négatif = dépense, positif = revenu. Ex: -2500 pour une dépense de 2 500 €" },
+            category: { type: "string", enum: ["Personnel", "Matériel", "Logiciel", "Sous-traitance", "Marketing", "Divers"] },
+            status: { type: "string", enum: ["prévu", "engagé", "payé", "annulé"], description: "Statut de la ligne (défaut: prévu)" },
+            date: { type: "string", description: "Date de la dépense au format YYYY-MM-DD" },
+            notes: { type: "string", description: "Notes ou référence de facture" }
+          },
+          required: ["title", "amount"]
+        }
+      },
+      {
+        name: "modifier_ligne_budget",
+        description: "Modifie une ligne budgétaire existante. Propriétaires et Admins peuvent tout modifier. Un Membre ne peut modifier que ses propres lignes.",
+        parameters: {
+          type: "object",
+          properties: {
+            entry_id: { type: "number", description: "ID de la ligne budgétaire à modifier" },
+            title: { type: "string" },
+            amount: { type: "number", description: "Nouveau montant en euros (négatif = dépense, positif = revenu)" },
+            category: { type: "string", enum: ["Personnel", "Matériel", "Logiciel", "Sous-traitance", "Marketing", "Divers"] },
+            status: { type: "string", enum: ["prévu", "engagé", "payé", "annulé"] },
+            date: { type: "string", description: "Date au format YYYY-MM-DD" },
+            notes: { type: "string" }
+          },
+          required: ["entry_id"]
+        }
+      },
+      {
+        name: "supprimer_ligne_budget",
+        description: "Supprime définitivement une ligne budgétaire. Réservé aux Propriétaires et Admins uniquement.",
+        parameters: {
+          type: "object",
+          properties: {
+            entry_id: { type: "number", description: "ID de la ligne budgétaire à supprimer" },
+            project_id: { type: "number" }
+          },
+          required: ["entry_id"]
         }
       }
     ]
@@ -905,7 +1161,16 @@ ${taskSnapshot}${milestoneSnapshot}
             1. STRUCTURE : Pour toute nouvelle fonctionnalité créée, génère AU MOINS 2 tâches liées.
             2. ÉCHÉANCES : Fournis TOUJOURS une 'start_date' et une 'due_date' pour toute création.
             3. CONFIRMATION OBLIGATOIRE : Tu as l'interdiction de créer, modifier ou supprimer quoi que ce soit sans l'accord explicite de l'utilisateur ("Oui", "Ok", "C'est bon"). Présente ton plan, puis attends sa validation.
-            4. SUPPRESSION : L'outil 'supprimer_elements' est EXPÉRIMENTAL. Ne l'utilise que si explicitement demandé et confirme toujours avant. Tu ne peux PAS supprimer un projet entier, seulement ses tâches/fonctionnalités.`;
+            4. SUPPRESSION : L'outil 'supprimer_elements' est EXPÉRIMENTAL. Ne l'utilise que si explicitement demandé et confirme toujours avant. Tu ne peux PAS supprimer un projet entier, seulement ses tâches/fonctionnalités.
+
+            BUDGET :
+            - Tu peux consulter le budget du projet avec 'voir_budget' et 'voir_lignes_budget' avant de répondre à toute question financière.
+            - Tu peux créer, modifier ou supprimer des lignes budgétaires si l'utilisateur te le demande explicitement.
+            - Avant toute action budgétaire (création, modification, suppression), appelle 'voir_budget' pour connaître l'état actuel.
+            - Affiche toujours les montants en euros formatés (ex: 1 500,00 €).
+            - Pour une dépense, le montant doit être négatif (ex: -2500 pour 2 500 €). Pour un revenu, positif.
+            - Si le budget dépasse 80%, signale-le proactivement dans ta réponse même si l'utilisateur ne le demande pas.
+            - CONFIRMATION OBLIGATOIRE avant toute action budgétaire (création, modification, suppression).`;
             currentTools = toolConfig;
           }
 
@@ -1075,6 +1340,26 @@ ${taskSnapshot}${milestoneSnapshot}
                   }
                   if (!isAdminOrOwner) {
                     toolLogs.push({ name: call.name, response: { error: "Action refusée : Vous n'avez pas les droits d'administrateur nécessaires pour supprimer des éléments via l'IA." } });
+                    continue;
+                  }
+                }
+
+                // Restriction BUDGET — création/modification réservée aux membres (role <= 3)
+                if (call.name === 'creer_ligne_budget' && !canCreate) {
+                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La création par l'IA est désactivée pour ce projet." } });
+                  continue;
+                }
+                if (call.name === 'modifier_ligne_budget' && !canModify) {
+                  toolLogs.push({ name: call.name, response: { error: "Action refusée : La modification par l'IA est désactivée pour ce projet." } });
+                  continue;
+                }
+                if (call.name === 'supprimer_ligne_budget') {
+                  if (!canDelete) {
+                    toolLogs.push({ name: call.name, response: { error: "Action refusée : La suppression par l'IA est désactivée pour ce projet." } });
+                    continue;
+                  }
+                  if (!isAdminOrOwner) {
+                    toolLogs.push({ name: call.name, response: { error: "Action refusée : Seuls les propriétaires et admins peuvent supprimer des lignes budgétaires via l'IA." } });
                     continue;
                   }
                 }

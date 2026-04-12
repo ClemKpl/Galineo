@@ -385,6 +385,25 @@ const initDb = async () => {
         attempts INTEGER DEFAULT 0,
         expires_at TIMESTAMP NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS budget_config (
+        project_id INTEGER PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
+        budget_total INTEGER DEFAULT 0,
+        devise TEXT DEFAULT 'EUR'
+      )`,
+      `CREATE TABLE IF NOT EXISTS budget_entries (
+        id ${autoInc},
+        project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        amount_cents INTEGER NOT NULL,
+        category TEXT DEFAULT 'Divers',
+        status TEXT DEFAULT 'prévu',
+        entry_date TEXT,
+        notes TEXT,
+        attachment_url TEXT,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`
     ];
 

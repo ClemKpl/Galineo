@@ -65,6 +65,7 @@ export default function ProjectLayout({ children, params }: { children: React.Re
     { name: 'Dashboard', path: `/projects/${projectId}` },
     { name: 'Tâches', path: `/projects/${projectId}/tasks` },
     { name: 'GANTT', path: `/projects/${projectId}/calendar` },
+    { name: 'Budget', path: `/projects/${projectId}/budget` },
     { name: 'Assistant IA', path: `/projects/${projectId}/ai` },
     { name: 'Chat', path: `/projects/${projectId}/chat` },
   ];
