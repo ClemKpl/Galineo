@@ -767,10 +767,49 @@ Si tu détectes cette structure, analyse son contenu et propose à l'utilisateur
             Confirme la création et précise que pour modifier ou AJOUTER des éléments, il doit maintenant utiliser l'Assistant IA interne au projet.`;
             currentTools = toolConfig;
           } else { // mode === 'project'
+            // Injection de l'état actuel du projet dans le contexte
+            const projectTasks = await dbAll(`
+              SELECT t.id, CASE WHEN t.parent_id IS NULL THEN 'feature' ELSE 'task' END as type,
+                     t.title, t.status, t.priority, t.start_date, t.due_date, t.parent_id, t.color,
+                     u.email as assigned_email
+              FROM tasks t
+              LEFT JOIN users u ON t.assigned_to = u.id
+              WHERE t.project_id = ? AND t.status != 'deleted'
+              ORDER BY t.parent_id ASC NULLS FIRST, t.id ASC
+            `, [projectId]);
+
+            let taskSnapshot = '';
+            if (projectTasks.length === 0) {
+              taskSnapshot = 'Aucune fonctionnalité ni tâche pour l\'instant.';
+            } else {
+              const features = projectTasks.filter(t => t.type === 'feature');
+              const tasks = projectTasks.filter(t => t.type === 'task');
+              taskSnapshot = features.map(f => {
+                const children = tasks.filter(t => t.parent_id === f.id);
+                const childLines = children.map(t =>
+                  `    - [TÂCHE #${t.id}] "${t.title}" | statut: ${t.status} | priorité: ${t.priority}${t.start_date ? ` | début: ${t.start_date}` : ''}${t.due_date ? ` | échéance: ${t.due_date}` : ''}${t.assigned_email ? ` | assigné: ${t.assigned_email}` : ''}${t.color ? ` | couleur: ${t.color}` : ''}`
+                ).join('\n');
+                return `  [FONCTIONNALITÉ #${f.id}] "${f.title}" | statut: ${f.status}${f.due_date ? ` | échéance: ${f.due_date}` : ''}\n${childLines}`;
+              }).join('\n');
+              // Tâches orphelines (sans feature parente connue)
+              const orphans = tasks.filter(t => !features.find(f => f.id === t.parent_id));
+              if (orphans.length > 0) {
+                taskSnapshot += '\n  [TÂCHES SANS FONCTIONNALITÉ]\n' + orphans.map(t =>
+                  `    - [TÂCHE #${t.id}] "${t.title}" | statut: ${t.status}`
+                ).join('\n');
+              }
+            }
+
             sysInstruct = `Tu es l'Assistant Galineo Room dédié au projet "${projectTitle}".
             UTILISATEUR ACTUEL : ${userName} (${userEmail}).
             CONTEXTE : ID Projet = ${projectId}. DATE DU JOUR : ${currentDate}.
-            
+
+            ── ÉTAT ACTUEL DU PROJET (mis à jour en temps réel) ──
+${taskSnapshot}
+            ── FIN DE L'ÉTAT DU PROJET ──
+
+            IMPORTANT : Tu connais déjà l'état complet du projet ci-dessus. Tu n'as PAS besoin d'appeler 'voir_taches' sauf si tu as besoin de vérifier un détail très précis après une modification récente.
+
             VOUS ÊTES DANS UN ENVIRONNEMENT MULTI-UTILISATEURS (Galineo Room).
             - Chaque message de l'historique utilisateur est préfixé par son nom : [Nom].
             - Tu dois être capable de distinguer qui a dit quoi.
