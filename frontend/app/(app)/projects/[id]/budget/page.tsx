@@ -62,8 +62,8 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
 
   // Role permissions
   const myRoleId = project.my_role_id ?? 4;
-  const isOwnerOrAdmin = myRoleId <= 2 || user?.isAdmin;
-  const isMember = myRoleId <= 3 || user?.isAdmin;
+  const isOwnerOrAdmin = myRoleId <= 2 || !!user?.isAdmin;
+  const isMember = myRoleId <= 3 || !!user?.isAdmin;
 
   const fetchAll = useCallback(async () => {
     try {
