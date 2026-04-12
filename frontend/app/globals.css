@@ -92,6 +92,18 @@ html, body {
   --accent-shadow: rgb(244 63 94 / 0.2);
 }
 
+[data-accent="cyan"] {
+  --accent-50: #ecfeff;
+  --accent-100: #cffafe;
+  --accent-200: #a5f3fc;
+  --accent-300: #67e8f9;
+  --accent-400: #22d3ee;
+  --accent-500: #06b6d4;
+  --accent-600: #0891b2;
+  --accent-700: #0e7490;
+  --accent-shadow: rgb(6 182 212 / 0.2);
+}
+
 /* ── Tailwind Overrides (Universal) ── */
 
 /* Apply to all data-accent folders */

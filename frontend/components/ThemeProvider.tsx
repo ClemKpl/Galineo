@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useState, useEffect } from 'react';
 
-export type AccentColor = 'orange' | 'blue' | 'violet' | 'emerald' | 'rose';
+export type AccentColor = 'orange' | 'blue' | 'violet' | 'emerald' | 'rose' | 'cyan';
 
 interface ThemeContextType {
   accent: AccentColor;

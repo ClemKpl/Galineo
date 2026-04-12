@@ -241,6 +241,7 @@ export default function SettingsPage() {
     { id: 'violet', label: 'Violet', color: '#8b5cf6' },
     { id: 'emerald',label: 'Vert',   color: '#10b981' },
     { id: 'rose',   label: 'Rose',   color: '#f43f5e' },
+    { id: 'cyan',   label: 'Cyan',   color: '#06b6d4' },
   ];
 
   const handleManageBilling = async () => {
