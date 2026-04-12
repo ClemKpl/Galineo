@@ -574,6 +574,13 @@ export default function Sidebar({
           <IconLogout />
           Déconnexion
         </button>
+        <div className="flex items-center justify-center gap-3 pt-1">
+          <a href="/legal/mentions-legales" target="_blank" className="text-[10px] text-stone-600 hover:text-stone-400 transition-colors">Mentions légales</a>
+          <span className="text-stone-700 text-[10px]">·</span>
+          <a href="/legal/cgu" target="_blank" className="text-[10px] text-stone-600 hover:text-stone-400 transition-colors">CGU</a>
+          <span className="text-stone-700 text-[10px]">·</span>
+          <a href="/legal/confidentialite" target="_blank" className="text-[10px] text-stone-600 hover:text-stone-400 transition-colors">Confidentialité</a>
+        </div>
       </div>
 
       {/* Le PricingModal a été déplacé dans le layout.tsx pour un affichage global */}
