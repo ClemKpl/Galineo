@@ -14,6 +14,7 @@ const ACCENT_BG: Record<string, string> = {
   violet:  'bg-violet-500 hover:bg-violet-600 shadow-violet-500/20 hover:shadow-violet-500/30',
   emerald: 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20 hover:shadow-emerald-500/30',
   rose:    'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20 hover:shadow-rose-500/30',
+  cyan:    'bg-cyan-500 hover:bg-cyan-600 shadow-cyan-500/20 hover:shadow-cyan-500/30',
 };
 
 interface Role { id: number; name: string; is_default: number; }
