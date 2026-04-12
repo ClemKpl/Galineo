@@ -37,6 +37,7 @@ function RegisterForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [accepted, setAccepted] = useState(false);
 
   // Pre-fill email or handle join redirects
   const joinToken = searchParams.get('join');
@@ -120,8 +121,23 @@ function RegisterForm() {
                 className="w-full px-4 py-3 rounded-xl border border-stone-200 text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-4 focus:ring-orange-400/10 focus:border-orange-400 transition-all outline-none"
                 placeholder="Min. 8 carac. + majuscule" />
             </div>
-            <button type="submit" disabled={loading}
-              className="w-full py-3.5 px-4 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white font-bold rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={accepted}
+                onChange={(e) => setAccepted(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-stone-300 text-orange-500 focus:ring-orange-400 shrink-0 cursor-pointer"
+              />
+              <span className="text-xs text-stone-500 leading-relaxed">
+                J'accepte les{' '}
+                <Link href="/legal/cgu" target="_blank" className="text-orange-500 hover:underline font-semibold">Conditions Générales d'Utilisation</Link>
+                {' '}et la{' '}
+                <Link href="/legal/confidentialite" target="_blank" className="text-orange-500 hover:underline font-semibold">Politique de confidentialité</Link>
+              </span>
+            </label>
+
+            <button type="submit" disabled={loading || !accepted}
+              className="w-full py-3.5 px-4 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white font-bold rounded-xl transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25">
               {loading && <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
               {loading ? 'Vérification...' : 'Continuer'}
             </button>
@@ -142,6 +158,12 @@ function RegisterForm() {
               </svg>
               Continuer avec Google
             </a>
+            <p className="text-center text-xs text-stone-400 leading-relaxed">
+              En continuant avec Google, vous acceptez nos{' '}
+              <Link href="/legal/cgu" target="_blank" className="text-orange-400 hover:underline">CGU</Link>
+              {' '}et notre{' '}
+              <Link href="/legal/confidentialite" target="_blank" className="text-orange-400 hover:underline">Politique de confidentialité</Link>.
+            </p>
           </form>
         ) : (
           <form onSubmit={handleRegister} className="space-y-6" noValidate>
