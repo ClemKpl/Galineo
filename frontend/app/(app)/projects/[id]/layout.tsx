@@ -145,6 +145,7 @@ export default function ProjectLayout({ children, params }: { children: React.Re
               const tourAttr = tab.name === 'Dashboard' ? 'project-tab-dashboard'
                 : tab.name === 'Tâches' ? 'project-tab-tasks'
                 : tab.name === 'GANTT' ? 'project-tab-gantt'
+                : tab.name === 'Budget' ? 'project-tab-budget'
                 : tab.name === 'Assistant IA' ? 'project-tab-ai'
                 : tab.name === 'Chat' ? 'project-tab-chat'
                 : tab.name === 'Paramètres' ? 'project-tab-settings'

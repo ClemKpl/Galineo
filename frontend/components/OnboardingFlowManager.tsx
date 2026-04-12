@@ -389,6 +389,14 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
         },
       },
       {
+        element: '[data-tour="project-tab-budget"]',
+        popover: {
+          title: '💰 Budget',
+          description: 'Suivez les dépenses et revenus de votre projet, visualisez la répartition par catégorie et exportez vos données en CSV. L\'IA peut aussi créer et modifier des lignes budgétaires sur demande.',
+          side: 'bottom',
+        },
+      },
+      {
         element: '[data-tour="project-tab-ai"]',
         popover: {
           title: '🧠 Galineo Room',
