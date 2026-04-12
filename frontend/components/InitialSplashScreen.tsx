@@ -50,10 +50,16 @@ export default function InitialSplashScreen() {
         visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
     >
-      <div className={`transform transition-all duration-1000 ease-out ${
+      <div className={`flex items-center gap-4 transform transition-all duration-1000 ease-out ${
         visible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
       }`}>
-        <Logo size={100} className="text-orange-500" />
+        <Logo size={80} className="text-orange-500" />
+        <span 
+          className="text-stone-900 font-bold text-4xl tracking-tighter" 
+          style={{ fontFamily: "'Archivo Black', sans-serif" }}
+        >
+          GALINÉO
+        </span>
       </div>
     </div>
   );
