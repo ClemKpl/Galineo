@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import InitialSplashScreen from '@/components/InitialSplashScreen';
 
 export const metadata: Metadata = {
   title: 'Galineo — Gestion de projets',
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           <ThemeProvider>
+            <InitialSplashScreen />
             {children}
           </ThemeProvider>
         </AuthProvider>
