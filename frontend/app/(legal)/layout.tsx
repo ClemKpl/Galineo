@@ -16,6 +16,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
             <Link href="/legal/mentions-legales" className="hover:text-stone-900 transition-colors">Mentions légales</Link>
             <Link href="/legal/cgu" className="hover:text-stone-900 transition-colors">CGU</Link>
             <Link href="/legal/confidentialite" className="hover:text-stone-900 transition-colors">Confidentialité</Link>
+            <Link href="/legal/mes-donnees" className="hover:text-stone-900 transition-colors">Mes données</Link>
           </nav>
         </div>
       </header>
@@ -31,6 +32,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
             <Link href="/legal/mentions-legales" className="hover:text-stone-600 transition-colors">Mentions légales</Link>
             <Link href="/legal/cgu" className="hover:text-stone-600 transition-colors">CGU</Link>
             <Link href="/legal/confidentialite" className="hover:text-stone-600 transition-colors">Confidentialité</Link>
+            <Link href="/legal/mes-donnees" className="hover:text-stone-600 transition-colors">Mes données</Link>
           </div>
         </div>
       </footer>
