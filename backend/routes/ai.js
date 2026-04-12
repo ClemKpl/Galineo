@@ -354,8 +354,10 @@ const functions = {
       return { error: "Accès refusé." };
     }
     if (!element_ids || !Array.isArray(element_ids) || element_ids.length === 0) return { error: "IDs manquants ou liste vide." };
+    const validIds = element_ids.filter(id => Number.isInteger(Number(id)) && Number(id) > 0);
+    if (validIds.length === 0) return { error: "Aucun ID valide fourni." };
 
-    await dbRun(`UPDATE tasks SET status = 'deleted' WHERE project_id = ? AND id IN (${element_ids.map(() => '?').join(',')})`, [targetProjectId, ...element_ids]);
+    await dbRun(`UPDATE tasks SET status = 'deleted' WHERE project_id = ? AND id IN (${validIds.map(() => '?').join(',')})`, [targetProjectId, ...validIds]);
     return { message: `${element_ids.length} élément(s) supprimé(s).` };
   }
 };

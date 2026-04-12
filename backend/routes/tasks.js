@@ -3,6 +3,7 @@ const router = express.Router({ mergeParams: true });
 const db = require('../db');
 const { authMiddleware } = require('../middleware/auth');
 const { ensureProjectActive } = require('../middleware/projectStatus');
+const { projectMemberMiddleware } = require('../middleware/projectMember');
 const { logActivity } = require('../utils/activityLogger');
 const { sendNotificationEmail } = require('../utils/mailer');
 const { createNotification } = require('../utils/notifService');
@@ -90,7 +91,7 @@ function parseCsv(csv) {
 }
 
 // GET /projects/:projectId/tasks — Liste des tâches
-router.get('/', authMiddleware, (req, res) => {
+router.get('/', authMiddleware, projectMemberMiddleware, (req, res) => {
   const { projectId } = req.params;
   db.all(`
     SELECT t.*, u1.name as creator_name, u2.name as assignee_name, u2.avatar as assignee_avatar
@@ -106,7 +107,7 @@ router.get('/', authMiddleware, (req, res) => {
 });
 
 // GET /projects/:projectId/tasks/export
-router.get('/export', authMiddleware, (req, res) => {
+router.get('/export', authMiddleware, projectMemberMiddleware, (req, res) => {
   const { projectId } = req.params;
   db.all(`
     SELECT t.*, parent.title as parent_title, assignee.email as assignee_email
@@ -144,7 +145,7 @@ router.get('/export', authMiddleware, (req, res) => {
 });
 
 // POST /projects/:projectId/tasks/import
-router.post('/import', authMiddleware, ensureProjectActive, (req, res) => {
+router.post('/import', authMiddleware, projectMemberMiddleware, ensureProjectActive, (req, res) => {
   const { projectId } = req.params;
   const { csv } = req.body || {};
   const createdBy = req.user.id;
@@ -203,22 +204,22 @@ router.post('/import', authMiddleware, ensureProjectActive, (req, res) => {
 });
 
 // GET /projects/:projectId/tasks/:id/comments
-router.get('/:id/comments', authMiddleware, (req, res) => {
+router.get('/:id/comments', authMiddleware, projectMemberMiddleware, (req, res) => {
   const { id, projectId } = req.params;
   db.all(`
     SELECT tc.*, u.name as author_name, u.avatar as author_avatar
     FROM task_comments tc
     LEFT JOIN users u ON u.id = tc.user_id
-    WHERE tc.task_id = ?
+    WHERE tc.task_id = ? AND tc.task_id IN (SELECT id FROM tasks WHERE project_id = ?)
     ORDER BY tc.created_at DESC
-  `, [id], (err, rows) => {
+  `, [id, projectId], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });
 
 // POST /projects/:projectId/tasks/:id/comments
-router.post('/:id/comments', authMiddleware, ensureProjectActive, (req, res) => {
+router.post('/:id/comments', authMiddleware, projectMemberMiddleware, ensureProjectActive, (req, res) => {
   const { id } = req.params;
   const { content } = req.body;
   const userId = req.user.id;
@@ -239,7 +240,7 @@ router.post('/:id/comments', authMiddleware, ensureProjectActive, (req, res) => 
 });
 
 // POST / — Créer une tâche
-router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
+router.post('/', authMiddleware, projectMemberMiddleware, ensureProjectActive, (req, res) => {
   const { projectId } = req.params;
   const { title, description, parent_id, phase, priority, start_date, due_date, assigned_to, color } = req.body;
   const createdBy = req.user.id;
@@ -300,7 +301,7 @@ router.post('/', authMiddleware, ensureProjectActive, (req, res) => {
 });
 
 // PATCH /:id — Modifier une tâche
-router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
+router.patch('/:id', authMiddleware, projectMemberMiddleware, ensureProjectActive, (req, res) => {
   const { id, projectId } = req.params;
   const userId = req.user.id;
   const updates = [];
@@ -394,18 +395,28 @@ router.patch('/:id', authMiddleware, ensureProjectActive, (req, res) => {
   }
 });
 
-// DELETE /clear — Vider toutes les tâches d'un projet
-router.delete('/clear', authMiddleware, ensureProjectActive, (req, res) => {
+// DELETE /clear — Vider toutes les tâches d'un projet (admin/owner uniquement)
+router.delete('/clear', authMiddleware, projectMemberMiddleware, ensureProjectActive, (req, res) => {
   const { projectId } = req.params;
-  db.run('DELETE FROM tasks WHERE project_id = ?', [projectId], async (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    await logActivity(projectId, req.user.id, 'project', projectId, 'cleared_all_tasks');
-    res.json({ message: 'Toutes les tâches ont été supprimées' });
-  });
+  const userId = req.user.id;
+  db.get(
+    `SELECT p.owner_id, pm.role_id FROM projects p LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ? WHERE p.id = ?`,
+    [userId, projectId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const isOwnerOrAdmin = row && (row.owner_id === userId || row.role_id <= 2 || req.user.isAdmin);
+      if (!isOwnerOrAdmin) return res.status(403).json({ error: 'Seul un admin ou propriétaire peut vider toutes les tâches.' });
+      db.run('DELETE FROM tasks WHERE project_id = ?', [projectId], async (err2) => {
+        if (err2) return res.status(500).json({ error: err2.message });
+        await logActivity(projectId, userId, 'project', projectId, 'cleared_all_tasks');
+        res.json({ message: 'Toutes les tâches ont été supprimées' });
+      });
+    }
+  );
 });
 
 // DELETE /:id — Supprimer une tâche
-router.delete('/:id', authMiddleware, ensureProjectActive, (req, res) => {
+router.delete('/:id', authMiddleware, projectMemberMiddleware, ensureProjectActive, (req, res) => {
   const { id, projectId } = req.params;
   
   // Get parent_id before deleting
