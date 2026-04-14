@@ -83,7 +83,7 @@ router.patch('/me', authMiddleware, (req, res) => {
       if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Email déjà utilisé' });
       return res.status(500).json({ error: err.message });
     }
-    db.get(`SELECT id, name, email, avatar, plan, ${ALL_NOTIF_COLS} FROM users WHERE id = ?`, [userId], (err2, row) => {
+    db.get(`SELECT id, name, email, avatar, plan, onboarding_status, ${ALL_NOTIF_COLS} FROM users WHERE id = ?`, [userId], (err2, row) => {
       if (err2) return res.status(500).json({ error: err2.message });
       
       // Override plan for whitelisted admins

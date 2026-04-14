@@ -78,8 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateUser = (newUser: User) => {
-    localStorage.setItem('galineo_user', JSON.stringify(newUser));
-    setUser(newUser);
+    const merged = { ...user, ...newUser } as User;
+    localStorage.setItem('galineo_user', JSON.stringify(merged));
+    setUser(merged);
   };
 
   const logout = () => {
