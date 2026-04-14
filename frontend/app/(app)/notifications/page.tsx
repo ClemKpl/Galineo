@@ -78,16 +78,30 @@ export default function NotificationsPage() {
 
   function handleNotifClick(notif: any) {
     if (!notif.is_read) markOneRead(notif.id);
-    if (notif.project_id) {
-      if (notif.type === 'mention') {
-        router.push(`/projects/${notif.project_id}/chat`);
-      } else if (notif.type === 'task_assigned') {
-        router.push(`/projects/${notif.project_id}/tasks`);
-      } else if (notif.type === 'ai_response') {
-        router.push(notif.project_id ? `/projects/${notif.project_id}/ai` : '/wizard');
-      } else if (notif.type === 'project_invite') {
-        router.push(`/projects/${notif.project_id}`);
-      }
+    const pid = notif.project_id;
+    const gid = notif.group_id;
+    switch (notif.type) {
+      case 'mention':
+        if (gid) router.push(`/messages/${gid}`);
+        else if (pid) router.push(`/projects/${pid}/chat`);
+        break;
+      case 'task_assigned':
+        if (pid) router.push(`/projects/${pid}/tasks`);
+        break;
+      case 'ai_response':
+        if (pid) router.push(`/projects/${pid}/ai`);
+        else router.push('/wizard');
+        break;
+      case 'project_invite':
+      case 'added_to_project':
+        if (pid) router.push(`/projects/${pid}`);
+        break;
+      case 'group_added':
+        if (gid) router.push(`/messages/${gid}`);
+        break;
+      default:
+        if (pid) router.push(`/projects/${pid}`);
+        break;
     }
   }
 
@@ -142,9 +156,9 @@ export default function NotificationsPage() {
             <div
               key={notif.id}
               onClick={() => handleNotifClick(notif)}
-              className={`flex items-start gap-4 p-5 rounded-[2rem] border transition-all animate-fadeUp group relative ${
-                notif.is_read 
-                  ? 'bg-white border-stone-100 text-stone-600' 
+              className={`flex items-start gap-4 p-5 rounded-[2rem] border transition-all animate-fadeUp group relative cursor-pointer hover:shadow-md ${
+                notif.is_read
+                  ? 'bg-white border-stone-100 text-stone-600'
                   : 'bg-white border-orange-200 shadow-lg shadow-orange-500/5 text-stone-900'
               }`}
               style={{ animationDelay: `${i * 50}ms` }}

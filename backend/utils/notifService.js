@@ -5,15 +5,16 @@ const { sendNotificationEmail } = require('./mailer');
  * Service centralisé pour la gestion des notifications.
  * Gère la création en base de données et l'envoi d'emails en respectant les préférences.
  */
-async function createNotification({ 
-  userId, 
-  type, 
-  title, 
-  message, 
-  projectId = null, 
-  taskId = null, 
+async function createNotification({
+  userId,
+  type,
+  title,
+  message,
+  projectId = null,
+  taskId = null,
+  groupId = null,
   fromUserId = null,
-  extras = {} 
+  extras = {}
 }) {
   return new Promise((resolve, reject) => {
     // 1. Récupérer les préférences de l'utilisateur destinataire
@@ -45,8 +46,8 @@ async function createNotification({
 
         // 3. Création de la notification en base de données (In-app)
         db.run(
-          'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id, task_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [userId, type, title, message, projectId, fromUserId, taskId],
+          'INSERT INTO notifications (user_id, type, title, message, project_id, from_user_id, task_id, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+          [userId, type, title, message, projectId, fromUserId, taskId, groupId],
           function(dbErr) {
             if (dbErr) {
               console.error('❌ [notifService] Erreur insertion DB:', dbErr.message);

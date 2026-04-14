@@ -73,6 +73,7 @@ router.post('/', authMiddleware, (req, res) => {
               type: 'group_added',
               title: 'Nouveau groupe de discussion',
               message: notifMsg,
+              groupId: groupId,
               fromUserId: userId
             }).catch(console.error);
           }
@@ -145,6 +146,7 @@ router.post('/:id/members', authMiddleware, memberMiddleware, adminMiddleware, (
           type: 'group_added',
           title: 'Ajouté à un groupe',
           message: notifMsg,
+          groupId: Number(groupId),
           fromUserId: req.user.id
         }).catch(console.error);
       }
@@ -212,6 +214,7 @@ router.post('/:id/messages', authMiddleware, memberMiddleware, (req, res) => {
                 type: 'mention',
                 title: 'Mention dans un groupe',
                 message: notifMsg,
+                groupId: Number(groupId),
                 fromUserId: userId
               }).catch(console.error);
             }

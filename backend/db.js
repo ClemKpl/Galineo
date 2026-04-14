@@ -450,6 +450,7 @@ const initDb = async () => {
 
     await ensureColumn('notifications', 'from_user_id', 'INTEGER');
     await ensureColumn('notifications', 'task_id', 'INTEGER');
+    await ensureColumn('notifications', 'group_id', 'INTEGER');
 
     await ensureColumn('project_members', 'is_favorite', 'INTEGER DEFAULT 0');
     await ensureColumn('tasks', 'color', 'TEXT');
