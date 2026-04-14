@@ -100,14 +100,14 @@ export default function ProjectSettingsPage() {
   const isOwner = project.my_role_id === 1 || project.owner_id === user?.id || user?.plan === 'unlimited';
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8 animate-[fadeIn_0.3s_ease-out]">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6 md:space-y-8 animate-[fadeIn_0.3s_ease-out]">
       <section className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50">
+        <div className="px-4 md:px-6 py-4 border-b border-stone-100 bg-stone-50/50">
           <h2 className="text-lg font-bold text-stone-900">Informations générales</h2>
           <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold mt-1">Éditez les détails principaux du projet</p>
         </div>
-        
-        <form onSubmit={handleUpdateProject} className="p-6 space-y-5">
+
+        <form onSubmit={handleUpdateProject} className="p-4 md:p-6 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-stone-700 mb-2">Titre du projet</label>
@@ -159,10 +159,10 @@ export default function ProjectSettingsPage() {
           
           {isOwner && (
             <div className="pt-4 flex justify-end">
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={saving}
-                className="px-6 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                className="w-full sm:w-auto px-6 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
               </button>
@@ -174,14 +174,14 @@ export default function ProjectSettingsPage() {
       {/* ── Assistant AI Permissions ── */}
       {isOwner && (
         <section className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-stone-100 bg-gradient-to-r from-orange-50 to-white">
+          <div className="px-4 md:px-6 py-4 border-b border-stone-100 bg-gradient-to-r from-orange-50 to-white">
             <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
               <span className="text-xl">🤖</span> Permissions de l'Assistant IA
             </h2>
             <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold mt-1">Contrôlez les actions autonomes autorisées</p>
           </div>
-          
-          <div className="p-6 space-y-4">
+
+          <div className="p-4 md:p-6 space-y-4">
             <PermissionToggle 
               label="Créer des éléments" 
               description="Autoriser l'IA à créer des fonctionnalités et des tâches."
@@ -226,13 +226,13 @@ export default function ProjectSettingsPage() {
       )}
 
       <section className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
+        <div className="px-4 md:px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-stone-900">Équipe & Membres</h2>
             <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold mt-1">Les collaborateurs actifs sur ce projet</p>
           </div>
           {isOwner && (
-            <button 
+            <button
               onClick={() => setShowMembersModal(true)}
               className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
             >
@@ -241,30 +241,30 @@ export default function ProjectSettingsPage() {
             </button>
           )}
         </div>
-        <div className="p-6">
-          <div className="flex flex-wrap gap-4">
-             {project.members && project.members.map((m: any) => (
-               <div key={m.id} className="flex items-center gap-3 p-3 bg-stone-50 border border-stone-100 rounded-2xl min-w-[200px]">
-                  <div className="w-10 h-10 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-700 font-bold shadow-sm shrink-0">
-                    {m.name.substring(0,2).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-stone-900 truncate">{m.name}</p>
-                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">{m.role_name}</p>
-                  </div>
-               </div>
-             ))}
-             {project.invitations && project.invitations.map((inv: any) => (
-               <div key={inv.id} className="flex items-center gap-3 p-3 bg-orange-50/30 border border-orange-100 rounded-2xl min-w-[200px]">
-                  <div className="w-10 h-10 rounded-full bg-white border border-orange-200 flex items-center justify-center text-orange-400 font-bold shadow-sm shrink-0">
-                    {inv.email.substring(0,1).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-stone-900 truncate">{inv.email}</p>
-                    <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest">En attente ({inv.role_name})</p>
-                  </div>
-               </div>
-             ))}
+        <div className="p-4 md:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {project.members && project.members.map((m: any) => (
+              <div key={m.id} className="flex items-center gap-3 p-3 bg-stone-50 border border-stone-100 rounded-2xl">
+                <div className="w-10 h-10 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-700 font-bold shadow-sm shrink-0 overflow-hidden">
+                  {m.avatar ? <img src={m.avatar} alt="" className="w-full h-full object-cover" /> : m.name.substring(0,2).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-stone-900 truncate">{m.name}</p>
+                  <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">{m.role_name}</p>
+                </div>
+              </div>
+            ))}
+            {project.invitations && project.invitations.map((inv: any) => (
+              <div key={inv.id} className="flex items-center gap-3 p-3 bg-orange-50/30 border border-orange-100 rounded-2xl">
+                <div className="w-10 h-10 rounded-full bg-white border border-orange-200 flex items-center justify-center text-orange-400 font-bold shadow-sm shrink-0">
+                  {inv.email.substring(0,1).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-stone-900 truncate">{inv.email}</p>
+                  <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest">En attente ({inv.role_name})</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -277,18 +277,18 @@ export default function ProjectSettingsPage() {
       {isOwner && (
         <>
           <section className="bg-orange-50/30 rounded-2xl border border-orange-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-orange-50 bg-orange-50/50">
+            <div className="px-4 md:px-6 py-4 border-b border-orange-50 bg-orange-50/50">
               <h2 className="text-lg font-bold text-orange-900">Statut du projet</h2>
               <p className="text-xs text-orange-600 uppercase tracking-wider font-semibold mt-1">Actions de fin de vie</p>
             </div>
-            <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-bold text-stone-900">Terminer & Archiver</p>
                 <p className="text-xs text-stone-500 mt-1">Marquer le projet comme fini et le placer dans votre historique.</p>
               </div>
-              <button 
+              <button
                 onClick={handleCompleteProject}
-                className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2"
               >
                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                 Terminer le projet
@@ -297,23 +297,23 @@ export default function ProjectSettingsPage() {
           </section>
 
           <section className="bg-red-50/30 rounded-2xl border border-red-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-red-50 bg-red-50/50">
-            <h2 className="text-lg font-bold text-red-900">Zone de danger</h2>
-            <p className="text-xs text-red-600 uppercase tracking-wider font-semibold mt-1">Actions irréversibles</p>
-          </div>
-          <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-bold text-stone-900">Supprimer le projet</p>
-              <p className="text-xs text-stone-500 mt-1">Cette action supprimera également toutes les tâches et fichiers associés.</p>
+            <div className="px-4 md:px-6 py-4 border-b border-red-50 bg-red-50/50">
+              <h2 className="text-lg font-bold text-red-900">Zone de danger</h2>
+              <p className="text-xs text-red-600 uppercase tracking-wider font-semibold mt-1">Actions irréversibles</p>
             </div>
-            <button 
-              onClick={handleDeleteProject}
-              disabled={isDeleting}
-              className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
-            >
-              {isDeleting ? 'Suppression...' : 'Supprimer définitivement'}
-            </button>
-          </div>
+            <div className="p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-stone-900">Supprimer le projet</p>
+                <p className="text-xs text-stone-500 mt-1">Cette action supprimera également toutes les tâches et fichiers associés.</p>
+              </div>
+              <button
+                onClick={handleDeleteProject}
+                disabled={isDeleting}
+                className="w-full sm:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? 'Suppression...' : 'Supprimer définitivement'}
+              </button>
+            </div>
           </section>
         </>
       )}
@@ -408,12 +408,12 @@ function ShareLinksSection({ projectId }: { projectId: number }) {
 
   return (
     <section className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
+      <div className="px-4 md:px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-stone-900">Liens de partage</h2>
           <p className="text-xs text-stone-500 uppercase tracking-wider font-semibold mt-1">Créez des accès rapides pour votre équipe</p>
         </div>
-        <button 
+        <button
           onClick={createLink}
           disabled={creating}
           className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
@@ -426,7 +426,7 @@ function ShareLinksSection({ projectId }: { projectId: number }) {
           )}
         </button>
       </div>
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         {loading ? (
           <div className="h-20 bg-stone-50 animate-pulse rounded-xl" />
         ) : links.length === 0 ? (
