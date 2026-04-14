@@ -250,14 +250,31 @@ router.post('/:id/leave', authMiddleware, memberMiddleware, (req, res) => {
     const admins = members.filter(m => m.role === 'admin');
     const isMeAdmin = admins.some(a => a.user_id === userId);
 
-    if (isMeAdmin && admins.length === 1 && members.length > 1) {
-      return res.status(400).json({ error: 'Vous êtes le dernier administrateur. Nommez un autre admin avant de partir.' });
-    }
+    const proceedToLeave = () => {
+      db.run('DELETE FROM chat_group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], function(errDel) {
+        if (errDel) return res.status(500).json({ error: errDel.message });
+        res.json({ message: 'Vous avez quitté le groupe' });
+      });
+    };
 
-    db.run('DELETE FROM chat_group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], function(errDel) {
-      if (errDel) return res.status(500).json({ error: errDel.message });
-      res.json({ message: 'Vous avez quitte le groupe' });
-    });
+    if (isMeAdmin && admins.length === 1 && members.length > 1) {
+      // Automatiquement nommer l'administrateur suivant par ancienneté (joined_at)
+      db.get(`
+        SELECT user_id FROM chat_group_members 
+        WHERE group_id = ? AND user_id != ? 
+        ORDER BY joined_at ASC LIMIT 1
+      `, [groupId, userId], (errGet, nextAdmin) => {
+        if (errGet) return res.status(500).json({ error: errGet.message });
+        if (!nextAdmin) return proceedToLeave(); // Ne devrait pas arriver vu members.length > 1
+
+        db.run('UPDATE chat_group_members SET role = \'admin\' WHERE group_id = ? AND user_id = ?', [groupId, nextAdmin.user_id], (errUpd) => {
+          if (errUpd) return res.status(500).json({ error: errUpd.message });
+          proceedToLeave();
+        });
+      });
+    } else {
+      proceedToLeave();
+    }
   });
 });
 
