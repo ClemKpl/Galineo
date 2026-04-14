@@ -217,7 +217,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               >
                 <div className={`flex max-w-[90%] sm:max-w-[75%] lg:max-w-[70%] gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                   {/* Avatar — masqué si groupé avec le précédent */}
-                  <div className="shrink-0 pt-1 w-9">
+                  <div className="hidden sm:block shrink-0 pt-1 w-9">
                     {!isGroupedWithPrev ? (
                       <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden border ${
                         isMe ? 'bg-stone-100 border-stone-200' : 'bg-stone-200 border-stone-300'

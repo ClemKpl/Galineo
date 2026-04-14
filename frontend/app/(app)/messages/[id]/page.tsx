@@ -231,7 +231,7 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
                   </p>
                 )}
                 <div className={`flex items-end gap-3 max-w-[80%] ${isMe ? 'flex-row-reverse' : ''}`}>
-                  <div className="w-8 shrink-0">
+                  <div className="hidden sm:block w-8 shrink-0">
                     {!isGroupedWithPrev && (
                       <div className="w-8 h-8 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-[10px] font-black text-stone-400 shadow-sm overflow-hidden">
                         {msg.author_avatar ? <img src={msg.author_avatar} alt="" className="w-full h-full object-cover" /> : msg.author_name.substring(0, 2).toUpperCase()}

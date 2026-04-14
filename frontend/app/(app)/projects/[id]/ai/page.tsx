@@ -412,7 +412,7 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
             <div key={i} className={`flex w-full group ${isUser ? 'justify-end' : 'justify-start'} ${isGroupedWithPrev ? 'mt-0.5' : 'mt-4'}`}>
               <div className={`flex max-w-[95%] lg:max-w-[75%] gap-2 lg:gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
                 {/* Avatar — masqué si groupé */}
-                <div className={`shrink-0 pt-1 w-9 ${isUser ? '' : 'hidden lg:block'}`}>
+                <div className={`shrink-0 pt-1 w-9 hidden sm:block`}>
                   {!isGroupedWithPrev && (
                     <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden border ${
                       isUser ? 'bg-stone-100 border-stone-200' : 'bg-orange-500 border-orange-400 text-white'
