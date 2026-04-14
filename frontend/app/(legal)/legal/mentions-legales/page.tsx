@@ -7,10 +7,10 @@ export const metadata: Metadata = {
 export default function MentionsLegalesPage() {
   return (
     <article className="prose prose-stone max-w-none">
-      <h1 className="text-3xl font-black text-stone-900 uppercase tracking-tight mb-2" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
+      <h1 className="text-2xl sm:text-3xl font-black text-stone-900 uppercase tracking-tight mb-2" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
         Mentions légales
       </h1>
-      <p className="text-stone-400 text-sm mb-10">Dernière mise à jour : janvier 2025</p>
+      <p className="text-stone-400 text-sm mb-8 sm:mb-10">Dernière mise à jour : janvier 2025</p>
 
       <Section title="1. Éditeur du site">
         <p>Le site Galinéo est édité par :</p>
