@@ -150,7 +150,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   }
 
   return (
-    <div className="flex flex-col h-full bg-stone-50 animate-fadeIn">
+    <div className="flex flex-col h-full bg-stone-50 animate-fadeIn relative">
       {/* HEADER & INFO BULLE */}
       <div className="relative z-20 px-4 md:px-8 py-4 md:py-5 border-b border-stone-200 bg-white shrink-0">
         <div className="flex items-center gap-3">
@@ -167,7 +167,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       {/* CHAT MESSAGES */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 lg:pb-4 scrollbar-none flex flex-col">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 lg:pb-24 scrollbar-none flex flex-col">
         {loading ? (
           <div className="text-center text-stone-400 text-sm">Chargement...</div>
         ) : messages.length === 0 ? (
@@ -305,7 +305,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       {/* CHAT INPUT AREA */}
-      <div className="fixed lg:sticky inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] lg:bottom-0 z-20 px-4 md:px-8 pb-4 lg:pb-6 pt-3 shrink-0 lg:bg-stone-50/80 lg:backdrop-blur-sm lg:border-t lg:border-stone-100">
+      <div className="fixed lg:absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] lg:bottom-0 z-20 px-4 md:px-8 pb-4 lg:pb-6 pt-3 shrink-0 lg:bg-stone-50/80 lg:backdrop-blur-sm lg:border-t lg:border-stone-100">
         <form onSubmit={handleSend} className="relative max-w-4xl mx-auto">
           {/* Autocomplete Mentions Box */}
           {mentionListVisible && (
