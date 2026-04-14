@@ -663,6 +663,34 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
           </button>
         </div>
       ) : viewMode === 'list' ? (
+        <div>
+          {features.length > 0 && (
+            <div className="flex items-center justify-end mb-2">
+              <button
+                onClick={() => {
+                  const allExpanded = features.every(f => expandedFeatures.has(f.id));
+                  if (allExpanded) {
+                    setExpandedFeatures(new Set());
+                  } else {
+                    setExpandedFeatures(new Set(features.map((f: any) => f.id)));
+                  }
+                }}
+                className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-900 transition-colors px-3 py-1.5 rounded-xl hover:bg-stone-100"
+              >
+                {features.every(f => expandedFeatures.has(f.id)) ? (
+                  <>
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+                    Tout réduire
+                  </>
+                ) : (
+                  <>
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                    Tout déplier
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-sm">
            {features.map(feature => {
              const isExpanded = expandedFeatures.has(feature.id);
@@ -682,6 +710,7 @@ export default function TasksPage({ params }: { params: Promise<{ id: string }> 
                </div>
              );
            })}
+        </div>
         </div>
       ) : viewMode === 'kanban' ? (
         <div className="flex lg:grid gap-5 lg:grid-cols-3 overflow-x-auto lg:overflow-x-visible pb-8 lg:pb-0 scrollbar-none -mx-4 px-4 md:-mx-0 md:px-0">
