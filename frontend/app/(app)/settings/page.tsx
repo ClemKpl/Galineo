@@ -26,23 +26,7 @@ function Section({ title, description, children }: { title: string; description?
   );
 }
 
-function Toggle({ checked, onChange, label, description }: { checked: boolean; onChange: (v: boolean) => void; label: string; description?: string }) {
-  return (
-    <div className="flex items-center justify-between py-3 border-b border-stone-100 last:border-b-0">
-      <div>
-        <p className="text-sm font-medium text-stone-800">{label}</p>
-        {description && <p className="text-xs text-stone-400 mt-0.5">{description}</p>}
-      </div>
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${checked ? 'bg-orange-500' : 'bg-stone-200'}`}
-      >
-        <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${checked ? 'translate-x-6' : 'translate-x-1'}`} />
-      </button>
-    </div>
-  );
-}
+// Toggle unused — notifications use inline grid layout
 
 export default function SettingsPage() {
   const { user, login, updateUser, logout, token, refreshUser } = useAuth();
@@ -377,41 +361,43 @@ export default function SettingsPage() {
       </Section>
 
       {/* ── Notifications ── */}
-      <Section title="Notifications" description="Choisissez séparément ce que vous recevez dans l'appli et par email">
-        {/* In-app */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 rounded-lg bg-stone-900 flex items-center justify-center shrink-0">
-              <svg width="13" height="13" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-            </div>
-            <p className="text-xs font-black text-stone-700 uppercase tracking-widest">Dans l'application</p>
-          </div>
-          <Toggle checked={notifProject}  onChange={(v) => updateNotifSetting('notif_project_updates', v, setNotifProject)}  label="Activité sur mes projets"   description="Mises à jour et changements globaux" />
-          <Toggle checked={notifMember}   onChange={(v) => updateNotifSetting('notif_added_to_project', v, setNotifMember)}  label="Ajout à un projet ou groupe" description="Quand on vous ajoute à un projet ou groupe de discussion" />
-          <Toggle checked={notifDeadline} onChange={(v) => updateNotifSetting('notif_deadlines', v, setNotifDeadline)}       label="Rappels de deadline"         description="Alertes sur les échéances proches" />
-          <Toggle checked={notifMentions} onChange={(v) => updateNotifSetting('notif_mentions', v, setNotifMentions)}        label="Mentions (@nom)"             description="Quand vous êtes mentionné dans un chat" />
-          <Toggle checked={notifTaskDone} onChange={(v) => updateNotifSetting('notif_task_completed', v, setNotifTaskDone)}  label="Tâches terminées"            description="Quand une tâche que vous avez créée est terminée" />
-          <Toggle checked={notifAI}       onChange={(v) => updateNotifSetting('notif_ai_responses', v, setNotifAI)}          label="Réponses de l'IA"            description="Quand l'Assistant IA a terminé son analyse" />
-          <Toggle checked={notifChat}     onChange={(v) => updateNotifSetting('notif_chat_messages', v, setNotifChat)}       label="Messages de groupe"          description="Nouveaux messages dans les discussions" />
+      <Section title="Notifications" description="Gérez vos alertes dans l'appli et par email">
+        {/* En-tête colonnes */}
+        <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 items-center mb-2 pb-2 border-b border-stone-100">
+          <span />
+          <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest text-center w-10">Appli</span>
+          <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest text-center w-10">Email</span>
         </div>
-
-        {/* Email */}
-        <div className="border-t border-stone-100 pt-6">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
-              <svg width="13" height="13" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        {([
+          { label: 'Activité projets',     desc: 'Mises à jour et changements globaux',             appKey: 'notif_project_updates',   appState: notifProject,  appSet: setNotifProject,  emailKey: 'email_notif_project_updates',   emailState: emailNotifProject,  emailSet: setEmailNotifProject },
+          { label: 'Ajout à un projet',    desc: 'Ajouté à un projet ou groupe de discussion',      appKey: 'notif_added_to_project',  appState: notifMember,   appSet: setNotifMember,   emailKey: 'email_notif_added_to_project',  emailState: emailNotifMember,   emailSet: setEmailNotifMember },
+          { label: 'Deadlines',            desc: 'Alertes sur les échéances proches',               appKey: 'notif_deadlines',         appState: notifDeadline, appSet: setNotifDeadline, emailKey: 'email_notif_deadlines',         emailState: emailNotifDeadline, emailSet: setEmailNotifDeadline },
+          { label: 'Mentions (@nom)',       desc: 'Quand vous êtes mentionné dans un chat',          appKey: 'notif_mentions',          appState: notifMentions, appSet: setNotifMentions, emailKey: 'email_notif_mentions',          emailState: emailNotifMentions, emailSet: setEmailNotifMentions },
+          { label: 'Tâches terminées',     desc: 'Quand une tâche que vous avez créée est finie',   appKey: 'notif_task_completed',    appState: notifTaskDone, appSet: setNotifTaskDone, emailKey: 'email_notif_task_completed',    emailState: emailNotifTaskDone, emailSet: setEmailNotifTaskDone },
+          { label: "Réponses de l'IA",     desc: "Quand l'Assistant IA a terminé son analyse",      appKey: 'notif_ai_responses',      appState: notifAI,       appSet: setNotifAI,       emailKey: 'email_notif_ai_responses',      emailState: emailNotifAI,       emailSet: setEmailNotifAI },
+          { label: 'Messages de groupe',   desc: 'Nouveaux messages dans les discussions',          appKey: 'notif_chat_messages',     appState: notifChat,     appSet: setNotifChat,     emailKey: 'email_notif_chat_messages',     emailState: emailNotifChat,     emailSet: setEmailNotifChat },
+        ] as const).map((row) => (
+          <div key={row.appKey} className="grid grid-cols-[1fr_auto_auto] gap-x-4 items-center py-2.5 border-b border-stone-50 last:border-b-0">
+            <div>
+              <p className="text-sm font-medium text-stone-800">{row.label}</p>
+              <p className="text-xs text-stone-400 mt-0.5">{row.desc}</p>
             </div>
-            <p className="text-xs font-black text-stone-700 uppercase tracking-widest">Par email</p>
-            <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-1">désactivé par défaut</span>
+            {/* Toggle appli */}
+            <div className="flex justify-center w-10">
+              <button type="button" onClick={() => updateNotifSetting(row.appKey, !row.appState, row.appSet as (v: boolean) => void)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${row.appState ? 'bg-orange-500' : 'bg-stone-200'}`}>
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${row.appState ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+            {/* Toggle email */}
+            <div className="flex justify-center w-10">
+              <button type="button" onClick={() => updateNotifSetting(row.emailKey, !row.emailState, row.emailSet as (v: boolean) => void)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${row.emailState ? 'bg-blue-500' : 'bg-stone-200'}`}>
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${row.emailState ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
           </div>
-          <Toggle checked={emailNotifProject}  onChange={(v) => updateNotifSetting('email_notif_project_updates', v, setEmailNotifProject)}  label="Activité sur mes projets"   description="Mises à jour et changements globaux" />
-          <Toggle checked={emailNotifMember}   onChange={(v) => updateNotifSetting('email_notif_added_to_project', v, setEmailNotifMember)}  label="Ajout à un projet ou groupe" description="Quand on vous ajoute à un projet ou groupe" />
-          <Toggle checked={emailNotifDeadline} onChange={(v) => updateNotifSetting('email_notif_deadlines', v, setEmailNotifDeadline)}       label="Rappels de deadline"         description="Alertes sur les échéances proches" />
-          <Toggle checked={emailNotifMentions} onChange={(v) => updateNotifSetting('email_notif_mentions', v, setEmailNotifMentions)}        label="Mentions (@nom)"             description="Quand vous êtes mentionné dans un chat" />
-          <Toggle checked={emailNotifTaskDone} onChange={(v) => updateNotifSetting('email_notif_task_completed', v, setEmailNotifTaskDone)}  label="Tâches terminées"            description="Quand une tâche que vous avez créée est terminée" />
-          <Toggle checked={emailNotifAI}       onChange={(v) => updateNotifSetting('email_notif_ai_responses', v, setEmailNotifAI)}          label="Réponses de l'IA"            description="Quand l'Assistant IA a terminé son analyse" />
-          <Toggle checked={emailNotifChat}     onChange={(v) => updateNotifSetting('email_notif_chat_messages', v, setEmailNotifChat)}       label="Messages de groupe"          description="Nouveaux messages dans les discussions" />
-        </div>
+        ))}
       </Section>
 
       {/* ── Abonnement & Facturation ── */}
