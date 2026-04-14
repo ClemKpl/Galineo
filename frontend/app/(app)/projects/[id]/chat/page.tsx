@@ -321,7 +321,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             </div>
           )}
           <div className="flex gap-2.5">
-            <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md" onChange={handleFileChange} />
+            <input ref={fileInputRef} type="file" className="hidden" accept="image/*,.pdf,.txt,.csv,.md,.docx,.xlsx" onChange={handleFileChange} />
             <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
               className="w-10 h-10 bg-white/60 hover:bg-white/80 backdrop-blur-sm border border-stone-200/60 disabled:opacity-50 text-stone-500 rounded-xl flex items-center justify-center transition-all shrink-0">
               {uploading
