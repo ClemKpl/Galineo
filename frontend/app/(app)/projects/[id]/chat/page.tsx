@@ -167,7 +167,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       </div>
 
       {/* CHAT MESSAGES */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 md:pb-8 space-y-6 scrollbar-none">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 md:pb-8 scrollbar-none flex flex-col">
         {loading ? (
           <div className="text-center text-stone-400 text-sm">Chargement...</div>
         ) : messages.length === 0 ? (
@@ -175,52 +175,87 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             Aucun message. Soyez le premier à parler !
           </div>
         ) : (
-          messages.map(msg => {
+          messages.map((msg, index) => {
             const isMe = msg.user_id === currentUser?.id;
-            const avatar = msg.author_avatar; // Assumer que author_avatar est retourné par l'API
-            
+            const avatar = msg.author_avatar;
+
+            const prev = messages[index - 1];
+            const next = messages[index + 1];
+
+            // Groupé avec le message précédent : même auteur, moins de 5 minutes d'écart
+            const isGroupedWithPrev = !!(
+              prev &&
+              prev.user_id === msg.user_id &&
+              new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60 * 1000
+            );
+            // Suivi d'un message du même auteur (pour arrondir le bas aussi)
+            const isGroupedWithNext = !!(
+              next &&
+              next.user_id === msg.user_id &&
+              new Date(next.created_at).getTime() - new Date(msg.created_at).getTime() < 5 * 60 * 1000
+            );
+
+            // Forme de la bulle selon position dans le groupe
+            const bubbleRadius = (() => {
+              if (isMe) {
+                if (!isGroupedWithPrev && !isGroupedWithNext) return 'rounded-[22px] rounded-tr-md';
+                if (!isGroupedWithPrev && isGroupedWithNext)  return 'rounded-[22px] rounded-tr-md rounded-br-md';
+                if (isGroupedWithPrev && isGroupedWithNext)   return 'rounded-[22px] rounded-r-md';
+                return 'rounded-[22px] rounded-br-md'; // last in group
+              } else {
+                if (!isGroupedWithPrev && !isGroupedWithNext) return 'rounded-[22px] rounded-tl-md';
+                if (!isGroupedWithPrev && isGroupedWithNext)  return 'rounded-[22px] rounded-tl-md rounded-bl-md';
+                if (isGroupedWithPrev && isGroupedWithNext)   return 'rounded-[22px] rounded-l-md';
+                return 'rounded-[22px] rounded-bl-md'; // last in group
+              }
+            })();
+
             return (
-              <div key={msg.id} className={`flex w-full group ${isMe ? 'justify-end' : 'justify-start'} animate-fadeUp`}>
+              <div
+                key={msg.id}
+                className={`flex w-full group ${isMe ? 'justify-end' : 'justify-start'} animate-fadeUp ${isGroupedWithPrev ? 'mt-0.5' : 'mt-4'}`}
+              >
                 <div className={`flex max-w-[90%] sm:max-w-[75%] lg:max-w-[70%] gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                  {/* Avatar */}
-                  <div className="shrink-0 pt-1">
-                    <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden border ${
-                      isMe ? 'bg-stone-100 border-stone-200' : 'bg-stone-200 border-stone-300'
-                    }`}>
-                      {avatar ? (
-                        <img src={avatar} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-stone-400">{msg.author_name?.substring(0,2).toUpperCase()}</span>
-                      )}
-                    </div>
+                  {/* Avatar — masqué si groupé avec le précédent */}
+                  <div className="shrink-0 pt-1 w-9">
+                    {!isGroupedWithPrev ? (
+                      <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden border ${
+                        isMe ? 'bg-stone-100 border-stone-200' : 'bg-stone-200 border-stone-300'
+                      }`}>
+                        {avatar ? (
+                          <img src={avatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-stone-400">{msg.author_name?.substring(0, 2).toUpperCase()}</span>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* Message Content Container */}
                   <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} min-w-0`}>
-                    {/* Header: Name & Time */}
-                    <div className="flex items-center gap-2 px-1 mb-1.5 min-w-0">
-                      <span className="text-[11px] font-black text-stone-900 uppercase tracking-tight truncate">
-                         {isMe ? 'Moi' : msg.author_name}
-                      </span>
-                      <span className="text-[9px] font-bold text-stone-300 uppercase tracking-tighter whitespace-nowrap">
-                        {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: fr })}
-                      </span>
-                    </div>
-                    
+                    {/* Header: Name & Time — masqué si groupé avec le précédent */}
+                    {!isGroupedWithPrev && (
+                      <div className="flex items-center gap-2 px-1 mb-1.5 min-w-0">
+                        <span className="text-[11px] font-black text-stone-900 uppercase tracking-tight truncate">
+                          {isMe ? 'Moi' : msg.author_name}
+                        </span>
+                        <span className="text-[9px] font-bold text-stone-300 uppercase tracking-tighter whitespace-nowrap">
+                          {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true, locale: fr })}
+                        </span>
+                      </div>
+                    )}
+
                     {editingMessageId === msg.id ? (
                       <div className="flex flex-col gap-2 w-full min-w-[200px] mt-1 p-2 bg-white rounded-2xl border border-stone-200 shadow-sm">
                         <textarea
-                          autoFocus 
-                          className="w-full text-sm text-stone-900 bg-stone-50 rounded-xl px-4 py-3 resize-none outline-none focus:ring-2 focus:ring-orange-500/20" 
-                          value={editContent} 
-                          onChange={e => setEditContent(e.target.value)} 
+                          autoFocus
+                          className="w-full text-sm text-stone-900 bg-stone-50 rounded-xl px-4 py-3 resize-none outline-none focus:ring-2 focus:ring-orange-500/20"
+                          value={editContent}
+                          onChange={e => setEditContent(e.target.value)}
                           onKeyDown={e => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              submitEditMessage(msg.id);
-                            }
+                            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitEditMessage(msg.id); }
                             if (e.key === 'Escape') setEditingMessageId(null);
-                          }} 
+                          }}
                           rows={2}
                         />
                         <div className="flex justify-end gap-3 text-[10px] font-black uppercase tracking-widest px-1">
@@ -232,7 +267,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                       <div className="relative group">
                         {/* Action Buttons (Visible on Hover) */}
                         {isMe && (
-                          <div className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 ${isMe ? 'right-full mr-3' : 'left-full ml-3'}`}>
+                          <div className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 right-full mr-3`}>
                             <button onClick={() => startEditing(msg)} className="p-2 bg-white text-stone-400 hover:text-blue-500 rounded-xl shadow-sm border border-stone-100 transition-all hover:scale-110" title="Modifier">
                               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                             </button>
@@ -241,11 +276,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                             </button>
                           </div>
                         )}
-                        
-                        <div className={`px-5 py-3.5 rounded-[22px] text-sm leading-relaxed shadow-sm ${
+
+                        <div className={`px-5 py-3.5 text-sm leading-relaxed shadow-sm ${bubbleRadius} ${
                           isMe
-                            ? 'bg-orange-500 text-white rounded-tr-none shadow-orange-200/50'
-                            : 'bg-white border border-stone-100 text-stone-800 rounded-tl-none'
+                            ? 'bg-orange-500 text-white shadow-orange-200/50'
+                            : 'bg-white border border-stone-100 text-stone-800'
                         }`} style={{ whiteSpace: 'pre-wrap' }}>
                           {msg.content && renderMessageContent(msg.content)}
                           {msg.attachment_url && (
