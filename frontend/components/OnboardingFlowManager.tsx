@@ -413,11 +413,11 @@ async function runOnboardingTour(router: ReturnType<typeof useRouter>, onDone: (
         },
       },
       {
-        element: '[data-tour="project-tab-settings"]',
+        element: isMobile() ? '[data-tour="project-settings-mobile-btn"]' : '[data-tour="project-tab-settings"]',
         popover: {
           title: '👥 Membres & Paramètres',
           description: 'Gérez les membres de votre équipe, leurs rôles et les paramètres du projet depuis cet onglet.',
-          side: 'bottom',
+          side: isMobile() ? 'left' : 'bottom',
         },
       },
       // ── Final ────────────────────────────────────────────────────────
