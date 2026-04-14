@@ -64,7 +64,7 @@ export default function SettingsPage() {
   const { accent, setAccent } = useTheme();
   const [accentLoading, setAccentLoading] = useState(false);
 
-  // Notifications
+  // Notifications in-app
   const [notifProject, setNotifProject]     = useState(true);
   const [notifMember, setNotifMember]       = useState(true);
   const [notifDeadline, setNotifDeadline]   = useState(true);
@@ -73,6 +73,14 @@ export default function SettingsPage() {
   const [notifAI, setNotifAI]               = useState(true);
   const [notifChat, setNotifChat]           = useState(true);
   const [notifLoading, setNotifLoading]     = useState(false);
+  // Notifications email
+  const [emailNotifProject, setEmailNotifProject]   = useState(false);
+  const [emailNotifMember, setEmailNotifMember]     = useState(false);
+  const [emailNotifDeadline, setEmailNotifDeadline] = useState(false);
+  const [emailNotifMentions, setEmailNotifMentions] = useState(false);
+  const [emailNotifTaskDone, setEmailNotifTaskDone] = useState(false);
+  const [emailNotifAI, setEmailNotifAI]             = useState(false);
+  const [emailNotifChat, setEmailNotifChat]         = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
   const [testDowngradeLoading, setTestDowngradeLoading] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
@@ -87,6 +95,13 @@ export default function SettingsPage() {
       setNotifTaskDone(user.notif_task_completed !== 0);
       setNotifAI(user.notif_ai_responses !== 0);
       setNotifChat(user.notif_chat_messages !== 0);
+      setEmailNotifProject((user as any).email_notif_project_updates === 1);
+      setEmailNotifMember((user as any).email_notif_added_to_project === 1);
+      setEmailNotifDeadline((user as any).email_notif_deadlines === 1);
+      setEmailNotifMentions((user as any).email_notif_mentions === 1);
+      setEmailNotifTaskDone((user as any).email_notif_task_completed === 1);
+      setEmailNotifAI((user as any).email_notif_ai_responses === 1);
+      setEmailNotifChat((user as any).email_notif_chat_messages === 1);
     }
   }, [user]);
 
@@ -362,48 +377,40 @@ export default function SettingsPage() {
       </Section>
 
       {/* ── Notifications ── */}
-      <Section title="Notifications" description="Personnalisez vos alertes (emails et cloche)">
-        <div className="space-y-1">
-          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Général</p>
-          <Toggle 
-            checked={notifProject}  
-            onChange={(v) => updateNotifSetting('notif_project_updates', v, setNotifProject)}
-            label="Activité sur mes projets"
-            description="Mises à jour et changements globaux" />
-          <Toggle 
-            checked={notifMember}   
-            onChange={(v) => updateNotifSetting('notif_added_to_project', v, setNotifMember)}
-            label="Ajout à un projet"
-            description="Quand on vous ajoute à un nouveau projet" />
-          <Toggle 
-            checked={notifDeadline} 
-            onChange={(v) => updateNotifSetting('notif_deadlines', v, setNotifDeadline)}
-            label="Rappels de deadline"
-            description="Alertes sur les échéances proches" />
+      <Section title="Notifications" description="Choisissez séparément ce que vous recevez dans l'appli et par email">
+        {/* In-app */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-6 h-6 rounded-lg bg-stone-900 flex items-center justify-center shrink-0">
+              <svg width="13" height="13" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            </div>
+            <p className="text-xs font-black text-stone-700 uppercase tracking-widest">Dans l'application</p>
+          </div>
+          <Toggle checked={notifProject}  onChange={(v) => updateNotifSetting('notif_project_updates', v, setNotifProject)}  label="Activité sur mes projets"   description="Mises à jour et changements globaux" />
+          <Toggle checked={notifMember}   onChange={(v) => updateNotifSetting('notif_added_to_project', v, setNotifMember)}  label="Ajout à un projet ou groupe" description="Quand on vous ajoute à un projet ou groupe de discussion" />
+          <Toggle checked={notifDeadline} onChange={(v) => updateNotifSetting('notif_deadlines', v, setNotifDeadline)}       label="Rappels de deadline"         description="Alertes sur les échéances proches" />
+          <Toggle checked={notifMentions} onChange={(v) => updateNotifSetting('notif_mentions', v, setNotifMentions)}        label="Mentions (@nom)"             description="Quand vous êtes mentionné dans un chat" />
+          <Toggle checked={notifTaskDone} onChange={(v) => updateNotifSetting('notif_task_completed', v, setNotifTaskDone)}  label="Tâches terminées"            description="Quand une tâche que vous avez créée est terminée" />
+          <Toggle checked={notifAI}       onChange={(v) => updateNotifSetting('notif_ai_responses', v, setNotifAI)}          label="Réponses de l'IA"            description="Quand l'Assistant IA a terminé son analyse" />
+          <Toggle checked={notifChat}     onChange={(v) => updateNotifSetting('notif_chat_messages', v, setNotifChat)}       label="Messages de groupe"          description="Nouveaux messages dans les discussions" />
         </div>
 
-        <div className="mt-6 space-y-1">
-          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2">Interactions</p>
-          <Toggle 
-            checked={notifMentions} 
-            onChange={(v) => updateNotifSetting('notif_mentions', v, setNotifMentions)}
-            label="Mentions (@nom)"
-            description="Notifications quand vous êtes mentionné" />
-          <Toggle 
-            checked={notifTaskDone} 
-            onChange={(v) => updateNotifSetting('notif_task_completed', v, setNotifTaskDone)}
-            label="Tâches terminées"
-            description="Quand une tâche que vous avez créée est terminée" />
-          <Toggle 
-            checked={notifAI} 
-            onChange={(v) => updateNotifSetting('notif_ai_responses', v, setNotifAI)}
-            label="Réponses de l'IA"
-            description="Quand l'Assistant IA a terminé son analyse" />
-          <Toggle 
-            checked={notifChat} 
-            onChange={(v) => updateNotifSetting('notif_chat_messages', v, setNotifChat)}
-            label="Messages de groupe"
-            description="Nouveaux messages dans les discussions de groupe" />
+        {/* Email */}
+        <div className="border-t border-stone-100 pt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
+              <svg width="13" height="13" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <p className="text-xs font-black text-stone-700 uppercase tracking-widest">Par email</p>
+            <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest ml-1">désactivé par défaut</span>
+          </div>
+          <Toggle checked={emailNotifProject}  onChange={(v) => updateNotifSetting('email_notif_project_updates', v, setEmailNotifProject)}  label="Activité sur mes projets"   description="Mises à jour et changements globaux" />
+          <Toggle checked={emailNotifMember}   onChange={(v) => updateNotifSetting('email_notif_added_to_project', v, setEmailNotifMember)}  label="Ajout à un projet ou groupe" description="Quand on vous ajoute à un projet ou groupe" />
+          <Toggle checked={emailNotifDeadline} onChange={(v) => updateNotifSetting('email_notif_deadlines', v, setEmailNotifDeadline)}       label="Rappels de deadline"         description="Alertes sur les échéances proches" />
+          <Toggle checked={emailNotifMentions} onChange={(v) => updateNotifSetting('email_notif_mentions', v, setEmailNotifMentions)}        label="Mentions (@nom)"             description="Quand vous êtes mentionné dans un chat" />
+          <Toggle checked={emailNotifTaskDone} onChange={(v) => updateNotifSetting('email_notif_task_completed', v, setEmailNotifTaskDone)}  label="Tâches terminées"            description="Quand une tâche que vous avez créée est terminée" />
+          <Toggle checked={emailNotifAI}       onChange={(v) => updateNotifSetting('email_notif_ai_responses', v, setEmailNotifAI)}          label="Réponses de l'IA"            description="Quand l'Assistant IA a terminé son analyse" />
+          <Toggle checked={emailNotifChat}     onChange={(v) => updateNotifSetting('email_notif_chat_messages', v, setEmailNotifChat)}       label="Messages de groupe"          description="Nouveaux messages dans les discussions" />
         </div>
       </Section>
 

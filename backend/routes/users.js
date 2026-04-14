@@ -51,18 +51,11 @@ router.patch('/me', authMiddleware, (req, res) => {
   const { name, email } = req.body;
   const userId = req.user.id;
 
-  if (
-    !name && 
-    !email && 
-    req.body.avatar === undefined && 
-    req.body.notif_project_updates === undefined &&
-    req.body.notif_added_to_project === undefined &&
-    req.body.notif_deadlines === undefined &&
-    req.body.notif_mentions === undefined &&
-    req.body.notif_task_completed === undefined &&
-    req.body.notif_ai_responses === undefined &&
-    req.body.notif_chat_messages === undefined
-  ) {
+  const EMAIL_NOTIF_FIELDS = ['email_notif_project_updates','email_notif_added_to_project','email_notif_deadlines','email_notif_mentions','email_notif_task_completed','email_notif_ai_responses','email_notif_chat_messages'];
+  const NOTIF_FIELDS = ['notif_project_updates','notif_added_to_project','notif_deadlines','notif_mentions','notif_task_completed','notif_ai_responses','notif_chat_messages'];
+  const anyNotif = [...NOTIF_FIELDS, ...EMAIL_NOTIF_FIELDS].some(f => req.body[f] !== undefined);
+
+  if (!name && !email && req.body.avatar === undefined && !anyNotif) {
     return res.status(400).json({ error: 'Aucune donnée à modifier' });
   }
 
@@ -71,24 +64,26 @@ router.patch('/me', authMiddleware, (req, res) => {
   if (name)  { updates.push('name = ?');  values.push(name); }
   if (email) { updates.push('email = ?'); values.push(email); }
   if (req.body.avatar !== undefined) { updates.push('avatar = ?'); values.push(req.body.avatar); }
-  
-  // Notification settings
-  if (req.body.notif_project_updates !== undefined)   { updates.push('notif_project_updates = ?');   values.push(req.body.notif_project_updates ? 1 : 0); }
-  if (req.body.notif_added_to_project !== undefined)  { updates.push('notif_added_to_project = ?');  values.push(req.body.notif_added_to_project ? 1 : 0); }
-  if (req.body.notif_deadlines !== undefined)         { updates.push('notif_deadlines = ?');         values.push(req.body.notif_deadlines ? 1 : 0); }
-  if (req.body.notif_mentions !== undefined)          { updates.push('notif_mentions = ?');          values.push(req.body.notif_mentions ? 1 : 0); }
-  if (req.body.notif_task_completed !== undefined)   { updates.push('notif_task_completed = ?');   values.push(req.body.notif_task_completed ? 1 : 0); }
-  if (req.body.notif_ai_responses !== undefined)      { updates.push('notif_ai_responses = ?');      values.push(req.body.notif_ai_responses ? 1 : 0); }
-  if (req.body.notif_chat_messages !== undefined)     { updates.push('notif_chat_messages = ?');     values.push(req.body.notif_chat_messages ? 1 : 0); }
+
+  // In-app notification settings
+  for (const f of NOTIF_FIELDS) {
+    if (req.body[f] !== undefined) { updates.push(`${f} = ?`); values.push(req.body[f] ? 1 : 0); }
+  }
+  // Email notification settings
+  for (const f of EMAIL_NOTIF_FIELDS) {
+    if (req.body[f] !== undefined) { updates.push(`${f} = ?`); values.push(req.body[f] ? 1 : 0); }
+  }
 
   values.push(userId);
+
+  const ALL_NOTIF_COLS = [...NOTIF_FIELDS, ...EMAIL_NOTIF_FIELDS].join(', ');
 
   db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, values, function (err) {
     if (err) {
       if (err.message.includes('UNIQUE')) return res.status(409).json({ error: 'Email déjà utilisé' });
       return res.status(500).json({ error: err.message });
     }
-    db.get('SELECT id, name, email, avatar, plan, notif_project_updates, notif_added_to_project, notif_deadlines, notif_mentions, notif_task_completed, notif_ai_responses, notif_chat_messages FROM users WHERE id = ?', [userId], (err2, row) => {
+    db.get(`SELECT id, name, email, avatar, plan, ${ALL_NOTIF_COLS} FROM users WHERE id = ?`, [userId], (err2, row) => {
       if (err2) return res.status(500).json({ error: err2.message });
       
       // Override plan for whitelisted admins

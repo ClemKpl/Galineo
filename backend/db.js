@@ -422,6 +422,14 @@ const initDb = async () => {
     await ensureColumn('users', 'notif_task_completed', 'INTEGER DEFAULT 1');
     await ensureColumn('users', 'notif_ai_responses', 'INTEGER DEFAULT 1');
     await ensureColumn('users', 'notif_chat_messages', 'INTEGER DEFAULT 1');
+    // Email notifications — off par défaut pour éviter le spam
+    await ensureColumn('users', 'email_notif_project_updates', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'email_notif_added_to_project', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'email_notif_deadlines', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'email_notif_mentions', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'email_notif_task_completed', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'email_notif_ai_responses', 'INTEGER DEFAULT 0');
+    await ensureColumn('users', 'email_notif_chat_messages', 'INTEGER DEFAULT 0');
     await ensureColumn('users', 'ai_history_duration', 'INTEGER DEFAULT 60');
     await ensureColumn('users', 'stripe_customer_id', 'TEXT');
     await ensureColumn('users', 'stripe_subscription_id', 'TEXT');
