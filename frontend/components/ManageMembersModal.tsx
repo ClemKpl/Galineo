@@ -177,8 +177,8 @@ export default function ManageMembersModal({
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-stone-900/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-stone-100 flex items-start justify-between gap-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="px-4 md:px-6 py-4 border-b border-stone-100 flex items-start justify-between gap-4 shrink-0">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-stone-500">Gestion des membres</p>
             <h3 className="mt-1 text-lg font-semibold text-stone-900">Projet #{projectId}</h3>
@@ -188,7 +188,7 @@ export default function ManageMembersModal({
           </button>
         </div>
 
-        <div className="p-6 grid gap-6 md:grid-cols-[1fr_1.1fr]">
+        <div className="p-4 md:p-6 grid gap-6 md:grid-cols-[1fr_1.1fr] overflow-y-auto">
           <section className="space-y-3">
             <h4 className="text-sm font-semibold text-stone-900">Ajouter un membre</h4>
             <div className="space-y-2">
@@ -317,70 +317,66 @@ export default function ManageMembersModal({
               <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                 {/* Membres actifs */}
                 {members.map((m) => (
-                  <div key={m.id} className="rounded-2xl border border-stone-200 bg-white p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center shrink-0 overflow-hidden border border-stone-200 shadow-sm">
-                          {m.avatar ? (
-                            <img src={m.avatar} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-xs font-bold text-stone-400">{m.name.slice(0, 2).toUpperCase()}</span>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-stone-900 truncate">{m.name}</p>
-                          <p className="text-xs text-stone-400 truncate">{m.email}</p>
-                          <p className="text-[9px] text-stone-400 mt-1 uppercase tracking-tighter font-black">Co : {formatLastLogin(m.last_login_at)}</p>
-                        </div>
+                  <div key={m.id} className="rounded-2xl border border-stone-200 bg-white p-3 md:p-4">
+                    <div className="flex items-center gap-3 min-w-0 mb-2">
+                      <div className="w-9 h-9 rounded-full bg-stone-100 flex items-center justify-center shrink-0 overflow-hidden border border-stone-200 shadow-sm">
+                        {m.avatar ? (
+                          <img src={m.avatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs font-bold text-stone-400">{m.name.slice(0, 2).toUpperCase()}</span>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={m.role_id}
-                          onChange={(e) => changeRole(m.id, Number(e.target.value))}
-                          disabled={saving || m.role_id === 1}
-                          className="px-2 py-1.5 border border-stone-200 rounded-xl bg-white text-xs"
-                        >
-                          {roles.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          onClick={() => removeMember(m.id)}
-                          disabled={saving || m.role_id === 1}
-                          className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:text-stone-300 disabled:border-stone-100"
-                        >
-                          Retirer
-                        </button>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-stone-900 truncate">{m.name}</p>
+                        <p className="text-xs text-stone-400 truncate">{m.email}</p>
+                        <p className="text-[9px] text-stone-400 mt-0.5 uppercase tracking-tighter font-black">Co : {formatLastLogin(m.last_login_at)}</p>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={m.role_id}
+                        onChange={(e) => changeRole(m.id, Number(e.target.value))}
+                        disabled={saving || m.role_id === 1}
+                        className="flex-1 px-2 py-1.5 border border-stone-200 rounded-xl bg-white text-xs"
+                      >
+                        {roles.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => removeMember(m.id)}
+                        disabled={saving || m.role_id === 1}
+                        className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-semibold text-stone-600 hover:bg-stone-50 disabled:text-stone-300 disabled:border-stone-100 shrink-0"
+                      >
+                        Retirer
+                      </button>
                     </div>
                   </div>
                 ))}
 
                 {/* Invitations en attente */}
                 {invitations.map((inv) => (
-                  <div key={inv.id} className="rounded-2xl border border-orange-100 bg-orange-50/20 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                           <p className="text-sm font-semibold text-stone-900 truncate">{inv.email}</p>
-                           <span className="px-1.5 py-0.5 bg-orange-100 text-orange-600 text-[9px] font-black uppercase rounded tracking-wider">En attente</span>
-                        </div>
-                        <p className="text-xs text-stone-500 mt-1 uppercase tracking-tighter font-bold font-mono">Invitation envoyée</p>
+                  <div key={inv.id} className="rounded-2xl border border-orange-100 bg-orange-50/20 p-3 md:p-4">
+                    <div className="min-w-0 mb-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-stone-900 truncate">{inv.email}</p>
+                        <span className="px-1.5 py-0.5 bg-orange-100 text-orange-600 text-[9px] font-black uppercase rounded tracking-wider shrink-0">En attente</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="px-3 py-1.5 border border-orange-100 rounded-xl bg-white text-xs font-bold text-stone-500">
-                          {inv.role_name}
-                        </div>
-                        <button
-                          onClick={() => removeInvitation(inv.id)}
-                          disabled={saving}
-                          className="px-3 py-1.5 rounded-xl border border-red-100 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                        >
-                          Révoquer
-                        </button>
+                      <p className="text-xs text-stone-500 mt-0.5 uppercase tracking-tighter font-bold">Invitation envoyée</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 px-3 py-1.5 border border-orange-100 rounded-xl bg-white text-xs font-bold text-stone-500">
+                        {inv.role_name}
                       </div>
+                      <button
+                        onClick={() => removeInvitation(inv.id)}
+                        disabled={saving}
+                        className="px-3 py-1.5 rounded-xl border border-red-100 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 shrink-0"
+                      >
+                        Révoquer
+                      </button>
                     </div>
                   </div>
                 ))}
