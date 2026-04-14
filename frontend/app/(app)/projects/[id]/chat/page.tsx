@@ -21,6 +21,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -265,9 +266,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                       </div>
                     ) : (
                       <div className="relative group">
-                        {/* Action Buttons (Visible on Hover) */}
+                        {/* Action Buttons — hover sur desktop, tap sur mobile */}
                         {isMe && (
-                          <div className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 right-full mr-3`}>
+                          <div className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity z-10 right-full mr-3 ${
+                            selectedMessageId === msg.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                          }`}>
                             <button onClick={() => startEditing(msg)} className="p-2 bg-white text-stone-400 hover:text-blue-500 rounded-xl shadow-sm border border-stone-100 transition-all hover:scale-110" title="Modifier">
                               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                             </button>
@@ -277,7 +280,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                           </div>
                         )}
 
-                        <div className={`px-5 py-3.5 text-sm leading-relaxed shadow-sm ${bubbleRadius} ${
+                        <div
+                          onClick={() => isMe && setSelectedMessageId(selectedMessageId === msg.id ? null : msg.id)}
+                          className={`px-5 py-3.5 text-sm leading-relaxed shadow-sm ${bubbleRadius} ${isMe ? 'cursor-pointer' : ''} ${
                           isMe
                             ? 'bg-orange-500 text-white shadow-orange-200/50'
                             : 'bg-white border border-stone-100 text-stone-800'
