@@ -247,9 +247,9 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
                     {msg.attachment_url && <AttachmentBubble url={msg.attachment_url} name={msg.attachment_name} type={msg.attachment_type} isMe={isMe} />}
                   </div>
                 </div>
-                {idx === messages.length - 1 && (
-                  <p className="text-[9px] text-stone-400 mt-1 font-bold">
-                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {!isGroupedWithNext && (
+                  <p className={`text-[9px] text-stone-400 mt-1 font-bold ${isMe ? 'text-right' : 'text-left'}`}>
+                    {new Date(msg.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
               </div>

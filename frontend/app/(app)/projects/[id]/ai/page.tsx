@@ -447,6 +447,12 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
                       <AttachmentBubble url={(m as any).attachment_url} name={(m as any).attachment_name} type={(m as any).attachment_type} isMe />
                     )}
                   </div>
+                  {/* Heure sous le dernier bubble d'un groupe groupé */}
+                  {isGroupedWithPrev && !isGroupedWithNext && m.created_at && (
+                    <p className={`text-[9px] text-stone-400 mt-1 font-bold px-1 ${isUser ? 'text-right' : 'text-left'}`}>
+                      {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

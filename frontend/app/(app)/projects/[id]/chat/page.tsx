@@ -289,6 +289,12 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                         </div>
                       </div>
                     )}
+                    {/* Heure affichée sous le dernier bubble d'un groupe groupé */}
+                    {isGroupedWithPrev && !isGroupedWithNext && (
+                      <p className={`text-[9px] text-stone-400 mt-1 font-bold px-1 ${isMe ? 'text-right' : 'text-left'}`}>
+                        {new Date(msg.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
