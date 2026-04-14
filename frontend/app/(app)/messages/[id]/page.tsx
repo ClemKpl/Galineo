@@ -127,6 +127,16 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const handleLeaveGroup = async () => {
+    if (!confirm('Quitter ce groupe ? Vous ne pourrez plus voir les messages sauf si vous êtes réinvité.')) return;
+    try {
+      await api.post(`/chat-groups/${groupId}/leave`, {});
+      router.push('/messages');
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  };
+
   const handleDeleteGroup = async () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer définitivement ce groupe et tous ses messages ? Cette action est irréversible.')) return;
     try {
@@ -171,13 +181,20 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button 
+        <div className="flex items-center gap-2">
+          <button
             onClick={() => setShowMembersModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-black hover:bg-stone-800 transition-all shadow-xl shadow-stone-900/10"
           >
             <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
             {group.members?.length || 0} Membres
+          </button>
+          <button
+            onClick={handleLeaveGroup}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-stone-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all"
+            title="Quitter le groupe"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           </button>
         </div>
       </header>
