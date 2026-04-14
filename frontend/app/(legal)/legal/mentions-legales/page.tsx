@@ -19,7 +19,7 @@ export default function MentionsLegalesPage() {
           <li><strong>Forme juridique :</strong> <span className="text-orange-500">[Ex : Auto-entrepreneur, SAS, SARL…]</span></li>
           <li><strong>SIRET :</strong> <span className="text-orange-500">[Numéro SIRET à compléter]</span></li>
           <li><strong>Adresse :</strong> <span className="text-orange-500">[Adresse complète à compléter]</span></li>
-          <li><strong>Email :</strong> contact@flavien-gherardi.fr</li>
+          <li><strong>Email :</strong> <a href="mailto:capelleclem@gmail.com">capelleclem@gmail.com</a> — <a href="mailto:contact@flavien-gherardi.fr">contact@flavien-gherardi.fr</a></li>
         </ul>
       </Section>
 
