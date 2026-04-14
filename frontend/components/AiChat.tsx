@@ -200,41 +200,70 @@ export default function AiChat() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-5 pt-6 pb-32 lg:pb-6 space-y-6 bg-stone-50/50 scrollbar-none relative">
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeUp`}>
-                {m.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-xl bg-stone-900 border border-stone-800 text-white flex items-center justify-center text-[10px] font-black shrink-0 mr-3 mt-1 shadow-sm uppercase">
-                    AI
-                  </div>
-                )}
-                <div
-                  className={`max-w-[85%] px-4 py-3 rounded-2xl text-[13px] leading-relaxed shadow-sm ${
-                    m.role === 'user'
-                      ? 'bg-orange-500 text-white rounded-br-none shadow-orange-500/20'
-                      : 'bg-white text-stone-700 border border-stone-100 rounded-bl-none'
-                  }`}
-                >
-                  {m.role === 'assistant' ? (
-                    <div className="space-y-1">{renderMarkdown(m.content)}</div>
-                  ) : (
-                    <>
-                      {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
-                      {m.attachment_url && <AttachmentBubble url={m.attachment_url} name={m.attachment_name!} type={m.attachment_type!} isMe />}
-                    </>
+          <div className="flex-1 overflow-y-auto px-5 pt-6 pb-32 lg:pb-6 bg-stone-50/50 scrollbar-none relative flex flex-col">
+            {messages.map((m, i) => {
+              const isUser = m.role === 'user';
+              const prev = messages[i - 1];
+              const next = messages[i + 1];
+              // Pas de timestamp en mémoire → groupage par rôle consécutif uniquement
+              const isGroupedWithPrev = !!(prev && prev.role === m.role);
+              const isGroupedWithNext = !!(next && next.role === m.role);
+
+              const bubbleRadius = (() => {
+                if (isUser) {
+                  if (!isGroupedWithPrev && !isGroupedWithNext) return 'rounded-2xl rounded-tr-md';
+                  if (!isGroupedWithPrev && isGroupedWithNext)  return 'rounded-2xl rounded-tr-md rounded-br-md';
+                  if (isGroupedWithPrev && isGroupedWithNext)   return 'rounded-2xl rounded-r-md';
+                  return 'rounded-2xl rounded-br-md';
+                } else {
+                  if (!isGroupedWithPrev && !isGroupedWithNext) return 'rounded-2xl rounded-tl-md';
+                  if (!isGroupedWithPrev && isGroupedWithNext)  return 'rounded-2xl rounded-tl-md rounded-bl-md';
+                  if (isGroupedWithPrev && isGroupedWithNext)   return 'rounded-2xl rounded-l-md';
+                  return 'rounded-2xl rounded-bl-md';
+                }
+              })();
+
+              return (
+                <div key={i} className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-fadeUp ${isGroupedWithPrev ? 'mt-0.5' : 'mt-4'}`}>
+                  {!isUser && (
+                    <div className="w-8 shrink-0 mr-3 mt-1">
+                      {!isGroupedWithPrev && (
+                        <div className="w-8 h-8 rounded-xl bg-stone-900 border border-stone-800 text-white flex items-center justify-center text-[10px] font-black shadow-sm uppercase">
+                          AI
+                        </div>
+                      )}
+                    </div>
                   )}
-                </div>
-                {m.role === 'user' && (
-                  <div className="hidden lg:flex w-8 h-8 rounded-xl bg-orange-100 border border-orange-200 text-orange-600 items-center justify-center text-[10px] font-black shrink-0 ml-3 mt-1 shadow-sm overflow-hidden">
-                    {user?.avatar ? (
-                      <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                  <div className={`max-w-[85%] px-4 py-3 ${bubbleRadius} text-[13px] leading-relaxed shadow-sm ${
+                    isUser
+                      ? 'bg-orange-500 text-white shadow-orange-500/20'
+                      : 'bg-white text-stone-700 border border-stone-100'
+                  }`}>
+                    {m.role === 'assistant' ? (
+                      <div className="space-y-1">{renderMarkdown(m.content)}</div>
                     ) : (
-                      user?.name.slice(0, 2).toUpperCase()
+                      <>
+                        {m.content && <p className="whitespace-pre-wrap">{m.content}</p>}
+                        {m.attachment_url && <AttachmentBubble url={m.attachment_url} name={m.attachment_name!} type={m.attachment_type!} isMe />}
+                      </>
                     )}
                   </div>
-                )}
-              </div>
-            ))}
+                  {isUser && (
+                    <div className="hidden lg:flex w-8 shrink-0 ml-3 mt-1">
+                      {!isGroupedWithPrev && (
+                        <div className="w-8 h-8 rounded-xl bg-orange-100 border border-orange-200 text-orange-600 flex items-center justify-center text-[10px] font-black shadow-sm overflow-hidden">
+                          {user?.avatar ? (
+                            <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            user?.name.slice(0, 2).toUpperCase()
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
             {loading && (
               <div className="flex justify-start animate-pulse">

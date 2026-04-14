@@ -353,12 +353,12 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pt-4 lg:py-6 pb-36 lg:pb-6 space-y-4 lg:space-y-6 relative">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pt-4 lg:py-6 pb-36 lg:pb-6 relative flex flex-col">
         {aiSettings?.allow_delete === 1 && (
           <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 animate-pulse">
             <span className="text-xl">⚠️</span>
             <div className="text-xs text-red-800 font-medium">
-              <span className="font-bold uppercase tracking-wider">Mode Expérimental :</span> 
+              <span className="font-bold uppercase tracking-wider">Mode Expérimental :</span>
               L'Assistant IA est autorisé à supprimer des éléments dans ce projet. Soyez précis dans vos demandes.
             </div>
           </div>
@@ -376,35 +376,71 @@ export default function ProjectAiRoom({ params }: { params: Promise<{ id: string
           const senderName = isUser ? (m.user_name || 'Moi') : 'Galineo Room';
           const avatar = isUser ? m.user_avatar : null;
 
+          const prev = messages[i - 1];
+          const next = messages[i + 1];
+
+          const isGroupedWithPrev = !!(
+            prev &&
+            prev.role === m.role &&
+            prev.user_name === m.user_name &&
+            m.created_at && prev.created_at &&
+            new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60 * 1000
+          );
+          const isGroupedWithNext = !!(
+            next &&
+            next.role === m.role &&
+            next.user_name === m.user_name &&
+            m.created_at && next.created_at &&
+            new Date(next.created_at).getTime() - new Date(m.created_at).getTime() < 5 * 60 * 1000
+          );
+
+          const bubbleRadius = (() => {
+            if (isUser) {
+              if (!isGroupedWithPrev && !isGroupedWithNext) return 'rounded-[22px] rounded-tr-md';
+              if (!isGroupedWithPrev && isGroupedWithNext)  return 'rounded-[22px] rounded-tr-md rounded-br-md';
+              if (isGroupedWithPrev && isGroupedWithNext)   return 'rounded-[22px] rounded-r-md';
+              return 'rounded-[22px] rounded-br-md';
+            } else {
+              if (!isGroupedWithPrev && !isGroupedWithNext) return 'rounded-[22px] rounded-tl-md';
+              if (!isGroupedWithPrev && isGroupedWithNext)  return 'rounded-[22px] rounded-tl-md rounded-bl-md';
+              if (isGroupedWithPrev && isGroupedWithNext)   return 'rounded-[22px] rounded-l-md';
+              return 'rounded-[22px] rounded-bl-md';
+            }
+          })();
+
           return (
-            <div key={i} className={`flex w-full group ${isUser ? 'justify-end' : 'justify-start'}`}>
+            <div key={i} className={`flex w-full group ${isUser ? 'justify-end' : 'justify-start'} ${isGroupedWithPrev ? 'mt-0.5' : 'mt-4'}`}>
               <div className={`flex max-w-[95%] lg:max-w-[75%] gap-2 lg:gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                {/* Avatar - Masqué sur mobile pour l'IA, visible pour l'utilisateur */}
-                <div className={`shrink-0 pt-1 ${isUser ? '' : 'hidden lg:block'}`}>
-                  <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden border ${
-                    isUser ? 'bg-stone-100 border-stone-200' : 'bg-orange-500 border-orange-400 text-white'
-                  }`}>
-                    {isUser ? (
-                      avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" /> : <span className="text-stone-400">👤</span>
-                    ) : (
-                      <svg width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1-10 10A10 10 0 0 1 12 2zm0 2a8 8 0 1 0 8 8 8 8 0 0 0-8-8zm-1 3h2v2h-2zm0 4h2v6h-2z"/></svg>
-                    )}
-                  </div>
+                {/* Avatar — masqué si groupé */}
+                <div className={`shrink-0 pt-1 w-9 ${isUser ? '' : 'hidden lg:block'}`}>
+                  {!isGroupedWithPrev && (
+                    <div className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden border ${
+                      isUser ? 'bg-stone-100 border-stone-200' : 'bg-orange-500 border-orange-400 text-white'
+                    }`}>
+                      {isUser ? (
+                        avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" /> : <span className="text-stone-400">👤</span>
+                      ) : (
+                        <svg width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 1-10 10A10 10 0 0 1 12 2zm0 2a8 8 0 1 0 8 8 8 8 0 0 0-8-8zm-1 3h2v2h-2zm0 4h2v6h-2z"/></svg>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Message Content */}
                 <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}>
-                  <div className="flex items-center gap-2 px-1 mb-1.5">
-                    <span className="text-[11px] font-black text-stone-900 uppercase tracking-tight">{senderName}</span>
-                    <span className="text-[9px] font-bold text-stone-300 uppercase tracking-tighter">
-                      {m.created_at ? formatDistanceToNow(new Date(m.created_at), { addSuffix: true, locale: fr }) : 'À l\'instant'}
-                    </span>
-                  </div>
-                  
-                  <div className={`px-5 py-3.5 rounded-[22px] shadow-sm text-sm leading-relaxed ${
-                    isUser 
-                      ? 'bg-orange-500 text-white rounded-tr-none shadow-orange-200/50' 
-                      : 'bg-white text-stone-800 border border-stone-100 rounded-tl-none'
+                  {!isGroupedWithPrev && (
+                    <div className="flex items-center gap-2 px-1 mb-1.5">
+                      <span className="text-[11px] font-black text-stone-900 uppercase tracking-tight">{senderName}</span>
+                      <span className="text-[9px] font-bold text-stone-300 uppercase tracking-tighter">
+                        {m.created_at ? formatDistanceToNow(new Date(m.created_at), { addSuffix: true, locale: fr }) : 'À l\'instant'}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className={`px-5 py-3.5 ${bubbleRadius} shadow-sm text-sm leading-relaxed ${
+                    isUser
+                      ? 'bg-orange-500 text-white shadow-orange-200/50'
+                      : 'bg-white text-stone-800 border border-stone-100'
                   }`}>
                     {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
                     {m.role === 'user' && (m as any).attachment_url && (

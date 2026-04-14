@@ -183,7 +183,7 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
       </header>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-4 pb-36 pt-6 space-y-6 custom-scrollbar md:px-8 md:pb-8">
+      <div className="flex-1 overflow-y-auto px-4 pb-36 pt-6 custom-scrollbar md:px-8 md:pb-8 flex flex-col">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center">
             <div className="w-16 h-16 bg-orange-100 text-orange-500 rounded-2xl flex items-center justify-center mb-4">
@@ -195,25 +195,53 @@ export default function ChatGroupRoomPage({ params }: { params: Promise<{ id: st
         ) : (
           messages.map((msg, idx) => {
             const isMe = msg.user_id === user?.id;
-            const showAuthor = idx === 0 || messages[idx-1].user_id !== msg.user_id;
+            const prev = messages[idx - 1];
+            const next = messages[idx + 1];
+
+            const isGroupedWithPrev = !!(
+              prev &&
+              prev.user_id === msg.user_id &&
+              new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime() < 5 * 60 * 1000
+            );
+            const isGroupedWithNext = !!(
+              next &&
+              next.user_id === msg.user_id &&
+              new Date(next.created_at).getTime() - new Date(msg.created_at).getTime() < 5 * 60 * 1000
+            );
+
+            const bubbleRadius = (() => {
+              if (isMe) {
+                if (!isGroupedWithPrev && !isGroupedWithNext) return 'rounded-[22px] rounded-tr-md';
+                if (!isGroupedWithPrev && isGroupedWithNext)  return 'rounded-[22px] rounded-tr-md rounded-br-md';
+                if (isGroupedWithPrev && isGroupedWithNext)   return 'rounded-[22px] rounded-r-md';
+                return 'rounded-[22px] rounded-br-md';
+              } else {
+                if (!isGroupedWithPrev && !isGroupedWithNext) return 'rounded-[22px] rounded-tl-md';
+                if (!isGroupedWithPrev && isGroupedWithNext)  return 'rounded-[22px] rounded-tl-md rounded-bl-md';
+                if (isGroupedWithPrev && isGroupedWithNext)   return 'rounded-[22px] rounded-l-md';
+                return 'rounded-[22px] rounded-bl-md';
+              }
+            })();
 
             return (
-              <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-scaleIn`}>
-                {showAuthor && !isMe && (
+              <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-scaleIn ${isGroupedWithPrev ? 'mt-0.5' : 'mt-4'}`}>
+                {!isGroupedWithPrev && !isMe && (
                   <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1.5 ml-1">
                     {msg.author_name}
                   </p>
                 )}
-                <div className="flex items-end gap-3 max-w-[80%]">
-                  {!isMe && showAuthor && (
-                    <div className="w-8 h-8 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-[10px] font-black text-stone-400 shadow-sm overflow-hidden shrink-0">
-                      {msg.author_avatar ? <img src={msg.author_avatar} alt="" className="w-full h-full object-cover" /> : msg.author_name.substring(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                  <div className={`px-5 py-3.5 rounded-[1.5rem] shadow-sm text-sm leading-relaxed font-medium ${
+                <div className={`flex items-end gap-3 max-w-[80%] ${isMe ? 'flex-row-reverse' : ''}`}>
+                  <div className="w-8 shrink-0">
+                    {!isMe && !isGroupedWithPrev && (
+                      <div className="w-8 h-8 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-[10px] font-black text-stone-400 shadow-sm overflow-hidden">
+                        {msg.author_avatar ? <img src={msg.author_avatar} alt="" className="w-full h-full object-cover" /> : msg.author_name.substring(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className={`px-5 py-3.5 ${bubbleRadius} shadow-sm text-sm leading-relaxed font-medium ${
                     isMe
-                      ? 'bg-orange-500 text-white rounded-br-none'
-                      : 'bg-white text-stone-800 border border-stone-100 rounded-bl-none'
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-white text-stone-800 border border-stone-100'
                   }`}>
                     {msg.content}
                     {msg.attachment_url && <AttachmentBubble url={msg.attachment_url} name={msg.attachment_name} type={msg.attachment_type} isMe={isMe} />}
