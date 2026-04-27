@@ -8,7 +8,7 @@ const { checkAiPromptLimit } = require('../middleware/planLimits');
 const { createNotification } = require('../utils/notifService');
 const { sendProjectInvitation, sendMemberAdded } = require('../utils/mailer');
 
-const MODEL_NAME = "gemini-3.1-flash-lite-preview";
+const MODEL_NAME = "gemini-2.0-flash-lite";
 
 // ─── Promisify db ─────────────────────────────────────────────────────────────
 const dbGet = (sql, params) =>
