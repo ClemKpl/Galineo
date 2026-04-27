@@ -17,17 +17,26 @@ async function authMiddleware(req, res, next) {
 
     // Vérification du ban (sauf pour les admins)
     if (!req.user.isAdmin) {
-      const db = require('../db');
-      const row = await new Promise((resolve, reject) =>
-        db.get('SELECT banned FROM users WHERE id = ?', [req.user.id], (err, r) => err ? reject(err) : resolve(r))
-      );
-      if (row?.banned) {
-        return res.status(403).json({ error: 'Votre compte a été suspendu. Contactez le support.' });
+      try {
+        const db = require('../db');
+        const row = await new Promise((resolve, reject) =>
+          db.get('SELECT banned FROM users WHERE id = ?', [req.user.id], (err, r) => err ? reject(err) : resolve(r))
+        );
+        if (row?.banned) {
+          return res.status(403).json({ error: 'Votre compte a été suspendu. Contactez le support.' });
+        }
+      } catch (dbErr) {
+        console.error('❌ [AuthMiddleware DB Error]', dbErr);
+        return res.status(500).json({ error: 'Erreur interne lors de la vérification du compte' });
       }
     }
 
     next();
-  } catch {
+  } catch (err) {
+    console.error('❌ [AuthMiddleware Error]', err);
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Session expirée. Veuillez vous reconnecter.' });
+    }
     return res.status(401).json({ error: 'Token invalide' });
   }
 }

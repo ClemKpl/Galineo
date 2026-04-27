@@ -46,9 +46,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('galineo_user', JSON.stringify(freshUser));
         setUser(freshUser);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Failed to refresh user profile:', err);
-      // If unauthorized, could logout, but let's keep it simple for now as it might be a network error
+      // Si le token est invalide (401) ou banni (403), on déconnecte proprement
+      if (err.status === 401 || err.status === 403) {
+        console.warn('⚠️ Session invalide ou expirée, déconnexion...');
+        logout();
+      }
     }
   };
 

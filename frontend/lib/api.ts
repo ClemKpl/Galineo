@@ -15,6 +15,14 @@ function getToken(): string | null {
   return localStorage.getItem('galineo_token');
 }
 
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function request(path: string, options: RequestInit = {}) {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -23,13 +31,19 @@ async function request(path: string, options: RequestInit = {}) {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const cleanApiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '');
   const cleanPath = path.replace(/^\//, '');
-  const finalUrl = `${cleanApiUrl}/${cleanPath}`;
+  const finalUrl = `${API_URL}/${cleanPath}`;
+  
   console.log('📡 Appel API vers :', finalUrl);
   const res = await fetch(finalUrl, { cache: 'no-store', ...options, headers });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || data.error || 'Erreur serveur');
+  
+  // Certains terminaux renvoient du vide en cas de 204 No Content
+  if (res.status === 204) return null;
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new ApiError(data.message || data.error || 'Erreur serveur', res.status);
+  }
   return data;
 }
 
