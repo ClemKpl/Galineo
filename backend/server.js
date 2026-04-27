@@ -11,6 +11,10 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+const geminiKey = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
+console.log(`[Startup] GEMINI key length: ${geminiKey.length} | prefix: "${geminiKey.substring(0, 10)}" | suffix: "${geminiKey.slice(-4)}"`);
+
+
 require('./db'); // Initialise la DB et les tables
 
 const { authMiddleware } = require('./middleware/auth');
