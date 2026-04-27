@@ -951,6 +951,8 @@ router.post('/chat', authMiddleware, checkAiPromptLimit, async (req, res) => {
   const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY;
   const apiKeys = rawKeys ? rawKeys.split(',').map(k => k.trim()).filter(k => !!k) : [];
 
+  console.log('[AI Debug] rawKeys length:', rawKeys?.length, '| first key prefix:', apiKeys[0]?.substring(0, 8), '| keys count:', apiKeys.length);
+
   if (apiKeys.length === 0) {
     return res.status(500).json({ error: "Clé API Gemini manquante." });
   }
