@@ -11,8 +11,12 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-const geminiKey = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '';
+const geminiKey = (process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '').split(',')[0].trim();
 console.log(`[Startup] GEMINI key length: ${geminiKey.length} | prefix: "${geminiKey.substring(0, 10)}" | suffix: "${geminiKey.slice(-4)}"`);
+fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey}`)
+  .then(r => r.json())
+  .then(data => console.log('[Startup] Available Gemini models:', (data.models || []).map(m => m.name).join(', ')))
+  .catch(e => console.error('[Startup] Failed to list Gemini models:', e.message));
 
 
 require('./db'); // Initialise la DB et les tables
