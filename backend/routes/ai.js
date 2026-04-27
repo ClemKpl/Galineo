@@ -23,6 +23,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // ─── Outils (Tools/Functions) ────────────────────────────────────────────────
 const functions = {
   creer_projet: async ({ titre, description, deadline, start_date, members, elements }, userId, contextProjectId) => {
+    console.log(`[Wizard] creer_projet called: titre="${titre}" | elements count: ${elements?.length ?? 'undefined'} | members count: ${members?.length ?? 0}`);
     // Si on est déjà dans un projet, on interdit la création d'un autre projet via l'IA projet
     if (contextProjectId) return { error: "Action non autorisée : Vous êtes déjà dans un projet. Utilisez le Wizard pour créer de nouveaux projets." };
 
