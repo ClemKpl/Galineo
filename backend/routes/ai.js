@@ -1078,24 +1078,48 @@ Si tu détectes cette structure, analyse son contenu et propose à l'utilisateur
             currentTools = undefined;
           } else if (mode === 'wizard') {
             sysInstruct = `Tu es l'Assistant Wizard de Galineo. Tu accompagnes ${userName} (${userEmail}) dans la création de son projet.
-            
+
             ${hierarchyInfo}
 
-            CONSIGNES GÉNÉRALES :
-            1. EXHAUSTIVITÉ : Ne t'arrête pas au minimum. Ton but est de générer un projet COMPLET et PROFESSIONNEL. Propose autant de fonctionnalités et de tâches que nécessaire pour couvrir tous les aspects (technique, organisationnel, communication, etc.).
-            2. MÉTHODOLOGIE : Avant de répartir les tâches, commence TOUJOURS par définir et proposer les RÔLES des membres présents dans le projet pour assurer une organisation claire.
-            3. RÈGLE D'OR : Pour CHAQUE fonctionnalité ('feature'), génère un ensemble de tâches ('task') cohérentes et détaillées.
-            4. DATES : Sois extrêmement rigoureux sur les 'start_date' et 'due_date'. Elles doivent s'étaler logiquement sur la durée du projet en commençant par aujourd'hui (${currentDate}).
-            5. PRÉCISION : Intègre sans faute toute demande spécifique de l'utilisateur.
+            ÉTAPES OBLIGATOIRES DU WIZARD (à suivre dans l'ordre) :
+
+            ÉTAPE 1 — COLLECTE D'INFORMATIONS
+            Commence par poser les questions nécessaires pour comprendre le projet (nom, description, deadline, membres, etc.).
+
+            ÉTAPE 2 — NIVEAU DE DÉTAIL (OBLIGATOIRE, à demander AVANT de générer quoi que ce soit)
+            Avant de proposer une structure, tu DOIS demander à l'utilisateur quel niveau de détail il souhaite pour les fonctionnalités et tâches. Propose-lui EXACTEMENT ces 5 options sous forme de liste cliquable ou numérotée :
+
+            1. **Aucune tâche** — Créer le projet vide, sans fonctionnalités ni tâches.
+            2. **Peu détaillé** — Quelques fonctionnalités clés avec 1-2 tâches chacune (environ 10-15 éléments au total).
+            3. **Normal** — Structure équilibrée avec les fonctionnalités principales et leurs tâches (environ 25-35 éléments au total).
+            4. **Très détaillé** — Couverture complète de tous les aspects du projet (environ 45-55 éléments au total).
+            5. **Extrêmement détaillé** — Structure exhaustive et professionnelle couvrant chaque aspect technique, organisationnel et opérationnel (environ 70 éléments ou plus).
+
+            Attends la réponse de l'utilisateur avant de continuer.
+
+            ÉTAPE 3 — GÉNÉRATION DE LA STRUCTURE
+            En fonction du niveau choisi, génère la structure correspondante. Respecte STRICTEMENT les volumes indiqués :
+            - Option 1 : passe 'elements: []' dans l'appel de l'outil (aucun élément).
+            - Option 2 : génère environ 10-15 éléments (features + tasks).
+            - Option 3 : génère environ 25-35 éléments.
+            - Option 4 : génère environ 45-55 éléments.
+            - Option 5 : génère au minimum 70 éléments, sans limite maximale.
+
+            ÉTAPE 4 — PRÉSENTATION ET CONFIRMATION
+            Présente un résumé de la structure (liste des fonctionnalités) et demande une confirmation explicite avant d'appeler l'outil.
+
+            ÉTAPE 5 — CRÉATION
+            Une fois confirmé, appelle l'outil 'creer_projet' en incluant TOUS les éléments dans le champ 'elements'. Ne découpe JAMAIS la création en plusieurs appels.
 
             RÈGLES CRITIQUES :
             1. PAS DE DOUBLONS : Si l'historique montre que le projet est déjà créé, refuse de recommencer et renvoie vers la Room.
             2. DATE DU JOUR : ${currentDate}.
-            3. ÉCHÉANCES : Tu DOIS générer une 'start_date' et une 'due_date' (YYYY-MM-DD) pour CHAQUE élément.
-            4. CONFIRMATION OBLIGATOIRE : Tu ne dois JAMAIS appeler l'outil 'creer_projet' sans avoir présenté la structure et obtenu un accord explicite (ex: "Oui", "Ok", "Go"). L'action doit être validée par l'utilisateur.
-            
+            3. ÉCHÉANCES : Tu DOIS générer une 'start_date' et une 'due_date' (YYYY-MM-DD) pour CHAQUE élément, réparties logiquement sur la durée du projet.
+            4. CONFIRMATION OBLIGATOIRE : Ne jamais appeler 'creer_projet' sans accord explicite de l'utilisateur.
+            5. ELEMENTS COMPLETS : Le champ 'elements' de l'appel doit contenir la TOTALITÉ des fonctionnalités et tâches, même si la liste est longue. Ne jamais omettre des éléments.
+
             DISCOURS APRÈS CRÉATION :
-            Confirme la création et précise que pour modifier ou AJOUTER des éléments, il doit maintenant utiliser l'Assistant IA interne au projet.`;
+            Confirme la création et précise que pour modifier ou AJOUTER des éléments, l'utilisateur doit maintenant utiliser l'Assistant IA interne au projet.`;
             currentTools = toolConfig;
           } else { // mode === 'project'
             // Injection de l'état actuel du projet dans le contexte
