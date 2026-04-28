@@ -547,10 +547,8 @@ export default function LandingPage() {
                       className="w-full h-full object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                     />
-                    {/* Fallback initials */}
-                    <div className="absolute inset-0 flex items-center justify-center text-3xl font-black text-stone-400" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
-                      {person.name.split(' ').map(n => n[0]).join('')}
-                    </div>
+                    {/* Fallback */}
+                    <div className="absolute inset-0 bg-stone-200" />
                   </div>
                   <div className="p-4">
                     <div className="flex items-center justify-between">
