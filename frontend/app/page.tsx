@@ -237,7 +237,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── DASHBOARD PREVIEW ── */}
-      <section className="py-20 px-6 bg-stone-50 overflow-hidden">
+      <section className="hidden md:block py-20 px-6 bg-stone-50 overflow-hidden">
         <div className="max-w-6xl mx-auto">
           <Reveal className="text-center mb-10">
             <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Aperçu</p>
