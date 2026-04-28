@@ -188,7 +188,7 @@ export default function LandingPage() {
                 <span className="relative inline-block">
                   <span className="relative z-10 text-orange-500">structuré</span>
                   <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 300 12" fill="none" preserveAspectRatio="none" style={{ height: '8px' }}>
-                    <path d="M0 8 Q75 2 150 8 Q225 14 300 8" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.5"/>
+                    <path d="M0 8 Q75 2 150 8 Q225 14 300 8" stroke="var(--accent-500)" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.5"/>
                   </svg>
                 </span>
                 ,<br />en quelques secondes.
