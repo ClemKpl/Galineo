@@ -43,6 +43,7 @@ function Header({ user }: { user: any }) {
   const links = [
     { href: '#fonctionnalites', label: 'Fonctionnalités' },
     { href: '#pour-qui', label: 'Pour qui ?' },
+    { href: '#equipe', label: 'Notre équipe' },
     { href: '#faq', label: 'FAQ' },
   ];
   return (
@@ -489,7 +490,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── QUI SOMMES-NOUS ── */}
-      <section className="py-28 px-6 bg-white">
+      <section id="equipe" className="py-28 px-6 bg-white">
         <div className="max-w-5xl mx-auto">
           <Reveal className="mb-16">
             <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Derrière Galinéo</p>
