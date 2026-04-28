@@ -21,7 +21,6 @@ function Header({ user }: { user: any }) {
   const navLinks = [
     { href: '#fonctionnalites', label: 'Fonctionnalités' },
     { href: '#pour-qui', label: 'Pour qui ?' },
-    { href: '#tarifs', label: 'Tarifs' },
     { href: '#faq', label: 'FAQ' },
   ];
   return (
@@ -116,21 +115,6 @@ const FOR_WHO = [
   { emoji: '🎨', title: 'Créatifs & agences', desc: 'Briefs, livrables, révisions. Gardez le contrôle sur vos missions client avec des vues adaptées à votre workflow.' },
 ];
 
-const PLANS = [
-  {
-    name: 'Gratuit', price: '0€', period: 'pour toujours', color: 'border-stone-200', badge: null,
-    features: ['1 projet actif', "Jusqu'à 25 tâches par projet", 'Wizard IA (limité)', 'Galineo Room', "Collaboration jusqu'à 3 membres", 'Vues Kanban & Liste'],
-  },
-  {
-    name: 'Premium', price: '7€', period: 'par mois', color: 'border-orange-400 ring-2 ring-orange-200', badge: 'Populaire',
-    features: ['Projets illimités', 'Tâches illimitées', 'Wizard IA complet', 'Galineo Room avancée', 'Membres illimités', 'Toutes les vues (GANTT, Calendrier)', 'Suivi budgétaire', 'Support prioritaire'],
-  },
-  {
-    name: 'Unlimited', price: '15€', period: 'par mois', color: 'border-stone-200', badge: null,
-    features: ['Tout Premium', 'IA sans limites de quota', 'Export CSV / PDF', 'Accès API', 'Support dédié'],
-  },
-];
-
 const FAQ_ITEMS = [
   { q: 'Galineo est-il vraiment gratuit ?', r: 'Oui, le plan gratuit est disponible sans carte bancaire. Il vous donne accès aux fonctionnalités essentielles pour démarrer.' },
   { q: 'Comment fonctionne le Wizard IA ?', r: "Décrivez votre projet en langage naturel. L'IA analyse votre demande et génère une structure complète (fonctionnalités, tâches, dates) que vous pouvez personnaliser avant de valider." },
@@ -174,7 +158,7 @@ export default function LandingPage() {
       <Header user={user} />
 
       {/* ── Hero ── */}
-      <section className="relative min-h-screen flex items-center justify-center px-6 pt-24 pb-20">
+      <section className="relative flex items-center justify-center px-6 pt-36 pb-28">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-white to-stone-50 pointer-events-none" />
         <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-orange-100/40 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-stone-100/60 rounded-full blur-3xl pointer-events-none" />
@@ -201,55 +185,6 @@ export default function LandingPage() {
           </div>
           <p className="mt-4 text-sm text-stone-400">Gratuit sans carte bancaire · Aucun engagement</p>
 
-          {/* App mockup */}
-          <div className="mt-16">
-            <div className="bg-white rounded-3xl border border-stone-200 shadow-2xl shadow-stone-200/60 overflow-hidden max-w-3xl mx-auto">
-              <div className="bg-stone-50 border-b border-stone-100 px-4 py-3 flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-400" />
-                <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                <div className="w-3 h-3 rounded-full bg-green-400" />
-                <div className="ml-4 flex-1 bg-stone-200/60 rounded-md h-5 max-w-xs" />
-              </div>
-              <div className="p-6 bg-stone-50/50">
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  {[
-                    { label: 'En attente', count: 3, color: 'bg-orange-200' },
-                    { label: 'En cours', count: 2, color: 'bg-blue-200' },
-                    { label: 'Terminé', count: 4, color: 'bg-emerald-200' },
-                  ].map(({ label, count, color }) => (
-                    <div key={label} className="bg-white rounded-2xl border border-stone-100 p-3">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs font-bold uppercase tracking-wider text-stone-400">{label}</span>
-                        <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full font-medium">{count}</span>
-                      </div>
-                      <div className="space-y-2">
-                        {Array.from({ length: count }).map((_, j) => (
-                          <div key={j} className="bg-stone-50 rounded-xl p-2.5 border border-stone-100">
-                            <div className={`h-2 rounded-full mb-1.5 ${color}`} style={{ width: `${55 + j * 15}%` }} />
-                            <div className="h-1.5 bg-stone-200 rounded-full w-2/3" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="bg-white rounded-2xl border border-stone-100 p-4 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                    <Logo size={20} className="text-orange-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-semibold text-stone-700">Progression globale</span>
-                      <span className="text-sm font-bold text-orange-500">64%</span>
-                    </div>
-                    <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-orange-400 rounded-full" style={{ width: '64%' }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -298,46 +233,6 @@ export default function LandingPage() {
           <h2 className="text-3xl md:text-4xl font-black text-white mb-4" style={{ fontFamily: 'Archivo Black, sans-serif' }}>Prêt à transformer votre façon de travailler ?</h2>
           <p className="text-orange-100 mb-8 text-lg">Rejoignez Galineo et créez votre premier projet structuré par l'IA en moins de 2 minutes.</p>
           <Link href={ctaHref} className="inline-block px-8 py-4 bg-white hover:bg-orange-50 text-orange-600 font-bold rounded-2xl text-lg transition-all hover:-translate-y-0.5">{ctaLabel}</Link>
-        </div>
-      </section>
-
-      {/* ── Tarifs ── */}
-      <section id="tarifs" className="py-24 px-6 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-orange-500 font-bold uppercase tracking-widest text-sm mb-3">Tarifs</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight" style={{ fontFamily: 'Archivo Black, sans-serif' }}>Simple et transparent</h2>
-            <p className="mt-4 text-stone-500 text-lg">Commencez gratuitement. Évoluez quand vous en avez besoin.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-            {PLANS.map((plan) => (
-              <div key={plan.name} className={`relative rounded-3xl border ${plan.color} p-8 bg-white`}>
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full">{plan.badge}</span>
-                  </div>
-                )}
-                <div className="mb-6">
-                  <h3 className="font-bold text-xl text-stone-900 mb-1">{plan.name}</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-stone-900">{plan.price}</span>
-                    <span className="text-stone-400 text-sm">/ {plan.period}</span>
-                  </div>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-stone-600">
-                      <svg className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href={ctaHref} className={`block text-center py-3 rounded-xl font-semibold text-sm transition-all ${plan.badge ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-stone-100 hover:bg-stone-200 text-stone-700'}`}>
-                  {user ? "Accéder à l'app" : 'Commencer'}
-                </Link>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
