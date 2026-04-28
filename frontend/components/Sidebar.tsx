@@ -576,6 +576,12 @@ export default function Sidebar({
           <IconLogout />
           Déconnexion
         </button>
+        <div className="flex items-center justify-center pt-1">
+          <a href="/" className="text-[10px] text-stone-600 hover:text-stone-400 transition-colors flex items-center gap-1">
+            <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Site
+          </a>
+        </div>
         <div className="flex items-center justify-center gap-3 pt-1">
           <a href="/legal/mentions-legales" target="_blank" className="text-[10px] text-stone-600 hover:text-stone-400 transition-colors">Mentions légales</a>
           <span className="text-stone-700 text-[10px]">·</span>
