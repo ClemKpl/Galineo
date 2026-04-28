@@ -192,9 +192,9 @@ function FaqItem({ q, r }: { q: string; r: string }) {
   return (
     <div className="border-b border-stone-800/60 last:border-0 overflow-hidden">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between py-5 text-left gap-4 group">
-        <span className="font-semibold text-white group-hover:text-orange-400 transition-colors duration-200">{q}</span>
+        <span className="font-semibold text-white group-hover:text-stone-300 transition-colors duration-200">{q}</span>
         <span
-          className="shrink-0 w-7 h-7 rounded-full bg-stone-800 flex items-center justify-center text-stone-400 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300"
+          className="shrink-0 w-7 h-7 rounded-full bg-stone-800 flex items-center justify-center text-stone-400 group-hover:bg-stone-700 group-hover:text-white transition-all duration-300"
           style={{ transform: open ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease, background 0.2s, color 0.2s' }}
         >
           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
@@ -267,7 +267,7 @@ export default function LandingPage() {
         @keyframes floatOrb2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(20px, -30px) scale(0.9); } }
         @keyframes floatOrb3 { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.05); } }
         @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
-        @keyframes badgePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.4); } 50% { box-shadow: 0 0 0 8px rgba(249,115,22,0); } }
+        @keyframes badgePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(120,113,108,0.3); } 50% { box-shadow: 0 0 0 8px rgba(120,113,108,0); } }
         @keyframes heroFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
         @keyframes gradientShift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
         .gradient-text {
@@ -278,8 +278,8 @@ export default function LandingPage() {
           background-clip: text;
           animation: gradientShift 4s ease infinite;
         }
-        .card-glow:hover { box-shadow: 0 0 0 1px rgba(249,115,22,0.3), 0 20px 60px rgba(249,115,22,0.08); }
-        .btn-glow:hover { box-shadow: 0 0 30px rgba(249,115,22,0.4), 0 8px 20px rgba(249,115,22,0.3); }
+        .card-glow:hover { box-shadow: 0 0 0 1px rgba(120,113,108,0.2), 0 20px 60px rgba(0,0,0,0.3); }
+        .btn-glow:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.3); }
       `}</style>
 
       <Header user={user} />
@@ -307,7 +307,7 @@ export default function LandingPage() {
               transition: 'opacity 0.8s ease, transform 0.8s ease',
               animation: heroVisible ? 'badgePulse 3s ease-in-out 1s infinite' : 'none',
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-sm font-medium mb-8"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-stone-700 bg-stone-800/60 text-stone-400 text-sm font-medium mb-8"
           >
             <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
             Propulsé par l'intelligence artificielle
@@ -443,7 +443,7 @@ export default function LandingPage() {
                       </span>
                     </div>
                   </div>
-                  <h3 className="font-bold text-lg text-white mb-2 group-hover:text-orange-400 transition-colors duration-200">{f.title}</h3>
+                  <h3 className="font-bold text-lg text-white mb-2 group-hover:text-stone-200 transition-colors duration-200">{f.title}</h3>
                   <p className="text-stone-400 text-sm leading-relaxed">{f.desc}</p>
                 </div>
               </Reveal>
@@ -469,7 +469,7 @@ export default function LandingPage() {
               <Reveal key={item.title} delay={i * 100}>
                 <div className="card-glow group p-6 rounded-2xl border border-stone-800 bg-stone-900 hover:bg-stone-800/70 transition-all duration-300 hover:-translate-y-2 cursor-default">
                   <span className="text-4xl mb-4 block group-hover:scale-110 transition-transform duration-300 inline-block">{item.emoji}</span>
-                  <h3 className="font-bold text-white mb-2 group-hover:text-orange-400 transition-colors duration-200">{item.title}</h3>
+                  <h3 className="font-bold text-white mb-2 group-hover:text-stone-200 transition-colors duration-200">{item.title}</h3>
                   <p className="text-stone-400 text-sm leading-relaxed">{item.desc}</p>
                 </div>
               </Reveal>
@@ -526,7 +526,7 @@ export default function LandingPage() {
         <DotGrid />
         <Reveal className="relative max-w-3xl mx-auto text-center">
           <div className="flex justify-center mb-6">
-            <div className="p-4 rounded-3xl bg-orange-500/10 border border-orange-500/20" style={{ animation: 'badgePulse 3s ease-in-out infinite' }}>
+            <div className="p-4 rounded-3xl bg-stone-800 border border-stone-700" style={{ animation: 'badgePulse 3s ease-in-out infinite' }}>
               <Logo size={44} className="text-orange-500" />
             </div>
           </div>
