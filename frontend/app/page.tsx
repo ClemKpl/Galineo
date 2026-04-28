@@ -235,6 +235,160 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── DASHBOARD PREVIEW ── */}
+      <section className="py-20 px-6 bg-stone-50 overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <Reveal className="text-center mb-10">
+            <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Aperçu</p>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>Votre projet, au premier coup d'œil</h2>
+            <p className="mt-3 text-stone-500 text-sm max-w-md mx-auto">Un tableau de bord pensé pour piloter sans friction.</p>
+          </Reveal>
+
+          <Reveal delay={100}>
+            <div className="rounded-2xl overflow-hidden border border-stone-200 shadow-[0_8px_48px_rgba(0,0,0,0.10)] bg-white" style={{ fontFamily: 'Inter, sans-serif' }}>
+              {/* Window chrome */}
+              <div className="bg-stone-100 border-b border-stone-200 px-4 py-2.5 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-400/70" /><div className="w-3 h-3 rounded-full bg-yellow-400/70" /><div className="w-3 h-3 rounded-full bg-green-400/70" />
+                <div className="flex-1 mx-4"><div className="bg-stone-200/80 rounded h-4 max-w-xs mx-auto" /></div>
+              </div>
+
+              <div className="flex h-[480px]">
+                {/* Sidebar */}
+                <div className="w-52 shrink-0 bg-stone-900 flex flex-col text-white text-xs select-none">
+                  <div className="px-4 h-11 flex items-center gap-2 border-b border-stone-800">
+                    <Logo size={16} className="text-orange-500 shrink-0" />
+                    <span className="font-bold tracking-tight text-sm" style={{ fontFamily: "'Archivo Black', sans-serif" }}>GALINÉO</span>
+                    <span className="ml-auto text-[9px] font-bold bg-violet-600 text-white px-1.5 py-0.5 rounded-full">Admin</span>
+                  </div>
+                  <div className="px-3 py-2.5 border-b border-stone-800">
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+                      <div className="w-6 h-6 rounded-lg bg-stone-600 shrink-0" />
+                      <div><div className="font-semibold text-stone-200 text-[11px]">Clément</div><div className="text-stone-500 text-[10px]">capelleclem@gmail.com</div></div>
+                    </div>
+                  </div>
+                  <div className="px-3 py-2 space-y-0.5 border-b border-stone-800">
+                    {['Notifications', 'Tableau de bord', 'Discussions', 'Historique', 'Corbeille', 'Panel Admin'].map((item, i) => (
+                      <div key={item} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-stone-400 hover:text-stone-200">
+                        <div className="w-3.5 h-3.5 rounded bg-stone-700 shrink-0" />
+                        <span className="text-[11px]">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-3 py-2 flex-1">
+                    <div className="text-[9px] font-bold text-stone-600 uppercase tracking-widest px-2 mb-1.5">Mes projets</div>
+                    <div className="text-[9px] font-bold text-stone-600 uppercase tracking-widest px-2 mb-1">Propriétaire</div>
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-stone-800">
+                      <div className="w-4 h-4 rounded bg-orange-500 flex items-center justify-center shrink-0"><Logo size={8} className="text-white" /></div>
+                      <span className="text-[11px] text-stone-200 font-medium truncate">GoNest : Roadmap</span>
+                      <svg className="ml-auto shrink-0 text-yellow-400" width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-stone-500 mt-0.5">
+                      <div className="w-4 h-4 rounded-full border border-dashed border-stone-600 flex items-center justify-center shrink-0 text-stone-600 text-[10px]">+</div>
+                      <span className="text-[11px]">Nouveau projet</span>
+                    </div>
+                  </div>
+                  <div className="px-4 py-3 border-t border-stone-800 text-[10px] text-stone-600 text-center">Site · Mentions légales · CGU</div>
+                </div>
+
+                {/* Main content */}
+                <div className="flex-1 flex flex-col overflow-hidden bg-white">
+                  {/* Project header */}
+                  <div className="px-6 pt-4 pb-0 border-b border-stone-100">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-stone-900 flex items-center justify-center shrink-0"><Logo size={18} className="text-white" /></div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-stone-900 text-base">GoNest : Roadmap</span>
+                            <svg className="text-yellow-400" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                          </div>
+                          <div className="text-[11px] text-stone-400 uppercase tracking-wide">Développement et déploiement structuré de la plateforme SaaS ente…</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button className="text-xs font-semibold text-stone-600 border border-stone-200 px-3 py-1.5 rounded-lg">RETOUR</button>
+                        <button className="text-xs font-semibold text-stone-600 border border-stone-200 px-3 py-1.5 rounded-lg flex items-center gap-1">
+                          <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>
+                          QUITTER
+                        </button>
+                      </div>
+                    </div>
+                    {/* Tabs */}
+                    <div className="flex items-center gap-1 text-[11px] font-semibold -mb-px">
+                      {['DASHBOARD', 'TÂCHES', 'GANTT', 'BUDGET', 'ASSISTANT IA', 'CHAT', 'PARAMÈTRES'].map((tab, i) => (
+                        <div key={tab} className={`px-3 py-2 border-b-2 cursor-pointer transition-colors ${i === 0 ? 'border-orange-500 text-orange-500' : 'border-transparent text-stone-400 hover:text-stone-600'}`}>{tab}</div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dashboard body */}
+                  <div className="flex-1 overflow-auto p-5 bg-stone-50/50">
+                    {/* Header card */}
+                    <div className="bg-white rounded-2xl border border-stone-100 px-6 py-5 mb-4 flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-1">Pilotage Projet</div>
+                        <div className="text-xl font-black text-stone-900">Tableau de bord</div>
+                        <div className="text-xs text-stone-400 mt-0.5">Gérez vos jalons, surveillez la charge de l'équipe et programmez vos événements.</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button className="text-xs font-bold bg-stone-900 text-white px-4 py-2 rounded-xl">Nouvel Événement</button>
+                        <button className="text-xs font-semibold text-stone-600 border border-stone-200 bg-white px-4 py-2 rounded-xl">Actualiser</button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      {/* Progression card */}
+                      <div className="col-span-2 bg-white rounded-2xl border border-stone-100 p-5">
+                        <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">Progression</div>
+                        <div className="flex items-center gap-8">
+                          <div>
+                            <div className="flex items-baseline gap-1.5"><span className="text-4xl font-black text-stone-900">57%</span><span className="text-sm text-stone-400">achevées</span></div>
+                            <div className="mt-3 w-48 h-2 bg-stone-100 rounded-full overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500" style={{ width: '57%' }} /></div>
+                            <div className="grid grid-cols-4 gap-2 mt-4">
+                              {[{ v: '28', l: 'TOTAL', c: 'text-stone-800' }, { v: '2', l: 'À FAIRE', c: 'text-stone-400' }, { v: '10', l: 'EN COURS', c: 'text-orange-500' }, { v: '16', l: 'TERMINÉES', c: 'text-emerald-500' }].map(s => (
+                                <div key={s.l} className="bg-stone-50 rounded-xl p-2.5 text-center">
+                                  <div className={`text-base font-black ${s.c}`}>{s.v}</div>
+                                  <div className="text-[9px] font-bold text-stone-400 uppercase tracking-wide mt-0.5">{s.l}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          {/* Donut chart */}
+                          <div className="relative w-28 h-28 shrink-0">
+                            <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                              <circle cx="50" cy="50" r="38" fill="none" stroke="#f1f5f9" strokeWidth="12"/>
+                              <circle cx="50" cy="50" r="38" fill="none" stroke="#e2e8f0" strokeWidth="12" strokeDasharray="239" strokeDashoffset="0"/>
+                              <circle cx="50" cy="50" r="38" fill="none" stroke="#f97316" strokeWidth="12" strokeDasharray="239" strokeDashoffset="154" strokeLinecap="round"/>
+                              <circle cx="50" cy="50" r="38" fill="none" stroke="#10b981" strokeWidth="12" strokeDasharray="239" strokeDashoffset="63" strokeLinecap="round"/>
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <span className="text-xl font-black text-stone-900">28</span>
+                              <span className="text-[9px] text-stone-400 font-bold uppercase tracking-wide">tâches</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Events card */}
+                      <div className="bg-white rounded-2xl border border-stone-100 p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Événements</div>
+                          <button className="w-6 h-6 flex items-center justify-center text-stone-400 hover:text-stone-600 text-lg leading-none">+</button>
+                        </div>
+                        <div className="flex flex-col items-center justify-center h-24 text-center">
+                          <div className="text-[11px] font-bold text-stone-300 uppercase tracking-widest mb-1">Aucun événement</div>
+                          <div className="text-[10px] text-stone-300">Réunions, points d'étape, etc.</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       {/* ── MARQUEE LOGOS (social proof placeholder) ── */}
       <div className="border-y border-stone-100 py-4 overflow-hidden bg-stone-50/60">
         <div className="flex items-center gap-12 whitespace-nowrap" style={{ animation: 'marquee 20s linear infinite', width: 'max-content' }}>
