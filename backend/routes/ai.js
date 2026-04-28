@@ -1297,6 +1297,9 @@ ${taskSnapshot}${milestoneSnapshot}
           currentProjectIdTask = projectId || dbProjectId;
           const currentUserRoleId = userRoleId;
 
+          const initialFunctionCalls = response.functionCalls();
+          console.log(`[AI Tools] functionCalls count: ${initialFunctionCalls?.length ?? 0}`, initialFunctionCalls?.map(c => c.name));
+
           let toolCallsCount = 0;
           const actions = [];
           while (response.functionCalls()?.length > 0 && toolCallsCount < 5) {
