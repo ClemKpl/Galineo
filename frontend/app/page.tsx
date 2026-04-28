@@ -544,11 +544,8 @@ export default function LandingPage() {
                     <img
                       src={person.img}
                       alt={person.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      className="absolute inset-0 w-full h-full object-cover z-10"
                     />
-                    {/* Fallback */}
-                    <div className="absolute inset-0 bg-stone-200" />
                   </div>
                   <div className="p-4">
                     <div className="flex items-center justify-between">
