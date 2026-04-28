@@ -534,8 +534,8 @@ export default function LandingPage() {
             {/* Founders cards */}
             <Reveal delay={150} className="grid grid-cols-2 gap-4">
               {[
-                { name: 'Clément Capelle', role: 'Co-fondateur', img: '/clement.jpg', linkedin: 'https://www.linkedin.com/in/clement-capelle/' },
-                { name: 'Flavien Gherardi', role: 'Co-fondateur', img: '/flavien.jpg', linkedin: 'https://www.linkedin.com/in/flavien-gherardi/' },
+                { name: 'Clément Capelle', role: 'Co-fondateur', img: '/Clem.jpeg', linkedin: 'https://www.linkedin.com/in/clement-capelle/' },
+                { name: 'Flavien Gherardi', role: 'Co-fondateur', img: '/Flav.jpg', linkedin: 'https://www.linkedin.com/in/flavien-gherardi/' },
               ].map((person) => (
                 <a key={person.name} href={person.linkedin} target="_blank" rel="noopener noreferrer"
                   className="group block bg-stone-50 hover:bg-stone-100 border border-stone-100 hover:border-stone-200 rounded-2xl overflow-hidden transition-all duration-300">
