@@ -97,12 +97,12 @@ function Header({ user }: { user: any }) {
 }
 
 const FEATURES = [
-  { icon: '✦', title: 'Wizard IA', desc: "Décrivez votre projet en langage naturel. L'IA génère automatiquement une structure complète : fonctionnalités, tâches, échéances." },
-  { icon: '⊞', title: 'Vues multiples', desc: 'Kanban, liste, GANTT ou calendrier. Basculez entre les vues en un clic selon votre mode de travail.' },
-  { icon: '◎', title: 'Galineo Room', desc: "Un assistant IA dédié à chaque projet. Il connaît vos tâches et peut modifier votre projet en temps réel." },
-  { icon: '⬡', title: 'Collaboration', desc: 'Invitez votre équipe, assignez des rôles et discutez par projet. Tout le monde reste aligné.' },
-  { icon: '◈', title: 'Suivi budgétaire', desc: "Gérez les dépenses et revenus de vos projets. Restez dans les clous financiers sans effort." },
-  { icon: '▦', title: 'Tableau de bord', desc: "Vue d'ensemble de vos projets, tâches assignées et activité récente en un coup d'œil." },
+  { icon: '✦', title: 'Wizard IA', desc: "Décrivez votre projet en langage naturel. L'IA génère automatiquement une structure complète : fonctionnalités, tâches, échéances.", badge: 'Essai gratuit inclus' },
+  { icon: '⊞', title: 'Vues multiples', desc: 'Kanban, liste, GANTT ou calendrier. Basculez entre les vues en un clic selon votre mode de travail.', badge: null },
+  { icon: '◎', title: 'Galineo Room', desc: "Un assistant IA dédié à chaque projet. Il connaît vos tâches et peut modifier votre projet en temps réel.", badge: 'Essai gratuit inclus' },
+  { icon: '⬡', title: 'Collaboration', desc: 'Invitez votre équipe, assignez des rôles et discutez par projet. Tout le monde reste aligné.', badge: null },
+  { icon: '◈', title: 'Suivi budgétaire', desc: "Gérez les dépenses et revenus de vos projets. Restez dans les clous financiers sans effort.", badge: null },
+  { icon: '▦', title: 'Tableau de bord', desc: "Vue d'ensemble de vos projets, tâches assignées et activité récente en un coup d'œil.", badge: null },
 ];
 
 const FOR_WHO = [
@@ -117,6 +117,7 @@ const FAQ_ITEMS = [
   { q: 'Comment fonctionne le Wizard IA ?', r: "Décrivez votre projet en langage naturel. L'IA génère une structure complète (fonctionnalités, tâches, dates) que vous personnalisez avant de valider." },
   { q: 'La Galineo Room peut-elle modifier mes tâches ?', r: "Oui. L'assistant IA connaît l'état complet de votre projet et peut créer, modifier ou réorganiser vos tâches sur demande." },
   { q: 'Puis-je inviter des membres sans compte Galineo ?', r: 'Oui, par email. Ils reçoivent un lien pour créer leur compte et rejoindre directement votre projet.' },
+  { q: "L'IA est-elle vraiment gratuite ?", r: "L'accès à l'IA (Wizard et Galineo Room) inclut un nombre de requêtes offertes à l'inscription pour tester sans engagement. Au-delà, les fonctionnalités IA nécessitent un abonnement payant." },
   { q: 'Mes données sont-elles sécurisées ?', r: 'Toutes les communications sont chiffrées (HTTPS). Vos données ne sont jamais partagées avec des tiers.' },
 ];
 
@@ -220,6 +221,7 @@ export default function LandingPage() {
               className="mt-6 flex items-center gap-5">
               {[
                 { icon: '✓', text: 'Gratuit sans carte bancaire' },
+                { icon: '✓', text: 'Essai IA inclus' },
                 { icon: '✓', text: 'Aucun engagement' },
               ].map(item => (
                 <span key={item.text} className="flex items-center gap-1.5 text-xs text-stone-400 font-medium">
@@ -262,10 +264,16 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-stone-100 rounded-2xl overflow-hidden border border-stone-100">
             {FEATURES.map((f, i) => (
               <Reveal key={f.title} delay={i * 60}>
-                <div className="bg-white p-7 hover:bg-stone-50 transition-colors duration-200 group h-full">
+                <div className="bg-white p-7 hover:bg-stone-50 transition-colors duration-200 group h-full flex flex-col">
                   <div className="text-2xl text-orange-400 group-hover:text-orange-500 transition-colors duration-300 mb-5 font-light">{f.icon}</div>
                   <h3 className="font-bold text-stone-900 mb-2 text-base">{f.title}</h3>
                   <p className="text-stone-500 text-sm leading-relaxed">{f.desc}</p>
+                  {f.badge && (
+                    <span className="mt-4 self-start inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-orange-500 bg-orange-50 px-2 py-1 rounded-md">
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                      {f.badge}
+                    </span>
+                  )}
                 </div>
               </Reveal>
             ))}
@@ -319,7 +327,7 @@ export default function LandingPage() {
                   {cta.label}
                   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="group-hover:translate-x-0.5 transition-transform"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </Link>
-                <span className="text-xs text-stone-600">Gratuit · Sans engagement</span>
+                <span className="text-xs text-stone-600">Gratuit · Essai IA inclus · Sans engagement</span>
               </div>
             </div>
           </div>
