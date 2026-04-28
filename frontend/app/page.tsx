@@ -168,7 +168,7 @@ export default function LandingPage() {
       <section className="relative pt-32 pb-24 px-6 overflow-hidden">
         {/* Background shapes */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full" style={{ background: 'radial-gradient(circle at 60% 40%, rgba(251,146,60,0.08) 0%, transparent 70%)' }} />
+          <div className="absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full" style={{ background: 'radial-gradient(circle at 60% 40%, rgba(120,113,108,0.06) 0%, transparent 70%)' }} />
           <div className="absolute top-1/2 -left-40 w-[500px] h-[500px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(231,229,228,0.5) 0%, transparent 70%)' }} />
         </div>
 
@@ -177,7 +177,7 @@ export default function LandingPage() {
             {/* Tag */}
             <div style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(16px)', transition: 'all 0.6s ease' }}
               className="inline-flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-widest mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-stone-400" />
               Gestion de projets propulsée par l'IA
             </div>
 
@@ -186,9 +186,9 @@ export default function LandingPage() {
               <h1 className="text-5xl md:text-7xl font-black leading-[1.05] tracking-tight mb-6 text-stone-900" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
                 De l'idée au projet<br />
                 <span className="relative inline-block">
-                  <span className="relative z-10 text-orange-500">structuré</span>
+                  <span className="relative z-10">structuré</span>
                   <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 300 12" fill="none" preserveAspectRatio="none" style={{ height: '8px' }}>
-                    <path d="M0 8 Q75 2 150 8 Q225 14 300 8" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.4"/>
+                    <path d="M0 8 Q75 2 150 8 Q225 14 300 8" stroke="#a8a29e" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.5"/>
                   </svg>
                 </span>
                 ,<br />en quelques secondes.
@@ -223,56 +223,13 @@ export default function LandingPage() {
                 { icon: '✓', text: 'Aucun engagement' },
               ].map(item => (
                 <span key={item.text} className="flex items-center gap-1.5 text-xs text-stone-400 font-medium">
-                  <span className="text-emerald-500 font-bold">{item.icon}</span>
+                  <span className="text-stone-400 font-bold">{item.icon}</span>
                   {item.text}
                 </span>
               ))}
             </div>
           </div>
 
-          {/* Floating decoration */}
-          <div className="hidden lg:block absolute right-0 top-0 w-[380px]" style={{ animation: 'float 6s ease-in-out infinite' }}>
-            <div className="relative">
-              {/* Main card */}
-              <div className="bg-white rounded-2xl border border-stone-200/80 shadow-[0_8px_40px_rgba(0,0,0,0.08)] p-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center">
-                    <Logo size={16} className="text-white" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-stone-800">Wizard IA</div>
-                    <div className="text-[10px] text-stone-400">Génération en cours…</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {[
-                    { label: 'Authentification', w: '85%', color: 'bg-blue-400' },
-                    { label: 'Tableau de bord', w: '60%', color: 'bg-orange-400' },
-                    { label: 'API REST', w: '40%', color: 'bg-emerald-400' },
-                  ].map(row => (
-                    <div key={row.label} className="flex items-center gap-3">
-                      <span className="text-[11px] text-stone-500 w-28 shrink-0">{row.label}</span>
-                      <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                        <div className={`h-full ${row.color} rounded-full`} style={{ width: row.w }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Mini card 1 */}
-              <div className="absolute -top-4 -right-6 bg-white rounded-xl border border-stone-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.07)] p-3 flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-bold">✓</div>
-                <span className="text-[11px] font-semibold text-stone-700">12 tâches créées</span>
-              </div>
-
-              {/* Mini card 2 */}
-              <div className="absolute -bottom-4 -left-6 bg-white rounded-xl border border-stone-200/80 shadow-[0_4px_20px_rgba(0,0,0,0.07)] p-3 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                <span className="text-[11px] font-semibold text-stone-700">IA en ligne</span>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -293,7 +250,7 @@ export default function LandingPage() {
       <section id="fonctionnalites" className="py-28 px-6">
         <div className="max-w-6xl mx-auto">
           <Reveal className="mb-16">
-            <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Fonctionnalités</p>
+            <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">Fonctionnalités</p>
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
               <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
                 Tout ce dont<br />votre équipe a besoin
@@ -306,7 +263,7 @@ export default function LandingPage() {
             {FEATURES.map((f, i) => (
               <Reveal key={f.title} delay={i * 60}>
                 <div className="bg-white p-7 hover:bg-stone-50 transition-colors duration-200 group h-full">
-                  <div className="text-2xl text-stone-300 group-hover:text-orange-400 transition-colors duration-300 mb-5 font-light">{f.icon}</div>
+                  <div className="text-2xl text-stone-300 group-hover:text-stone-600 transition-colors duration-300 mb-5 font-light">{f.icon}</div>
                   <h3 className="font-bold text-stone-900 mb-2 text-base">{f.title}</h3>
                   <p className="text-stone-500 text-sm leading-relaxed">{f.desc}</p>
                 </div>
@@ -320,7 +277,7 @@ export default function LandingPage() {
       <section id="pour-qui" className="py-28 px-6 bg-stone-50">
         <div className="max-w-6xl mx-auto">
           <Reveal className="mb-16 text-center">
-            <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Pour qui ?</p>
+            <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">Pour qui ?</p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
               Fait pour vous
             </h2>
@@ -373,7 +330,7 @@ export default function LandingPage() {
       <section id="faq" className="py-28 px-6 bg-stone-50">
         <div className="max-w-3xl mx-auto">
           <Reveal className="mb-12">
-            <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">FAQ</p>
+            <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-3">FAQ</p>
             <h2 className="text-4xl font-black tracking-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>Questions fréquentes</h2>
           </Reveal>
           <Reveal delay={80}>
@@ -386,10 +343,10 @@ export default function LandingPage() {
 
       {/* ── FINAL CTA ── */}
       <section className="py-32 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(251,146,60,0.07) 0%, transparent 70%)' }} />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 100%, rgba(120,113,108,0.06) 0%, transparent 70%)' }} />
         <Reveal className="relative max-w-2xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-orange-50 border border-orange-100 mb-8">
-            <Logo size={28} className="text-orange-500" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-stone-100 border border-stone-200 mb-8">
+            <Logo size={28} className="text-stone-600" />
           </div>
           <h2 className="text-5xl md:text-6xl font-black tracking-tight mb-5 leading-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
             Commencez<br />dès maintenant
