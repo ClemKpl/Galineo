@@ -13,6 +13,7 @@ interface Project {
   owner_name: string;
   member_count: number;
   created_at: string;
+  avatar?: string | null;
 }
 
 export default function HistoryPage() {
@@ -80,8 +81,12 @@ export default function HistoryPage() {
               className="bg-white rounded-2xl border border-stone-200 p-6 opacity-80 hover:opacity-100 grayscale-[0.5] hover:grayscale-0 transition-all cursor-pointer group"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500 font-bold">
-                  {(p.title || 'PR').substring(0, 2).toUpperCase()}
+                <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500 font-bold overflow-hidden">
+                  {p.avatar ? (
+                    <img src={p.avatar} alt={p.title} className="w-full h-full object-cover" />
+                  ) : (
+                    (p.title || 'PR').substring(0, 2).toUpperCase()
+                  )}
                 </div>
                 {p.owner_id === user?.id && (
                   <button onClick={(e) => restoreProject(e, p.id)} title="Restaurer" className="p-1.5 text-stone-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors">
