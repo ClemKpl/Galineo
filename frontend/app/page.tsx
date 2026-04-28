@@ -488,6 +488,86 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
+      {/* ── QUI SOMMES-NOUS ── */}
+      <section className="py-28 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <Reveal className="mb-16">
+            <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-3">Derrière Galinéo</p>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
+              Le logiciel qu'on aurait<br />aimé avoir dès le départ
+            </h2>
+          </Reveal>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            {/* Story */}
+            <Reveal className="space-y-5 text-stone-500 leading-relaxed">
+              <p>
+                On est <span className="font-semibold text-stone-800">Clément Capelle</span> et <span className="font-semibold text-stone-800">Flavien Gherardi</span>, deux étudiants en 2ème année. Depuis qu'on est arrivés dans le supérieur, les projets de groupe font partie du quotidien — et on n'est pas les seuls : <span className="font-semibold text-stone-700">plus de 70 % des étudiants du supérieur travaillent régulièrement en mode projet</span>, souvent sans outil dédié.
+              </p>
+              <p>
+                Pendant longtemps, notre workflow ressemblait à ça : des emails dans tous les sens, des fichiers éparpillés, un Trello ouvert dans un onglet, des notions dans un autre, et une deadline qui approche. On passait plus de temps à <span className="font-semibold text-stone-700">s'organiser qu'à vraiment travailler</span>.
+              </p>
+              <p>
+                Galinéo est né d'un hackathon au sein de notre école — une nuit à coder, à tester, à débattre. Puis d'une longue réflexion menée en collaboration avec de <span className="font-semibold text-stone-700">vrais chefs de projets</span>, pour concevoir un outil qui soit à la fois facile à prendre en main, abordable, et le plus complet possible.
+              </p>
+              <p>
+                On y a ajouté une couche d'IA — parce qu'honnêtement, quand ça peut générer une structure de projet en quelques secondes, il serait dommage de s'en priver.
+              </p>
+              <p className="text-sm">
+                Une question, une suggestion, envie d'échanger ?{' '}
+                <span className="font-semibold text-stone-700">On répond toujours.</span>
+              </p>
+              <div className="flex items-center gap-3 pt-2">
+                <a href="https://www.linkedin.com/in/clement-capelle/" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-stone-200 hover:border-stone-400 text-stone-600 hover:text-stone-900 text-xs font-semibold rounded-lg transition-all">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  Clément Capelle
+                </a>
+                <a href="https://www.linkedin.com/in/flavien-gherardi/" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-stone-200 hover:border-stone-400 text-stone-600 hover:text-stone-900 text-xs font-semibold rounded-lg transition-all">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  Flavien Gherardi
+                </a>
+              </div>
+            </Reveal>
+
+            {/* Founders cards */}
+            <Reveal delay={150} className="grid grid-cols-2 gap-4">
+              {[
+                { name: 'Clément Capelle', role: 'Co-fondateur', img: '/clement.jpg', linkedin: 'https://www.linkedin.com/in/clement-capelle/' },
+                { name: 'Flavien Gherardi', role: 'Co-fondateur', img: '/flavien.jpg', linkedin: 'https://www.linkedin.com/in/flavien-gherardi/' },
+              ].map((person) => (
+                <a key={person.name} href={person.linkedin} target="_blank" rel="noopener noreferrer"
+                  className="group block bg-stone-50 hover:bg-stone-100 border border-stone-100 hover:border-stone-200 rounded-2xl overflow-hidden transition-all duration-300">
+                  {/* Photo placeholder */}
+                  <div className="w-full aspect-square bg-stone-200 relative overflow-hidden">
+                    <img
+                      src={person.img}
+                      alt={person.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    {/* Fallback initials */}
+                    <div className="absolute inset-0 flex items-center justify-center text-3xl font-black text-stone-400" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
+                      {person.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-stone-900 text-sm">{person.name}</div>
+                        <div className="text-xs text-stone-400 mt-0.5">{person.role}</div>
+                      </div>
+                      <svg className="text-stone-300 group-hover:text-stone-500 transition-colors" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
       {/* ── FAQ ── */}
       <section id="faq" className="py-28 px-6 bg-stone-50">
         <div className="max-w-3xl mx-auto">
