@@ -263,7 +263,7 @@ export default function LandingPage() {
                   <div className="px-3 py-2.5 border-b border-stone-800">
                     <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
                       <div className="w-6 h-6 rounded-lg bg-stone-600 shrink-0" />
-                      <div><div className="font-semibold text-stone-200 text-[11px]">Clément</div><div className="text-stone-500 text-[10px]">capelleclem@gmail.com</div></div>
+                      <div><div className="font-semibold text-stone-200 text-[11px]">Votre nom</div><div className="text-stone-500 text-[10px]">votre@email.com</div></div>
                     </div>
                   </div>
                   <div className="px-3 py-2 space-y-0.5 border-b border-stone-800">
